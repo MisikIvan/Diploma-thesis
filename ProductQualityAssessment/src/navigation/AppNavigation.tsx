@@ -1,57 +1,72 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useAppSelector } from '../hooks';
 
-import HomeStackNavigator from './HomeStackNavigator';
+// Stacks
+import HomeStack from './stacks/HomeStack';
+import SearchStack from './stacks/SearchStack';
+import ProfileStack from './stacks/ProfileStack';
+
+// Screens
 import FavoritesScreen from '../screens/FavoritesScreen';
-import ProfileScreen from '../screens/ProfileScreen';
-import AdminPanelScreen from '../screens/AdminPanelScreen'; 
+import ProductDetailScreen from '../screens/ProductDetailScreen';
 
+// Types
+import { MainTabParamList, RootStackParamList } from './types';
 
-type AppTabParamList = {
-  HomeStack: undefined;
-  Favorites: undefined;
-  Profile: undefined;
-  Admin: undefined; 
-};
+const Tab = createBottomTabNavigator<MainTabParamList>();
+const Stack = createStackNavigator<RootStackParamList>();
 
-const Tab = createBottomTabNavigator<AppTabParamList>();
+const MainTabNavigator = () => {
+  const user = useAppSelector(state => state.auth.user);
 
-
-const isAdmin = true; // Замінить на реальну преревірку із Redux/Auth
-
-const AppNavigator = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap = 'alert-circle'; // іконка за замовчуванням
+          let iconName: keyof typeof Ionicons.glyphMap = 'alert-circle'; 
 
-          if (route.name === 'HomeStack') {
+          if (route.name === 'Home') {
             iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'Search') {
+            iconName = focused ? 'search' : 'search-outline';
           } else if (route.name === 'Favorites') {
             iconName = focused ? 'heart' : 'heart-outline';
           } else if (route.name === 'Profile') {
             iconName = focused ? 'person' : 'person-outline';
-          } else if (route.name === 'Admin') {
-             iconName = focused ? 'cog' : 'cog-outline';
           }
-
           
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: 'tomato',
+        tabBarActiveTintColor: '#2ECC71',
         tabBarInactiveTintColor: 'gray',
         headerShown: false,
       })}
     >
-      <Tab.Screen name="HomeStack" component={HomeStackNavigator} options={{ title: 'Главная' }} />
-      <Tab.Screen name="Favorites" component={FavoritesScreen} options={{ title: 'Избранное' }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Профиль' }} />
-      {isAdmin && ( // Відображає вкладку тільки для адміна
-        <Tab.Screen name="Admin" component={AdminPanelScreen} options={{ title: 'Админ' }} />
-      )}
+      <Tab.Screen name="Home" component={HomeStack} options={{ title: 'Головна' }} />
+      <Tab.Screen name="Search" component={SearchStack} options={{ title: 'Пошук' }} />
+      <Tab.Screen name="Favorites" component={FavoritesScreen} options={{ title: 'Улюблене' }} />
+      <Tab.Screen name="Profile" component={ProfileStack} options={{ title: 'Профіль' }} />
     </Tab.Navigator>
+  );
+};
+
+const AppNavigator = () => {
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Main" component={MainTabNavigator} />
+      <Stack.Screen 
+        name="ProductDetails" 
+        component={ProductDetailScreen}
+        options={{
+          headerShown: true,
+          title: 'Деталі продукту',
+          headerTintColor: '#2ECC71',
+        }}
+      />
+    </Stack.Navigator>
   );
 };
 

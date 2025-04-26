@@ -34,3 +34,9 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+
+src/screens/ViewHistoryScreen.tsx
+src/screens/SearchResultsScreen.tsx
+src/screens/AuthScreen.tsx
+src/navigation/RootNavigator.tsx
