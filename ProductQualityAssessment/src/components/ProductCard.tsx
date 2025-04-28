@@ -1,97 +1,74 @@
 import React from 'react';
-import {
-  TouchableOpacity,
-  Image,
-  Text,
-  StyleSheet,
-  View,
-  Dimensions,
-} from 'react-native';
-import { Product } from '../types';
-import { NUTRITION_SCORE_COLORS } from '../constants';
+import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { Product, getNutriScoreColor } from '../types';
 
 interface ProductCardProps {
   product: Product;
   onPress: () => void;
 }
 
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - 48) / 2;
-
-export default function ProductCard({ product, onPress }: ProductCardProps) {
-  const scoreColor = NUTRITION_SCORE_COLORS[product.nutritionScore.letter];
-
+const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) => {
   return (
     <TouchableOpacity style={styles.container} onPress={onPress}>
       <Image
         source={{ uri: product.imageUrl }}
         style={styles.image}
-        resizeMode="cover"
+        resizeMode="contain"
       />
       <View style={styles.content}>
         <Text style={styles.name} numberOfLines={2}>
           {product.name}
         </Text>
-        <View style={styles.scoreContainer}>
-          <View style={[styles.scoreBadge, { backgroundColor: scoreColor }]}>
-            <Text style={styles.scoreText}>{product.nutritionScore.letter}</Text>
-          </View>
-          <Text style={styles.scoreValue}>{product.nutritionScore.score}</Text>
+        <View style={styles.nutriScoreContainer}>
+          <Text style={styles.nutriScoreText}>
+            Nutri-Score: {product.nutriscoreGrade}
+          </Text>
+          <Text style={styles.nutriScoreEmoji}>
+            {getNutriScoreColor(product.nutriscoreGrade)}
+          </Text>
         </View>
       </View>
     </TouchableOpacity>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
-    width: CARD_WIDTH,
+    width: 160,
     backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 16,
+    borderRadius: 8,
+    padding: 8,
+    marginRight: 12,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 2,
   },
   image: {
-    width: CARD_WIDTH,
-    height: CARD_WIDTH,
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
+    width: '100%',
+    height: 120,
+    borderRadius: 4,
   },
   content: {
-    padding: 12,
+    marginTop: 8,
   },
   name: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 8,
+    fontWeight: 'bold',
+    marginBottom: 4,
   },
-  scoreContainer: {
+  nutriScoreContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  scoreBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  scoreText: {
-    color: '#fff',
+  nutriScoreText: {
     fontSize: 12,
-    fontWeight: 'bold',
+    marginRight: 4,
   },
-  scoreValue: {
-    fontSize: 12,
-    color: '#666',
+  nutriScoreEmoji: {
+    fontSize: 16,
   },
-}); 
+});
+
+export default ProductCard; 

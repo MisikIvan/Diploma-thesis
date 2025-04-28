@@ -1,136 +1,146 @@
-import React, { useEffect } from 'react';
-import {
-  View,
-  StyleSheet,
-  FlatList,
-  TextInput,
-  TouchableOpacity,
-  Text,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useAppDispatch, useAppSelector } from '../hooks';
-import { fetchProducts } from '../store/slices/productsSlice';
-import { CATEGORIES } from '../constants';
-import CategoryCard from '../components/CategoryCard';
-import ProductCard from '../components/ProductCard';
-import RecentlyViewedList from '../components/RecentlyViewedList';
-import { HomeStackParamList, RootStackParamList } from '../navigation/types';
+import React, { useEffect, useState } from 'react';
+import { View, FlatList, ActivityIndicator, StyleSheet, Text } from 'react-native';
+import { useAppDispatch, useAppSelector } from '../redux/hooks';
+import { searchProducts, setCurrentProduct, setSelectedCategory } from '../redux/slices/productsSlice';
+import SearchBar from '../components/SearchBar';
+import CategoryList from '../components/CategoryList';
+import RecentProducts from '../components/RecentProducts';
+import ProductCard from '../components/ui/ProductCard';
+import { Product } from '../types';
 
-type HomeScreenNavigationProp = NativeStackNavigationProp<
-  HomeStackParamList & RootStackParamList,
-  'HomeScreen'
->;
+interface HomeScreenProps {
+  navigation: any; // Should be properly typed with React Navigation types
+}
 
-export default function HomeScreen() {
-  const navigation = useNavigation<HomeScreenNavigationProp>();
+const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const dispatch = useAppDispatch();
-  const { items: products, selectedCategory, sortBy } = useAppSelector((state) => state.products);
+  const { 
+    products = [], 
+    recentProducts = [], 
+    searchQuery = '', 
+    selectedCategory = null, 
+    loading: isLoading = false, 
+    error = null,
+    filteredProducts = [],
+  } = useAppSelector(state => state.products);
 
+  const [showFilterModal, setShowFilterModal] = useState(false);
+
+  // Initial search when the component mounts
   useEffect(() => {
-    dispatch(fetchProducts({ 
-      category: selectedCategory || undefined, 
-      sortBy 
-    }));
-  }, [dispatch, selectedCategory, sortBy]);
+    if (products.length === 0) {
+      handleSearch('');
+    }
+  }, []);
+
+  const handleSearch = (query: string) => {
+    dispatch(searchProducts({ query, page: 1, pageSize: 20 }));
+  };
+
+  const handleProductPress = (product: Product) => {
+    dispatch(setCurrentProduct(product));
+    navigation.navigate('ProductDetail', { productId: product.productId });
+  };
+
+  const handleCategorySelect = (categoryId: string | null) => {
+    dispatch(setSelectedCategory(categoryId));
+  };
+
+  const handleFilterPress = () => {
+    setShowFilterModal(true);
+  };
+
+  const renderProductItem = ({ item }: { item: Product }) => (
+    <ProductCard product={item} onPress={handleProductPress} />
+  );
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.searchContainer}>
-          <TouchableOpacity
-            style={styles.searchBar}
-            onPress={() => navigation.navigate('Main', { 
-              screen: 'Search'
-            })}
-          >
-            <Ionicons name="search" size={20} color="gray" />
-            <Text style={styles.searchPlaceholder}>Поиск продуктов...</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterButton}>
-            <Ionicons name="filter" size={24} color="#2ECC71" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <FlatList
-        data={products}
-        keyExtractor={(item) => item.id}
-        ListHeaderComponent={
-          <>
-            <FlatList
-              data={CATEGORIES}
-              keyExtractor={(item) => item.id}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.categoriesList}
-              renderItem={({ item }) => (
-                <CategoryCard
-                  category={item}
-                  isSelected={selectedCategory === item.id}
-                  onPress={() => navigation.navigate('CategoryProducts', {
-                    categoryId: item.id,
-                    categoryName: item.name,
-                  })}
-                />
-              )}
-            />
-            <RecentlyViewedList />
-          </>
-        }
-        renderItem={({ item }) => (
-          <ProductCard
-            product={item}
-            onPress={() => navigation.navigate('ProductDetails', { product: item })}
-          />
-        )}
-        numColumns={2}
-        columnWrapperStyle={styles.productColumns}
+      <SearchBar 
+        initialQuery={searchQuery}
+        onSearch={handleSearch}
+        onFilterPress={handleFilterPress}
       />
+
+      <CategoryList 
+        selectedCategory={selectedCategory}
+        onSelectCategory={handleCategorySelect}
+      />
+
+      {recentProducts.length > 0 && (
+        <RecentProducts 
+          products={recentProducts}
+          onProductPress={handleProductPress}
+        />
+      )}
+
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>
+            {error}. Please try again.
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredProducts.length > 0 ? filteredProducts : products}
+          renderItem={renderProductItem}
+          keyExtractor={(item) => item.productId}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>
+                No products found. Try a different search term.
+              </Text>
+            </View>
+          }
+        />
+      )}
+
+      {/* Filter Modal would go here */}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
   },
-  header: {
-    padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+  listContent: {
+    paddingBottom: 20,
   },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  searchBar: {
+  loadingContainer: {
     flex: 1,
-    flexDirection: 'row',
+    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginRight: 8,
   },
-  searchPlaceholder: {
-    marginLeft: 8,
-    color: 'gray',
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
     fontSize: 16,
+    color: 'red',
+    textAlign: 'center',
   },
-  filterButton: {
-    padding: 8,
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    height: 200,
   },
-  categoriesList: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  productColumns: {
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
+  emptyText: {
+    fontSize: 16,
+    color: '#888',
+    textAlign: 'center',
   },
 });
+
+export default HomeScreen; 

@@ -7,7 +7,6 @@ node_modules/
 .expo/
 dist/
 web-build/
-expo-env.d.ts
 
 # Native
 *.orig.*
@@ -35,8 +34,51 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# OSX
+.DS_Store
 
-src/screens/ViewHistoryScreen.tsx
-src/screens/SearchResultsScreen.tsx
-src/screens/AuthScreen.tsx
-src/navigation/RootNavigator.tsx
+# Expo
+.expo/
+dist/
+web-build/
+
+# Node modules
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# TypeScript
+*.tsbuildinfo
+
+# Build and bundle
+build/
+*.jsbundle
+ios/
+android/
+
+# Tests
+coverage/
+
+# Firebase
+google-services.json
+GoogleService-Info.plist
+
+# Logging
+*.log
+
+# Expo specific
+.expo-shared/

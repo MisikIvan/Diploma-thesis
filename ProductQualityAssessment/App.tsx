@@ -1,17 +1,14 @@
 import React from 'react';
-import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { StatusBar } from 'react-native';
 import { Provider } from 'react-redux';
-import { store } from './src/store';
-import RootNavigator from './src/navigation/RootNavigator';
+import store from './src/redux/store';
+import Navigation from './src/navigation';
 
 export default function App() {
   return (
     <Provider store={store}>
-      <SafeAreaProvider>
-        <RootNavigator />
-        <StatusBar style="auto" />
-      </SafeAreaProvider>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <Navigation />
     </Provider>
   );
-} 
+}

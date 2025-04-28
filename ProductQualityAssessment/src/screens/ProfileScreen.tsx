@@ -1,237 +1,384 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Image,
   TouchableOpacity,
+  Image,
   ScrollView,
+  Alert,
+  ActivityIndicator,
+  TextInput,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
-import { useAppDispatch, useAppSelector } from '../hooks';
-import { signOut } from '../store/slices/authSlice';
-import { ProfileStackParamList, RootStackParamList } from '../navigation/types';
-import { RootState } from '../store';
+import { User } from '../types';
+import { StorageService } from '../utils/storage';
 
-type ProfileNavigationProp = NativeStackNavigationProp<
-  ProfileStackParamList & RootStackParamList,
-  'ProfileScreen'
->;
+interface ProfileScreenProps {
+  navigation: any; // Should be properly typed with React Navigation types
+}
 
-export default function ProfileScreen() {
-  const navigation = useNavigation<ProfileNavigationProp>();
-  const dispatch = useAppDispatch();
-  const user = useAppSelector((state: RootState) => state.auth.user);
+const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedName, setEditedName] = useState('');
+
+  // Load user data when component mounts
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      setIsLoading(true);
+      // Get user from storage
+      const userData = await StorageService.user.getUser();
+      
+      if (userData) {
+        setUser(userData);
+        setEditedName(userData.displayName);
+      } else {
+        // For demo purposes, create a mock user if none exists
+        const mockUser: User = {
+          userId: 'user123',
+          email: 'demo@example.com',
+          displayName: 'Demo User',
+          avatarUrl: 'https://via.placeholder.com/150',
+          authMethod: 'email',
+          role: 'user',
+          isBlocked: false,
+        };
+        setUser(mockUser);
+        setEditedName(mockUser.displayName);
+        // Save mock user to storage
+        await StorageService.user.saveUser(mockUser);
+      }
+    } catch (error) {
+      console.error('Failed to load user data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to log out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          onPress: async () => {
+            // Clear user data from storage
+            await StorageService.user.removeUser();
+            // Navigate to auth screen
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Auth' }],
+            });
+          },
+        },
+      ]
+    );
+  };
+
+  const handleStartEditing = () => {
+    setIsEditing(true);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+
+    if (editedName.trim().length === 0) {
+      Alert.alert('Error', 'Name cannot be empty');
+      return;
+    }
+
+    try {
+      const updatedUser: User = {
+        ...user,
+        displayName: editedName,
+      };
+
+      await StorageService.user.saveUser(updatedUser);
+      setUser(updatedUser);
+      setIsEditing(false);
+      Alert.alert('Success', 'Profile updated successfully');
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      Alert.alert('Error', 'Failed to update profile');
+    }
+  };
+
+  const handleCancelEditing = () => {
+    if (user) {
+      setEditedName(user.displayName);
+    }
+    setIsEditing(false);
+  };
+
+  const handleViewHistory = () => {
+    // Navigate to history screen (would be implemented in a real app)
+    Alert.alert('View History', 'This feature is not implemented yet');
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
 
   if (!user) {
     return (
-      <View style={styles.authContainer}>
-        <Text style={styles.authTitle}>Увійдіть в обліковий запис</Text>
-        <Text style={styles.authDesc}>
-          Щоб переглядати профіль та керувати налаштуваннями, вам потрібно увійти в систему
-        </Text>
-        <TouchableOpacity
-          style={styles.authButton}
-          onPress={() => navigation.navigate('Auth')}
-        >
-          <Text style={styles.authButtonText}>Увійти</Text>
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Failed to load user data</Text>
+        <TouchableOpacity style={styles.button} onPress={loadUserData}>
+          <Text style={styles.buttonText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
-  const handleSignOut = async () => {
-    try {
-      await dispatch(signOut()).unwrap();
-      navigation.navigate('Auth');
-    } catch (error) {
-      console.error('Помилка при виході:', error);
-    }
-  };
-
-  const renderMenuItem = (
-    icon: keyof typeof Ionicons.glyphMap,
-    title: string,
-    onPress: () => void
-  ) => (
-    <TouchableOpacity style={styles.menuItem} onPress={onPress}>
-      <Ionicons name={icon} size={22} color="#333" style={styles.menuIcon} />
-      <Text style={styles.menuTitle}>{title}</Text>
-      <Ionicons name="chevron-forward" size={20} color="#ccc" />
-    </TouchableOpacity>
-  );
-
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Image
-          source={user.avatarUrl ? { uri: user.avatarUrl } : require('../assets/images/default-avatar.png')}
+          source={{ uri: user.avatarUrl || 'https://via.placeholder.com/150' }}
           style={styles.avatar}
         />
-        <View style={styles.userInfo}>
-          <Text style={styles.userName}>{user.name}</Text>
-          <Text style={styles.userEmail}>{user.email}</Text>
-          {user.role === 'admin' && (
-            <View style={styles.adminBadge}>
-              <Text style={styles.adminText}>Адміністратор</Text>
+        
+        {isEditing ? (
+          <View style={styles.editContainer}>
+            <TextInput
+              style={styles.nameInput}
+              value={editedName}
+              onChangeText={setEditedName}
+              placeholder="Your name"
+            />
+            <View style={styles.editButtonsRow}>
+              <TouchableOpacity style={styles.editButton} onPress={handleSaveProfile}>
+                <Text style={styles.editButtonText}>Save</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.editButton, styles.cancelButton]}
+                onPress={handleCancelEditing}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
             </View>
-          )}
-        </View>
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() => navigation.navigate('EditProfile')}
+          </View>
+        ) : (
+          <View style={styles.userInfo}>
+            <Text style={styles.displayName}>{user.displayName}</Text>
+            <Text style={styles.email}>{user.email}</Text>
+            <TouchableOpacity style={styles.editProfileButton} onPress={handleStartEditing}>
+              <Text style={styles.editProfileButtonText}>Edit Profile</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>Account</Text>
+        
+        <TouchableOpacity style={styles.menuItem} onPress={handleViewHistory}>
+          <Text style={styles.menuItemText}>View History</Text>
+          <Text style={styles.menuItemIcon}>📖</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('Favorites')}
         >
-          <Ionicons name="pencil" size={20} color="#fff" />
+          <Text style={styles.menuItemText}>Favorites</Text>
+          <Text style={styles.menuItemIcon}>❤️</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.menuSection}>
-        <Text style={styles.sectionTitle}>Мій аккаунт</Text>
-        {renderMenuItem('heart', 'Улюблені продукти', () => navigation.navigate('Main', { screen: 'Favorites' }))}
-        {renderMenuItem('time', 'Історія переглядів', () => navigation.navigate('ViewHistory'))}
-        {renderMenuItem('settings', 'Налаштування', () => navigation.navigate('Settings'))}
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>Settings</Text>
+        
+        <TouchableOpacity style={styles.menuItem}>
+          <Text style={styles.menuItemText}>Notifications</Text>
+          <Text style={styles.menuItemIcon}>🔔</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.menuItem}>
+          <Text style={styles.menuItemText}>Privacy</Text>
+          <Text style={styles.menuItemIcon}>🔒</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.menuItem}>
+          <Text style={styles.menuItemText}>Help & Support</Text>
+          <Text style={styles.menuItemIcon}>❓</Text>
+        </TouchableOpacity>
       </View>
 
-      {user.role === 'admin' && (
-        <View style={styles.menuSection}>
-          <Text style={styles.sectionTitle}>Панель адміністратора</Text>
-          {renderMenuItem('grid', 'Керування продуктами', () => navigation.navigate('AdminPanel'))}
-        </View>
-      )}
+      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutButtonText}>Logout</Text>
+      </TouchableOpacity>
 
-      <View style={styles.menuSection}>
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <Ionicons name="log-out-outline" size={22} color="#E74C3C" style={styles.menuIcon} />
-          <Text style={styles.signOutText}>Вийти з облікового запису</Text>
-        </TouchableOpacity>
+      <View style={styles.versionContainer}>
+        <Text style={styles.versionText}>Product Quality Assessment</Text>
+        <Text style={styles.versionText}>Version 1.0.0</Text>
       </View>
     </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: 'red',
+    marginBottom: 20,
+  },
   header: {
-    padding: 24,
-    flexDirection: 'row',
+    padding: 20,
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
-    position: 'relative',
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginRight: 16,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 15,
   },
   userInfo: {
-    flex: 1,
+    alignItems: 'center',
   },
-  userName: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
+  displayName: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 5,
   },
-  userEmail: {
+  email: {
     fontSize: 14,
     color: '#666',
+    marginBottom: 15,
   },
-  adminBadge: {
-    backgroundColor: '#2ECC71',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginTop: 6,
-    alignSelf: 'flex-start',
+  editProfileButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
   },
-  adminText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '500',
+  editProfileButtonText: {
+    color: '#007AFF',
+    fontWeight: 'bold',
+  },
+  editContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  nameInput: {
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 10,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    marginBottom: 15,
+    fontSize: 16,
+    backgroundColor: '#f9f9f9',
+  },
+  editButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    width: '100%',
   },
   editButton: {
-    backgroundColor: '#2ECC71',
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute',
-    top: 20,
-    right: 20,
+    paddingHorizontal: 30,
+    paddingVertical: 8,
+    backgroundColor: '#007AFF',
+    borderRadius: 20,
+    marginHorizontal: 5,
   },
-  menuSection: {
-    marginBottom: 24,
+  editButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  cancelButton: {
+    backgroundColor: '#f0f0f0',
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontWeight: 'bold',
+  },
+  sectionContainer: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
     color: '#333',
-    paddingHorizontal: 16,
-    marginTop: 24,
-    marginBottom: 8,
   },
   menuItem: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  menuIcon: {
-    marginRight: 16,
-  },
-  menuTitle: {
-    flex: 1,
-    fontSize: 16,
-    color: '#333',
-  },
-  signOutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    marginTop: 8,
-  },
-  signOutText: {
-    fontSize: 16,
-    color: '#E74C3C',
-  },
-  authContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 32,
-  },
-  authTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
-  },
-  authDesc: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  authButton: {
-    backgroundColor: '#2ECC71',
-    paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f5f5f5',
   },
-  authButtonText: {
+  menuItemText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  menuItemIcon: {
+    fontSize: 20,
+  },
+  logoutButton: {
+    margin: 20,
+    padding: 15,
+    backgroundColor: '#ffebe6',
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  logoutButtonText: {
+    color: '#e63e11',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 30,
+    paddingVertical: 10,
+    borderRadius: 10,
+  },
+  buttonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: 'bold',
+  },
+  versionContainer: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  versionText: {
+    fontSize: 12,
+    color: '#999',
   },
 });
+
+export default ProfileScreen; 

@@ -1,102 +1,82 @@
-export type ProductCategory = {
-  id: string;
+export interface User {
+  userId: string;
+  email: string;
+  displayName: string;
+  avatarUrl?: string;
+  authMethod: 'email' | 'google';
+  role: 'user' | 'admin';
+  isBlocked: boolean;
+}
+
+export interface Product {
+  productId: string;
   name: string;
-  icon: string;
-};
-
-export type NutritionScore = {
-  letter: 'A' | 'B' | 'C' | 'D' | 'E';
-  score: number;
-  color: string;
-};
-
-export type NutritionalValues = {
-  per100g: {
-    calories: number;
-    protein: number;
-    fats: {
-      total: number;
-      saturated: number;
-      unsaturated: number;
-    };
-    carbohydrates: {
-      total: number;
-      sugar: number;
-    };
-    salt: number;
-  };
-  perProduct: {
-    weight: number;
-    calories: number;
-    protein: number;
-    fats: {
-      total: number;
-      saturated: number;
-      unsaturated: number;
-    };
-    carbohydrates: {
-      total: number;
-      sugar: number;
-    };
-    salt: number;
-  };
-};
-
-export type ProductCharacteristics = {
-  isVegan: boolean;
-  isVegetarian: boolean;
-  containsLactose: boolean;
-  containsGluten: boolean;
-};
-
-export type Product = {
-  id: string;
-  name: string;
-  description: string;
-  imageUrl: string;
-  category: string;
-  nutritionScore: NutritionScore;
-  characteristics: ProductCharacteristics;
-  nutritionalValues: NutritionalValues;
-  ingredients: string[];
+  description?: string;
+  imageUrl?: string;
+  nutriscoreGrade: 'A' | 'B' | 'C' | 'D' | 'E';
+  nutriscoreScore?: number; // 0-100
+  categories: string[];
+  ingredients: string;
   allergens: string[];
   additives: string[];
-  viewCount: number;
+  nutriments: {
+    calories: number;
+    proteins: number;
+    fats: {
+      total: number;
+      saturated?: number;
+      unsaturated?: number;
+    };
+    carbohydrates: {
+      total: number;
+      sugar?: number;
+    };
+    salt?: number;
+  };
+  isVegan: boolean;
+  isVegetarian: boolean;
+  hasLactose: boolean;
+  hasGluten: boolean;
+  weight?: number; // in grams or ml
+  createdBy: 'admin' | 'api';
   createdAt: string;
   updatedAt: string;
-};
+}
 
-export type User = {
-  id: string;
-  email: string;
-  name: string;
-  avatarUrl?: string;
-  role: 'user' | 'admin';
-  status: 'active' | 'blocked';
-  authMethod: 'email' | 'google';
-  createdAt: string;
-};
-
-export type Comment = {
-  id: string;
+export interface Comment {
+  commentId: string;
   productId: string;
   userId: string;
+  userName: string;
+  rating: 1 | 2 | 3 | 4 | 5;
   text: string;
-  rating: number;
   createdAt: string;
-  status: 'pending' | 'approved' | 'rejected';
-};
+  isModerated: boolean;
+}
 
-export type Favorite = {
-  id: string;
+export interface Favorite {
+  favoriteId: string;
   userId: string;
   productId: string;
-  createdAt: string;
-};
+  addedAt: string;
+}
 
-export type RecentlyViewed = {
-  id: string;
+export interface ViewHistory {
+  historyId: string;
   userId: string;
   productId: string;
   viewedAt: string;
+}
+
+export type NutriScoreGrade = 'A' | 'B' | 'C' | 'D' | 'E';
+export type NutriScoreColor = '🟢' | '🟡' | '🟠' | '🔴' | '⛔️';
+
+export const getNutriScoreColor = (grade: NutriScoreGrade): NutriScoreColor => {
+  switch (grade) {
+    case 'A': return '🟢';
+    case 'B': return '🟡';
+    case 'C': return '🟠';
+    case 'D': return '🔴';
+    case 'E': return '⛔️';
+  }
 }; 
