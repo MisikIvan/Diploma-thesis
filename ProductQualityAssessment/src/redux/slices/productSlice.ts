@@ -114,7 +114,6 @@ const productSlice = createSlice({
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
           });
           break;
-        // For popularity, we would need additional data like view count
         default:
           break;
       }

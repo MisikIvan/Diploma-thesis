@@ -14,7 +14,7 @@ import { User } from '../types';
 import { StorageService } from '../utils/storage';
 
 interface ProfileScreenProps {
-  navigation: any; // Should be properly typed with React Navigation types
+  navigation: any;
 }
 
 const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
@@ -43,7 +43,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           userId: 'user123',
           email: 'demo@example.com',
           displayName: 'Demo User',
-          avatarUrl: 'https://via.placeholder.com/150',
+          avatarUrl: 'https://cdn.7tv.app/emote/01FSVRP2N00000QSWVVZJA08HV/4x.avif',
           authMethod: 'email',
           role: 'user',
           isBlocked: false,
@@ -118,7 +118,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   };
 
   const handleViewHistory = () => {
-    // Navigate to history screen (would be implemented in a real app)
+    // Navigate to history screen
     Alert.alert('View History', 'This feature is not implemented yet');
   };
 
@@ -145,7 +145,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <Image
-          source={{ uri: user.avatarUrl || 'https://via.placeholder.com/150' }}
+          source={{ uri: user.avatarUrl || 'https://cdn.7tv.app/emote/01FSVRP2N00000QSWVVZJA08HV/4x.avif' }}
           style={styles.avatar}
         />
         
@@ -222,7 +222,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
       <View style={styles.versionContainer}>
         <Text style={styles.versionText}>Product Quality Assessment</Text>
-        <Text style={styles.versionText}>Version 1.0.0</Text>
+        <Text style={styles.versionText}>Version 0.0.2</Text>
       </View>
     </ScrollView>
   );

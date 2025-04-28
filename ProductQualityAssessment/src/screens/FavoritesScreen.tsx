@@ -6,7 +6,7 @@ import ProductCard from '../components/ui/ProductCard';
 import { StorageService } from '../utils/storage';
 
 interface FavoritesScreenProps {
-  navigation: any; // Should be properly typed with React Navigation types
+  navigation: any; 
 }
 
 const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {

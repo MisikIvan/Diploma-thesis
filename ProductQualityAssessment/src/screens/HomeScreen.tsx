@@ -9,7 +9,7 @@ import ProductCard from '../components/ui/ProductCard';
 import { Product } from '../types';
 
 interface HomeScreenProps {
-  navigation: any; // Should be properly typed with React Navigation types
+  navigation: any;
 }
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
@@ -26,7 +26,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const [showFilterModal, setShowFilterModal] = useState(false);
 
-  // Initial search when the component mounts
+  
   useEffect(() => {
     if (products.length === 0) {
       handleSearch('');

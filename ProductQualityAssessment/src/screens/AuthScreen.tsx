@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 interface AuthScreenProps {
-  navigation: any; // Should be properly typed with React Navigation types
+  navigation: any; 
 }
 
 const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {

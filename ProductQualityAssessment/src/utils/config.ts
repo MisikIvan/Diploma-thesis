@@ -1,6 +1,6 @@
 // API endpoints
 export const API = {
-  // Base URL for our backend
+  // Base URL for backend
   BASE_URL: 'https://productqualityapp-api.example.com',
   
   // Open Food Facts API

@@ -4,7 +4,7 @@ import productsReducer from './slices/productsSlice';
 const store = configureStore({
   reducer: {
     products: productsReducer,
-    // Add more reducers here as needed
+    // Add more reducers here
   },
   // Enable Redux DevTools in development
   devTools: process.env.NODE_ENV !== 'production',

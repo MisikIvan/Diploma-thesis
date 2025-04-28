@@ -83,8 +83,6 @@ const MainTabNavigator = () => {
 
 // Root navigator
 const RootNavigator = () => {
-  // Here we would normally check if the user is authenticated
-  // and render the appropriate initial route
   const isAuthenticated = false;
 
   return (
