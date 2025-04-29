@@ -11,6 +11,7 @@ import {
   ScrollView,
   Alert
 } from 'react-native';
+import { translations } from '../utils/translations';
 
 interface AuthScreenProps {
   navigation: any; 
@@ -40,34 +41,34 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 
   const validateForm = (): boolean => {
     if (!email.trim()) {
-      setError('Email is required');
+      setError(translations.emailRequired);
       return false;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address');
+      setError(translations.validEmail);
       return false;
     }
 
     if (!password.trim()) {
-      setError('Password is required');
+      setError(translations.passwordRequired);
       return false;
     }
 
     if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
+      setError(translations.passwordLength);
       return false;
     }
 
     if (!isLogin) {
       if (!name.trim()) {
-        setError('Name is required');
+        setError(translations.nameRequired);
         return false;
       }
 
       if (password !== confirmPassword) {
-        setError('Passwords do not match');
+        setError(translations.passwordsDoNotMatch);
         return false;
       }
     }
@@ -125,24 +126,24 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   };
 
   const handleForgotPassword = () => {
-    // Firebase password reset would go here
+    // Firebase password reset here
     Alert.alert(
-      'Reset Password',
-      'Enter your email address and we will send you a password reset link.',
+      translations.resetPassword,
+      translations.resetPasswordPrompt,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: translations.cancel, style: 'cancel' },
         { 
-          text: 'Send', 
+          text: translations.send, 
           onPress: () => {
             if (!email.trim()) {
-              setError('Please enter your email address');
+              setError(translations.emailRequired);
               return;
             }
             
-            // Firebase password reset would go here
+            // Firebase password reset here
             Alert.alert(
-              'Reset Email Sent',
-              `If an account exists for ${email}, you will receive an email with instructions.`
+              translations.resetEmailSent,
+              translations.resetPasswordConfirmation.replace('{email}', email)
             );
           } 
         }
@@ -151,7 +152,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   };
 
   const handleGoogleSignIn = () => {
-    // Firebase Google OAuth would go here
+    // Firebase Google OAuth here
     Alert.alert('Google Sign In', 'This feature is not implemented yet.');
   };
 
@@ -163,9 +164,9 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.title}>Product Quality Assessment</Text>
+          <Text style={styles.title}>{translations.appName}</Text>
           <Text style={styles.subtitle}>
-            {isLogin ? 'Sign in to your account' : 'Create a new account'}
+            {isLogin ? translations.signIn : translations.createAccount}
           </Text>
         </View>
 
@@ -177,10 +178,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 
         {!isLogin && (
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Name</Text>
+            <Text style={styles.label}>{translations.name}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter your name"
+              placeholder={translations.name}
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
@@ -189,10 +190,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
         )}
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>{translations.email}</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter your email"
+            placeholder={translations.email}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -201,10 +202,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>Password</Text>
+          <Text style={styles.label}>{translations.password}</Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter your password"
+            placeholder={translations.password}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -213,10 +214,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 
         {!isLogin && (
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Confirm Password</Text>
+            <Text style={styles.label}>{translations.confirmPassword}</Text>
             <TextInput
               style={styles.input}
-              placeholder="Confirm your password"
+              placeholder={translations.confirmPassword}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
@@ -225,45 +226,47 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
         )}
 
         {isLogin && (
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.forgotPasswordContainer}
             onPress={handleForgotPassword}
           >
-            <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+            <Text style={styles.forgotPasswordText}>
+              {translations.forgotPassword}
+            </Text>
           </TouchableOpacity>
         )}
 
         <TouchableOpacity
-          style={styles.button}
+          style={styles.buttonPrimary}
           onPress={handleSubmit}
           disabled={isLoading}
         >
           {isLoading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color="#fff" size="small" />
           ) : (
-            <Text style={styles.buttonText}>
-              {isLogin ? 'Sign In' : 'Sign Up'}
+            <Text style={styles.buttonPrimaryText}>
+              {isLogin ? translations.login : translations.register}
             </Text>
           )}
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={styles.googleButton}
+          style={styles.buttonGoogle}
           onPress={handleGoogleSignIn}
           disabled={isLoading}
         >
-          <Text style={styles.googleButtonText}>
-            {isLogin ? 'Sign In with Google' : 'Sign Up with Google'}
+          <Text style={styles.buttonGoogleText}>
+            {translations.signInWithGoogle}
           </Text>
         </TouchableOpacity>
 
-        <View style={styles.toggleContainer}>
-          <Text style={styles.toggleText}>
-            {isLogin ? "Don't have an account?" : "Already have an account?"}
+        <View style={styles.switchAuthContainer}>
+          <Text style={styles.switchAuthText}>
+            {isLogin ? translations.dontHaveAccount : translations.alreadyHaveAccount}
           </Text>
           <TouchableOpacity onPress={toggleAuthMode}>
-            <Text style={styles.toggleButtonText}>
-              {isLogin ? 'Sign Up' : 'Sign In'}
+            <Text style={styles.switchAuthButton}>
+              {isLogin ? translations.register : translations.login}
             </Text>
           </TouchableOpacity>
         </View>
@@ -334,19 +337,19 @@ const styles = StyleSheet.create({
     color: '#007AFF',
     fontSize: 14,
   },
-  button: {
+  buttonPrimary: {
     backgroundColor: '#007AFF',
     borderRadius: 10,
     paddingVertical: 15,
     alignItems: 'center',
     marginBottom: 15,
   },
-  buttonText: {
+  buttonPrimaryText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  googleButton: {
+  buttonGoogle: {
     backgroundColor: '#fff',
     borderWidth: 1,
     borderColor: '#ddd',
@@ -355,23 +358,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  googleButtonText: {
+  buttonGoogleText: {
     color: '#333',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  toggleContainer: {
+  switchAuthContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 10,
   },
-  toggleText: {
+  switchAuthText: {
     color: '#666',
     fontSize: 14,
     marginRight: 5,
   },
-  toggleButtonText: {
+  switchAuthButton: {
     color: '#007AFF',
     fontSize: 14,
     fontWeight: 'bold',

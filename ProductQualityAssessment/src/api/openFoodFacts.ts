@@ -39,7 +39,7 @@ interface OpenFoodFactsSearchResponse {
 }
 
 /**
- * Transform OpenFoodFacts product to our app's Product type
+ * Transform OpenFoodFacts product to app's Product type
  */
 const transformProduct = (offProduct: OpenFoodFactsProduct): Product => {
   // Extract weight from quantity string if available

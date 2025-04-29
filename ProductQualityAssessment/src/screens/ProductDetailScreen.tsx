@@ -27,6 +27,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ProductCard from '../components/ProductCard';
 import LoadingScreen from '../components/LoadingScreen';
 import ErrorScreen from '../components/ErrorScreen';
+import { t } from '../utils/translations';
 
 type ProductDetailScreenProps = {
   route: RouteProp<RootStackParamList, 'ProductDetail'>;
@@ -52,52 +53,52 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
       case 'nutrition':
         return (
           <View style={styles.tabContainer}>
-            <Text style={styles.sectionTitle}>Nutritional Facts (per 100g)</Text>
+            <Text style={styles.sectionTitle}>{t('nutritionalFacts')}</Text>
             
             <View style={styles.nutritionRow}>
-              <Text style={styles.nutritionLabel}>Calories</Text>
+              <Text style={styles.nutritionLabel}>{t('calories')}</Text>
               <Text style={styles.nutritionValue}>
                 {formatNutrient(currentProduct.nutriments.calories, 'kcal')}
               </Text>
             </View>
 
             <View style={styles.nutritionRow}>
-              <Text style={styles.nutritionLabel}>Proteins</Text>
+              <Text style={styles.nutritionLabel}>{t('proteins')}</Text>
               <Text style={styles.nutritionValue}>
                 {formatNutrient(currentProduct.nutriments.proteins)}
               </Text>
             </View>
 
             <View style={styles.nutritionRow}>
-              <Text style={styles.nutritionLabel}>Carbohydrates</Text>
+              <Text style={styles.nutritionLabel}>{t('carbohydrates')}</Text>
               <Text style={styles.nutritionValue}>
                 {formatNutrient(currentProduct.nutriments.carbohydrates.total)}
               </Text>
             </View>
 
             <View style={styles.nutritionRow}>
-              <Text style={styles.nutritionLabel}>└ Sugar</Text>
+              <Text style={styles.nutritionLabel}>└ {t('sugar')}</Text>
               <Text style={styles.nutritionValue}>
                 {formatNutrient(currentProduct.nutriments.carbohydrates.sugar)}
               </Text>
             </View>
 
             <View style={styles.nutritionRow}>
-              <Text style={styles.nutritionLabel}>Fats</Text>
+              <Text style={styles.nutritionLabel}>{t('fats')}</Text>
               <Text style={styles.nutritionValue}>
                 {formatNutrient(currentProduct.nutriments.fats.total)}
               </Text>
             </View>
 
             <View style={styles.nutritionRow}>
-              <Text style={styles.nutritionLabel}>└ Saturated</Text>
+              <Text style={styles.nutritionLabel}>└ {t('saturatedFats')}</Text>
               <Text style={styles.nutritionValue}>
                 {formatNutrient(currentProduct.nutriments.fats.saturated)}
               </Text>
             </View>
 
             <View style={styles.nutritionRow}>
-              <Text style={styles.nutritionLabel}>Salt</Text>
+              <Text style={styles.nutritionLabel}>{t('salt')}</Text>
               <Text style={styles.nutritionValue}>
                 {formatNutrient(currentProduct.nutriments.salt)}
               </Text>
@@ -106,11 +107,11 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
             {currentProduct.weight && (
               <>
                 <Text style={[styles.sectionTitle, { marginTop: 20 }]}>
-                  Whole product ({currentProduct.weight}g)
+                  {t('wholeProduct')} ({currentProduct.weight}g)
                 </Text>
                 
                 <View style={styles.nutritionRow}>
-                  <Text style={styles.nutritionLabel}>Calories</Text>
+                  <Text style={styles.nutritionLabel}>{t('calories')}</Text>
                   <Text style={styles.nutritionValue}>
                     {formatNutrient(
                       calculateWholeProduct(currentProduct.nutriments.calories, currentProduct.weight) ?? undefined,
@@ -120,7 +121,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
                 </View>
 
                 <View style={styles.nutritionRow}>
-                  <Text style={styles.nutritionLabel}>Proteins</Text>
+                  <Text style={styles.nutritionLabel}>{t('proteins')}</Text>
                   <Text style={styles.nutritionValue}>
                     {formatNutrient(
                       calculateWholeProduct(currentProduct.nutriments.proteins, currentProduct.weight) ?? undefined
@@ -129,7 +130,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
                 </View>
 
                 <View style={styles.nutritionRow}>
-                  <Text style={styles.nutritionLabel}>Carbohydrates</Text>
+                  <Text style={styles.nutritionLabel}>{t('carbohydrates')}</Text>
                   <Text style={styles.nutritionValue}>
                     {formatNutrient(
                       calculateWholeProduct(currentProduct.nutriments.carbohydrates.total, currentProduct.weight) ?? undefined
@@ -144,12 +145,12 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
       case 'ingredients':
         return (
           <View style={styles.tabContainer}>
-            <Text style={styles.sectionTitle}>Ingredients</Text>
+            <Text style={styles.sectionTitle}>{t('ingredients')}</Text>
             <Text style={styles.ingredientsText}>{currentProduct.ingredients}</Text>
 
             {currentProduct.additives.length > 0 && (
               <>
-                <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Additives</Text>
+                <Text style={[styles.sectionTitle, { marginTop: 16 }]}>{t('additives')}</Text>
                 <View style={styles.additivesList}>
                   {currentProduct.additives.map((additive, index) => (
                     <View key={index} style={styles.additiveTag}>
@@ -165,7 +166,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
       case 'allergens':
         return (
           <View style={styles.tabContainer}>
-            <Text style={styles.sectionTitle}>Allergen Information</Text>
+            <Text style={styles.sectionTitle}>{t('allergens')}</Text>
             
             {currentProduct.allergens.length > 0 ? (
               <View style={styles.allergensList}>
@@ -176,7 +177,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
                 ))}
               </View>
             ) : (
-              <Text style={styles.noAllergensText}>No allergens listed.</Text>
+              <Text style={styles.noAllergensText}>{t('noAllergensListed')}</Text>
             )}
 
             <View style={styles.dietaryInfoContainer}>
@@ -186,7 +187,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
                   size={22} 
                   color={currentProduct.isVegan ? '#4CAF50' : '#F44336'} 
                 />
-                <Text style={styles.dietaryInfoText}>Vegan</Text>
+                <Text style={styles.dietaryInfoText}>{t('vegan')}</Text>
               </View>
 
               <View style={styles.dietaryInfoRow}>
@@ -195,7 +196,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
                   size={22} 
                   color={currentProduct.isVegetarian ? '#4CAF50' : '#F44336'} 
                 />
-                <Text style={styles.dietaryInfoText}>Vegetarian</Text>
+                <Text style={styles.dietaryInfoText}>{t('vegetarian')}</Text>
               </View>
 
               <View style={styles.dietaryInfoRow}>
@@ -204,7 +205,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
                   size={22} 
                   color={!currentProduct.hasLactose ? '#4CAF50' : '#F44336'} 
                 />
-                <Text style={styles.dietaryInfoText}>Lactose-Free</Text>
+                <Text style={styles.dietaryInfoText}>{t('lactoseFree')}</Text>
               </View>
 
               <View style={styles.dietaryInfoRow}>
@@ -213,7 +214,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
                   size={22} 
                   color={!currentProduct.hasGluten ? '#4CAF50' : '#F44336'} 
                 />
-                <Text style={styles.dietaryInfoText}>Gluten-Free</Text>
+                <Text style={styles.dietaryInfoText}>{t('glutenFree')}</Text>
               </View>
             </View>
           </View>
@@ -228,7 +229,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
     if (!similarProducts || similarProducts.length === 0) {
       return (
         <View style={styles.noSimilarProductsContainer}>
-          <Text style={styles.noSimilarProductsText}>No similar products found</Text>
+          <Text style={styles.noSimilarProductsText}>{t('noSimilarProducts')}</Text>
         </View>
       );
     }
@@ -250,15 +251,15 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
   };
 
   if (loading && !currentProduct) {
-    return <LoadingScreen message="Loading product details..." />;
+    return <LoadingScreen message={t('loading')} />;
   }
 
   if (error) {
-    return <ErrorScreen message="Failed to load product details" onRetry={() => dispatch(getProductDetails(productId))} />;
+    return <ErrorScreen message={t('error')} onRetry={() => dispatch(getProductDetails(productId))} />;
   }
 
   if (!currentProduct) {
-    return <ErrorScreen message="Product not found" onRetry={() => dispatch(getProductDetails(productId))} />;
+    return <ErrorScreen message={t('noResults')} onRetry={() => dispatch(getProductDetails(productId))} />;
   }
 
   return (
@@ -303,7 +304,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
             onPress={() => setActiveTab('nutrition')}
           >
             <Text style={[styles.tabButtonText, activeTab === 'nutrition' && styles.activeTabButtonText]}>
-              Nutrition
+              {t('nutrition')}
             </Text>
           </TouchableOpacity>
           
@@ -312,7 +313,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
             onPress={() => setActiveTab('ingredients')}
           >
             <Text style={[styles.tabButtonText, activeTab === 'ingredients' && styles.activeTabButtonText]}>
-              Ingredients
+              {t('ingredients')}
             </Text>
           </TouchableOpacity>
           
@@ -321,7 +322,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
             onPress={() => setActiveTab('allergens')}
           >
             <Text style={[styles.tabButtonText, activeTab === 'allergens' && styles.activeTabButtonText]}>
-              Allergens
+              {t('allergens')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -329,7 +330,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
         {renderTabContent()}
         
         <View style={styles.similarProductsSection}>
-          <Text style={styles.similarProductsTitle}>Similar Products</Text>
+          <Text style={styles.similarProductsTitle}>{t('similarProducts')}</Text>
           {renderSimilarProducts()}
         </View>
         

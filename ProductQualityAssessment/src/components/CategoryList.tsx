@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { PRODUCT_CATEGORIES } from '../utils/config';
+import { t } from '../utils/translations';
 
 interface CategoryListProps {
   selectedCategory: string | null;
@@ -8,13 +9,13 @@ interface CategoryListProps {
 }
 
 const CategoryList: React.FC<CategoryListProps> = ({ selectedCategory, onSelectCategory }) => {
-  // Add "All" option at the beginning
+  // Додаємо опцію "Усі" на початок з такою ж структурою як в інших категоріях
   const allCategories = [
-    { id: 'all', name: 'All Categories', icon: '🔎' },
+    { id: 'all', nameKey: 'categories' as const, icon: '🔎' },
     ...PRODUCT_CATEGORIES
   ];
 
-  const renderCategoryItem = ({ item }: { item: typeof PRODUCT_CATEGORIES[0] }) => {
+  const renderCategoryItem = ({ item }: { item: typeof PRODUCT_CATEGORIES[0] | { id: string, nameKey: 'categories', icon: string } }) => {
     const isSelected = selectedCategory === item.id || (selectedCategory === null && item.id === 'all');
     
     return (
@@ -24,7 +25,7 @@ const CategoryList: React.FC<CategoryListProps> = ({ selectedCategory, onSelectC
       >
         <Text style={styles.categoryIcon}>{item.icon}</Text>
         <Text style={[styles.categoryName, isSelected && styles.selectedCategoryText]}>
-          {item.name}
+          {t(item.nameKey)}
         </Text>
       </TouchableOpacity>
     );
@@ -32,7 +33,7 @@ const CategoryList: React.FC<CategoryListProps> = ({ selectedCategory, onSelectC
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Categories</Text>
+      <Text style={styles.title}>{t('categories')}</Text>
       <FlatList
         data={allCategories}
         renderItem={renderCategoryItem}

@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text } from 'react-native';
+import { t } from '../utils/translations';
 
 // Screens
 import HomeScreen from '../screens/HomeScreen';
@@ -55,6 +56,7 @@ const MainTabNavigator = () => {
             <Text style={{ fontSize: size, color }}>🏠</Text>
           ),
           headerShown: false,
+          tabBarLabel: t('home'),
         }}
       />
       <Tab.Screen
@@ -64,7 +66,8 @@ const MainTabNavigator = () => {
           tabBarIcon: ({ color, size }) => (
             <Text style={{ fontSize: size, color }}>❤️</Text>
           ),
-          headerTitle: "Your Favorites",
+          headerTitle: t('yourFavorites'),
+          tabBarLabel: t('favorites'),
         }}
       />
       <Tab.Screen
@@ -74,7 +77,8 @@ const MainTabNavigator = () => {
           tabBarIcon: ({ color, size }) => (
             <Text style={{ fontSize: size, color }}>👤</Text>
           ),
-          headerTitle: "Your Profile",
+          headerTitle: t('profile'),
+          tabBarLabel: t('profile'),
         }}
       />
     </Tab.Navigator>
@@ -117,7 +121,7 @@ const RootNavigator = () => {
         name="ProductDetail"
         component={ProductDetailScreen}
         options={({ route }) => ({
-          title: 'Product Details',
+          title: t('productDetails'),
           headerBackTitleVisible: false,
         })}
       />

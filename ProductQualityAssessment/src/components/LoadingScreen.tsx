@@ -1,11 +1,12 @@
 import React from 'react';
 import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
+import { t } from '../utils/translations';
 
 interface LoadingScreenProps {
   message?: string;
 }
 
-const LoadingScreen: React.FC<LoadingScreenProps> = ({ message = 'Loading...' }) => {
+const LoadingScreen: React.FC<LoadingScreenProps> = ({ message = t('loading') }) => {
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color="#2196F3" />

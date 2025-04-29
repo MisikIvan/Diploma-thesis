@@ -4,6 +4,7 @@ import { useAppSelector } from '../hooks/reduxHooks';
 import { Product } from '../types';
 import ProductCard from '../components/ui/ProductCard';
 import { StorageService } from '../utils/storage';
+import { t } from '../utils/translations';
 
 interface FavoritesScreenProps {
   navigation: any; 
@@ -61,7 +62,8 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   if (favoriteProducts.length === 0) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.emptyText}>You haven't added any favorites yet</Text>
+        <Text style={styles.emptyText}>{t('noFavorites')}</Text>
+        <Text style={styles.emptySubText}>{t('startAdding')}</Text>
       </View>
     );
   }
@@ -95,6 +97,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#888',
     textAlign: 'center',
+  },
+  emptySubText: {
+    fontSize: 14,
+    color: '#888',
+    textAlign: 'center',
+    marginTop: 10,
   },
   listContent: {
     paddingVertical: 10,

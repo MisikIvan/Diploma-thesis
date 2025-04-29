@@ -10,8 +10,11 @@ import {
   ActivityIndicator,
   TextInput,
 } from 'react-native';
-import { User } from '../types';
+import { User } from '../types/index';
 import { StorageService } from '../utils/storage';
+import { Language, t, getCurrentLanguage } from '../utils/translations';
+import { saveLanguage } from '../utils/languageStorage';
+import LanguageSelector from '../components/LanguageSelector';
 
 interface ProfileScreenProps {
   navigation: any;
@@ -22,6 +25,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState('');
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState<Language>(getCurrentLanguage());
 
   // Load user data when component mounts
   useEffect(() => {
@@ -62,12 +67,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
   const handleLogout = async () => {
     Alert.alert(
-      'Logout',
-      'Are you sure you want to log out?',
+      t('logout'),
+      t('logoutConfirmation'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Logout',
+          text: t('logout'),
           onPress: async () => {
             // Clear user data from storage
             await StorageService.user.removeUser();
@@ -90,7 +95,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     if (!user) return;
 
     if (editedName.trim().length === 0) {
-      Alert.alert('Error', 'Name cannot be empty');
+      Alert.alert(t('error'), t('nameEmpty'));
       return;
     }
 
@@ -103,10 +108,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       await StorageService.user.saveUser(updatedUser);
       setUser(updatedUser);
       setIsEditing(false);
-      Alert.alert('Success', 'Profile updated successfully');
+      Alert.alert(t('success'), t('profileUpdateSuccess'));
     } catch (error) {
       console.error('Failed to update profile:', error);
-      Alert.alert('Error', 'Failed to update profile');
+      Alert.alert(t('error'), t('profileUpdateError'));
     }
   };
 
@@ -119,7 +124,20 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
   const handleViewHistory = () => {
     // Navigate to history screen
-    Alert.alert('View History', 'This feature is not implemented yet');
+    Alert.alert(t('viewHistory'), t('featureNotImplemented'));
+  };
+
+  const handleLanguageChange = async (language: Language) => {
+    setCurrentLanguage(language);
+    await saveLanguage(language);
+    
+    // Повідомляємо користувача про зміну мови
+    Alert.alert(t('languageChanged'), '', [
+      { text: t('ok'), onPress: () => {
+        // Оновлюємо екран, щоб застосувати нові переклади
+        loadUserData();
+      }}
+    ]);
   };
 
   if (isLoading) {
@@ -133,9 +151,9 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   if (!user) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Failed to load user data</Text>
+        <Text style={styles.errorText}>{t('failedToLoadUser')}</Text>
         <TouchableOpacity style={styles.button} onPress={loadUserData}>
-          <Text style={styles.buttonText}>Retry</Text>
+          <Text style={styles.buttonText}>{t('retry')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -155,17 +173,17 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
               style={styles.nameInput}
               value={editedName}
               onChangeText={setEditedName}
-              placeholder="Your name"
+              placeholder={t('name')}
             />
             <View style={styles.editButtonsRow}>
               <TouchableOpacity style={styles.editButton} onPress={handleSaveProfile}>
-                <Text style={styles.editButtonText}>Save</Text>
+                <Text style={styles.editButtonText}>{t('ok')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.editButton, styles.cancelButton]}
                 onPress={handleCancelEditing}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -174,17 +192,17 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             <Text style={styles.displayName}>{user.displayName}</Text>
             <Text style={styles.email}>{user.email}</Text>
             <TouchableOpacity style={styles.editProfileButton} onPress={handleStartEditing}>
-              <Text style={styles.editProfileButtonText}>Edit Profile</Text>
+              <Text style={styles.editProfileButtonText}>{t('editProfile')}</Text>
             </TouchableOpacity>
           </View>
         )}
       </View>
 
       <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>Account</Text>
+        <Text style={styles.sectionTitle}>{t('accountInfo')}</Text>
         
         <TouchableOpacity style={styles.menuItem} onPress={handleViewHistory}>
-          <Text style={styles.menuItemText}>View History</Text>
+          <Text style={styles.menuItemText}>{t('viewHistory')}</Text>
           <Text style={styles.menuItemIcon}>📖</Text>
         </TouchableOpacity>
         
@@ -192,38 +210,69 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           style={styles.menuItem}
           onPress={() => navigation.navigate('Favorites')}
         >
-          <Text style={styles.menuItemText}>Favorites</Text>
+          <Text style={styles.menuItemText}>{t('favorites')}</Text>
           <Text style={styles.menuItemIcon}>❤️</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.sectionContainer}>
-        <Text style={styles.sectionTitle}>Settings</Text>
+        <Text style={styles.sectionTitle}>{t('preferences')}</Text>
         
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemText}>Notifications</Text>
-          <Text style={styles.menuItemIcon}>🔔</Text>
+        <TouchableOpacity 
+          style={styles.menuItem}
+          onPress={() => setShowLanguageSelector(true)}
+        >
+          <Text style={styles.menuItemText}>{t('languageSettings')}</Text>
+          <Text style={styles.menuItemValue}>
+            {currentLanguage === 'uk' ? t('ukrainian') : t('english')}
+          </Text>
+          <Text style={styles.menuItemIcon}>🌐</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemText}>Privacy</Text>
+          <Text style={styles.menuItemText}>{t('dietarySettings')}</Text>
+          <Text style={styles.menuItemIcon}>🥗</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.menuItem}>
+          <Text style={styles.menuItemText}>{t('notificationSettings')}</Text>
+          <Text style={styles.menuItemIcon}>🔔</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>{t('aboutApp')}</Text>
+        
+        <TouchableOpacity style={styles.menuItem}>
+          <Text style={styles.menuItemText}>{t('aboutAppInfo')}</Text>
+          <Text style={styles.menuItemIcon}>ℹ️</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.menuItem}>
+          <Text style={styles.menuItemText}>{t('privacyPolicy')}</Text>
           <Text style={styles.menuItemIcon}>🔒</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemText}>Help & Support</Text>
-          <Text style={styles.menuItemIcon}>❓</Text>
+          <Text style={styles.menuItemText}>{t('contactSupport')}</Text>
+          <Text style={styles.menuItemIcon}>📞</Text>
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-        <Text style={styles.logoutButtonText}>Logout</Text>
+        <Text style={styles.logoutButtonText}>{t('logout')}</Text>
       </TouchableOpacity>
 
       <View style={styles.versionContainer}>
-        <Text style={styles.versionText}>Product Quality Assessment</Text>
+        <Text style={styles.versionText}>{t('appName')}</Text>
         <Text style={styles.versionText}>Version 0.0.2</Text>
       </View>
+
+      <LanguageSelector 
+        isVisible={showLanguageSelector}
+        onClose={() => setShowLanguageSelector(false)}
+        onLanguageChange={handleLanguageChange}
+      />
     </ScrollView>
   );
 };
@@ -378,6 +427,11 @@ const styles = StyleSheet.create({
   versionText: {
     fontSize: 12,
     color: '#999',
+  },
+  menuItemValue: {
+    fontSize: 14,
+    color: '#888',
+    marginRight: 10,
   },
 });
 

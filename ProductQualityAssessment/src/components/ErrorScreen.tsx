@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { t } from '../utils/translations';
 
 interface ErrorScreenProps {
   message: string;
@@ -14,7 +15,7 @@ const ErrorScreen: React.FC<ErrorScreenProps> = ({ message, onRetry }) => {
       <Text style={styles.message}>{message}</Text>
       {onRetry && (
         <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
-          <Text style={styles.retryButtonText}>Try Again</Text>
+          <Text style={styles.retryButtonText}>{t('retry')}</Text>
         </TouchableOpacity>
       )}
     </View>

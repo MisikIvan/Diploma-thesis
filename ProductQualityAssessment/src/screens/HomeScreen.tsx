@@ -7,6 +7,7 @@ import CategoryList from '../components/CategoryList';
 import RecentProducts from '../components/RecentProducts';
 import ProductCard from '../components/ui/ProductCard';
 import { Product } from '../types';
+import { t } from '../utils/translations';
 
 interface HomeScreenProps {
   navigation: any;
@@ -81,7 +82,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       ) : error ? (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>
-            {error}. Please try again.
+            {t('networkError')}
           </Text>
         </View>
       ) : (
@@ -93,14 +94,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
-                No products found. Try a different search term.
+                {t('noResults')}
               </Text>
             </View>
           }
         />
       )}
 
-      {/* Filter Modal would go here */}
+      {/* Тут буде модальне вікно фільтрації */}
     </View>
   );
 };

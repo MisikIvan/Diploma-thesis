@@ -3,6 +3,7 @@ import { View, TextInput, TouchableOpacity, StyleSheet, Text } from 'react-nativ
 import { useAppDispatch } from '../hooks/reduxHooks';
 import { setSearchQuery } from '../redux/slices/productSlice';
 import { APP_CONSTANTS } from '../utils/config';
+import { t } from '../utils/translations';
 
 interface SearchBarProps {
   initialQuery?: string;
@@ -48,7 +49,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         <Text style={styles.searchIcon}>🔍</Text>
         <TextInput
           style={styles.input}
-          placeholder="Search products..."
+          placeholder={t('search')}
           value={query}
           onChangeText={handleChangeText}
           returnKeyType="search"

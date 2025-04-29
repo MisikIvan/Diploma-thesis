@@ -1,6 +1,8 @@
-// API endpoints
+// API ендпоінти
+import type { TranslationKeys } from './translations';
+
 export const API = {
-  // Base URL for backend
+  // Базовий URL для бекенду
   BASE_URL: 'https://productqualityapp-api.example.com',
   
   // Open Food Facts API
@@ -11,7 +13,7 @@ export const API = {
   },
 };
 
-// Firebase config 
+// Firebase конфігурація 
 export const FIREBASE_CONFIG = {
   apiKey: "YOUR_API_KEY",
   authDomain: "productqualityapp.firebaseapp.com",
@@ -22,7 +24,7 @@ export const FIREBASE_CONFIG = {
   measurementId: "YOUR_MEASUREMENT_ID"
 };
 
-// Local storage keys
+// Ключі локального сховища
 export const STORAGE_KEYS = {
   USER: 'ProductQualityApp_user',
   FAVORITES: 'ProductQualityApp_favorites',
@@ -30,23 +32,29 @@ export const STORAGE_KEYS = {
   THEME: 'ProductQualityApp_theme',
 };
 
-// App constants
+// Константи додатку
 export const APP_CONSTANTS = {
-  MAX_VIEW_HISTORY: 50, // Maximum number of items in view history
-  MAX_RECENT_PRODUCTS: 5, // Maximum number of recent products to show
-  DEBOUNCE_SEARCH: 300, // Debounce time for search input in ms
+  MAX_VIEW_HISTORY: 50, // Максимальна кількість елементів в історії переглядів
+  MAX_RECENT_PRODUCTS: 5, // Максимальна кількість недавніх продуктів для відображення
+  DEBOUNCE_SEARCH: 300, // Час затримки для пошукового вводу в мс
   DEFAULT_IMAGE: 'https://via.placeholder.com/300x300?text=No+Image',
 };
 
-// Product categories with icons
-export const PRODUCT_CATEGORIES = [
-  { id: 'beverages', name: 'Beverages', icon: '🥤' },
-  { id: 'bread', name: 'Bread & Bakery', icon: '🥐' },
-  { id: 'dairy', name: 'Dairy', icon: '🥛' },
-  { id: 'meat', name: 'Meat', icon: '🥩' },
-  { id: 'fish', name: 'Fish', icon: '🐟' },
-  { id: 'produce', name: 'Fruits & Vegetables', icon: '🥦' },
-  { id: 'snacks', name: 'Snacks', icon: '🍿' },
-  { id: 'eggs', name: 'Eggs', icon: '🥚' },
-  { id: 'meals', name: 'Ready Meals', icon: '🍱' },
+// Категорії продуктів з іконками - використовуємо ключі замість фіксованих англійських назв
+interface CategoryItem {
+  id: string;
+  nameKey: keyof TranslationKeys;
+  icon: string;
+}
+
+export const PRODUCT_CATEGORIES: CategoryItem[] = [
+  { id: 'beverages', nameKey: 'beverageCategory', icon: '🥤' },
+  { id: 'bread', nameKey: 'breadCategory', icon: '🥐' },
+  { id: 'dairy', nameKey: 'dairyCategory', icon: '🥛' },
+  { id: 'meat', nameKey: 'meatCategory', icon: '🥩' },
+  { id: 'fish', nameKey: 'fishCategory', icon: '🐟' },
+  { id: 'produce', nameKey: 'produceCategory', icon: '🥦' },
+  { id: 'snacks', nameKey: 'snacksCategory', icon: '🍿' },
+  { id: 'eggs', nameKey: 'eggsCategory', icon: '🥚' },
+  { id: 'meals', nameKey: 'mealsCategory', icon: '🍱' },
 ]; 
