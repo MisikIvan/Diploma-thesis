@@ -9,15 +9,19 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert
+  Alert,
+  Image
 } from 'react-native';
-import { translations } from '../utils/translations';
+import { t } from '../utils/translations';
+import { useAppDispatch } from '../redux/hooks';
+import { login, register, googleLogin } from '../redux/slices/userSlice';
 
 interface AuthScreenProps {
   navigation: any; 
 }
 
 const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
+  const dispatch = useAppDispatch();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -41,34 +45,34 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 
   const validateForm = (): boolean => {
     if (!email.trim()) {
-      setError(translations.emailRequired);
+      setError(t('emailRequired'));
       return false;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      setError(translations.validEmail);
+      setError(t('validEmail'));
       return false;
     }
 
     if (!password.trim()) {
-      setError(translations.passwordRequired);
+      setError(t('passwordRequired'));
       return false;
     }
 
     if (password.length < 8) {
-      setError(translations.passwordLength);
+      setError(t('passwordLength'));
       return false;
     }
 
     if (!isLogin) {
       if (!name.trim()) {
-        setError(translations.nameRequired);
+        setError(t('nameRequired'));
         return false;
       }
 
       if (password !== confirmPassword) {
-        setError(translations.passwordsDoNotMatch);
+        setError(t('passwordsDoNotMatch'));
         return false;
       }
     }
@@ -87,63 +91,55 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 
     try {
       if (isLogin) {
-        // Handle login
-        // Firebase Auth login would go here
+        // Handle login with Firebase through Redux
         console.log('Logging in with:', email, password);
-
-        // Mock successful login for now
-        setTimeout(() => {
-          setIsLoading(false);
-          navigation.replace('Main');
-        }, 1000);
+        await dispatch(login({ email, password })).unwrap();
+        // No need to navigate, the Navigation component will handle it based on auth state
       } else {
-        // Handle registration
-        // Firebase Auth registration would go here
+        // Handle registration with Firebase through Redux
         console.log('Registering with:', email, password, name);
-
-        // Mock successful registration for now
-        setTimeout(() => {
-          setIsLoading(false);
-          Alert.alert(
-            'Registration Successful',
-            'Your account has been created. You can now log in.',
-            [
-              { 
-                text: 'OK', 
-                onPress: () => {
-                  setIsLogin(true);
-                  resetForm();
-                } 
-              }
-            ]
-          );
-        }, 1000);
+        await dispatch(register({ email, password, displayName: name })).unwrap();
+        Alert.alert(
+          t('registrationSuccessful'),
+          t('accountCreated'),
+          [
+            { 
+              text: 'OK', 
+              onPress: () => {
+                setIsLogin(true);
+                resetForm();
+              } 
+            }
+          ]
+        );
       }
-    } catch (err) {
       setIsLoading(false);
-      setError(err instanceof Error ? err.message : 'An error occurred');
+    } catch (err: any) {
+      setIsLoading(false);
+      setError(err.message || t('error'));
+      console.error('Auth error:', err);
     }
   };
 
   const handleForgotPassword = () => {
     // Firebase password reset here
     Alert.alert(
-      translations.resetPassword,
-      translations.resetPasswordPrompt,
+      t('resetPassword'),
+      t('resetPasswordPrompt'),
       [
-        { text: translations.cancel, style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         { 
-          text: translations.send, 
+          text: t('send'), 
           onPress: () => {
             if (!email.trim()) {
-              setError(translations.emailRequired);
+              setError(t('emailRequired'));
               return;
             }
             
             // Firebase password reset here
             Alert.alert(
-              translations.resetEmailSent,
-              translations.resetPasswordConfirmation.replace('{email}', email)
+              t('resetEmailSent'),
+              t('resetPasswordConfirmation').replace('{email}', email)
             );
           } 
         }
@@ -151,9 +147,17 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     );
   };
 
-  const handleGoogleSignIn = () => {
-    // Firebase Google OAuth here
-    Alert.alert('Google Sign In', 'This feature is not implemented yet.');
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsLoading(true);
+      await dispatch(googleLogin()).unwrap();
+      // No need to navigate, the Navigation component will handle it based on auth state
+      setIsLoading(false);
+    } catch (err: any) {
+      setIsLoading(false);
+      setError(err.message || t('error'));
+      console.error('Google sign in error:', err);
+    }
   };
 
   return (
@@ -164,9 +168,17 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.title}>{translations.appName}</Text>
+          <Image 
+            source={require('../assets/logo.png')} 
+            style={styles.logo} 
+            resizeMode="contain"
+          />
+          <View style={styles.appNameContainer}>
+            <Text style={styles.appNameRegular}>Calori</Text>
+            <Text style={styles.appNameBold}>KO</Text>
+          </View>
           <Text style={styles.subtitle}>
-            {isLogin ? translations.signIn : translations.createAccount}
+            {isLogin ? t('signIn') : t('createAccount')}
           </Text>
         </View>
 
@@ -178,10 +190,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 
         {!isLogin && (
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>{translations.name}</Text>
+            <Text style={styles.label}>{t('name')}</Text>
             <TextInput
               style={styles.input}
-              placeholder={translations.name}
+              placeholder={t('name')}
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
@@ -190,10 +202,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
         )}
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>{translations.email}</Text>
+          <Text style={styles.label}>{t('email')}</Text>
           <TextInput
             style={styles.input}
-            placeholder={translations.email}
+            placeholder={t('email')}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -202,10 +214,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>{translations.password}</Text>
+          <Text style={styles.label}>{t('password')}</Text>
           <TextInput
             style={styles.input}
-            placeholder={translations.password}
+            placeholder={t('password')}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -214,10 +226,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 
         {!isLogin && (
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>{translations.confirmPassword}</Text>
+            <Text style={styles.label}>{t('confirmPassword')}</Text>
             <TextInput
               style={styles.input}
-              placeholder={translations.confirmPassword}
+              placeholder={t('confirmPassword')}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry
@@ -231,7 +243,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
             onPress={handleForgotPassword}
           >
             <Text style={styles.forgotPasswordText}>
-              {translations.forgotPassword}
+              {t('forgotPassword')}
             </Text>
           </TouchableOpacity>
         )}
@@ -245,31 +257,35 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
             <ActivityIndicator color="#fff" size="small" />
           ) : (
             <Text style={styles.buttonPrimaryText}>
-              {isLogin ? translations.login : translations.register}
+              {isLogin ? t('login') : t('register')}
             </Text>
           )}
         </TouchableOpacity>
 
+        <View style={styles.separatorContainer}>
+          <View style={styles.separator} />
+          <Text style={styles.separatorText}>{t('or')}</Text>
+          <View style={styles.separator} />
+        </View>
+
         <TouchableOpacity
-          style={styles.buttonGoogle}
+          style={styles.googleButton}
           onPress={handleGoogleSignIn}
-          disabled={isLoading}
         >
-          <Text style={styles.buttonGoogleText}>
-            {translations.signInWithGoogle}
-          </Text>
+          <Text style={styles.googleButtonText}>{t('continueWithGoogle')}</Text>
         </TouchableOpacity>
 
-        <View style={styles.switchAuthContainer}>
-          <Text style={styles.switchAuthText}>
-            {isLogin ? translations.dontHaveAccount : translations.alreadyHaveAccount}
-          </Text>
-          <TouchableOpacity onPress={toggleAuthMode}>
-            <Text style={styles.switchAuthButton}>
-              {isLogin ? translations.register : translations.login}
+        <TouchableOpacity
+          style={styles.switchModeContainer}
+          onPress={toggleAuthMode}
+        >
+          <Text style={styles.switchModeText}>
+            {isLogin ? t('needAccount') : t('alreadyHaveAccount')}
+            <Text style={styles.switchModeHighlight}>
+              {' '}{isLogin ? t('register') : t('login')}
             </Text>
-          </TouchableOpacity>
-        </View>
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -288,6 +304,25 @@ const styles = StyleSheet.create({
   header: {
     marginBottom: 30,
     alignItems: 'center',
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    marginBottom: 10,
+  },
+  appNameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  appNameRegular: {
+    fontSize: 28,
+    color: '#5d8402',
+  },
+  appNameBold: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#34572a',
   },
   title: {
     fontSize: 28,
@@ -377,6 +412,48 @@ const styles = StyleSheet.create({
   switchAuthButton: {
     color: '#007AFF',
     fontSize: 14,
+    fontWeight: 'bold',
+  },
+  separatorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  separator: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#ddd',
+  },
+  separatorText: {
+    color: '#666',
+    fontSize: 14,
+    marginHorizontal: 10,
+  },
+  googleButton: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 10,
+    paddingVertical: 15,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  googleButtonText: {
+    color: '#333',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  switchModeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  switchModeText: {
+    color: '#666',
+    fontSize: 14,
+  },
+  switchModeHighlight: {
     fontWeight: 'bold',
   },
 });

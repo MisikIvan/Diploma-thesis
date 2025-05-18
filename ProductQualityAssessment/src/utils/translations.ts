@@ -1,64 +1,57 @@
-// Визначення доступних мов
-export type Language = 'uk' | 'en';
-
-// Тип для зберігання перекладів
-export type TranslationKeys = {
-  // Загальні фрази
+// Define translation keys
+export interface TranslationKeys {
+  // Common
   appName: string;
   loading: string;
   error: string;
-  noResults: string;
+  retry: string;
+  cancel: string;
+  save: string;
+  delete: string;
+  confirm: string;
   
-  // Навігація
+  // Navigation
   home: string;
   favorites: string;
   profile: string;
+  admin: string;
   
-  // Екран авторизації
-  signIn: string;
-  createAccount: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  name: string;
-  forgotPassword: string;
+  // Screens
+  homeScreen: string;
+  favoritesScreen: string;
+  profileScreen: string;
+  adminScreen: string;
+  productDetails: string;
+  
+  // Product
+  noResults: string;
+  networkError: string;
+  searchPlaceholder: string;
+  categories: string;
+  ingredients: string;
+  nutrition: string;
+  calories: string;
+  proteins: string;
+  fats: string;
+  carbs: string;
+  salt: string;
+  
+  // User
   login: string;
   register: string;
-  signInWithGoogle: string;
-  alreadyHaveAccount: string;
-  dontHaveAccount: string;
-  
-  // Форма - повідомлення про помилки
-  emailRequired: string;
-  validEmail: string;
-  passwordRequired: string;
-  passwordLength: string;
-  nameRequired: string;
-  passwordsDoNotMatch: string;
-  
-  // Екран профілю
-  profileSettings: string;
-  accountInfo: string;
-  preferences: string;
-  aboutApp: string;
+  email: string;
+  password: string;
+  displayName: string;
   logout: string;
-  editProfile: string;
-  viewHistory: string;
-  dietarySettings: string;
-  notificationSettings: string;
-  aboutAppInfo: string;
-  privacyPolicy: string;
-  contactSupport: string;
-  retry: string;
   
-  // Екран продуктів
-  search: string;
-  filter: string;
-  categories: string;
-  recentProducts: string;
-  seeAll: string;
+  // Additional keys
+  nutritionalFacts: string;
+  allergens: string;
+  additives: string;
+  logoutConfirmation: string;
+  failedToLoadUser: string;
   
-  // Категорії продуктів
+  // Product categories
   beverageCategory: string;
   breadCategory: string;
   dairyCategory: string;
@@ -69,258 +62,163 @@ export type TranslationKeys = {
   eggsCategory: string;
   mealsCategory: string;
   
-  // Екран деталей продукту
-  productDetails: string;
-  nutritionalFacts: string;
-  ingredients: string;
-  allergens: string;
-  additives: string;
-  nutrition: string;
-  calories: string;
-  proteins: string;
-  carbohydrates: string;
+  // Product detail
   sugar: string;
-  fats: string;
   saturatedFats: string;
-  salt: string;
+  carbohydrates: string;
   wholeProduct: string;
-  noIngredientsListed: string;
   noAllergensListed: string;
-  
-  // Дієтичні властивості
   vegan: string;
   vegetarian: string;
   lactoseFree: string;
   glutenFree: string;
-  
-  // Екран улюблених
-  yourFavorites: string;
-  noFavorites: string;
-  startAdding: string;
-  
-  // Повідомлення
-  registrationSuccessful: string;
-  accountCreated: string;
+  similarProducts: string;
+  noSimilarProducts: string;
+
+  // Auth Screen
+  signIn: string;
+  createAccount: string;
+  name: string;
+  confirmPassword: string;
+  forgotPassword: string;
+  or: string;
+  continueWithGoogle: string;
+  needAccount: string;
+  alreadyHaveAccount: string;
+  emailRequired: string;
+  validEmail: string;
+  passwordRequired: string;
+  passwordLength: string;
+  nameRequired: string;
+  passwordsDoNotMatch: string;
   resetPassword: string;
   resetPasswordPrompt: string;
+  send: string;
   resetEmailSent: string;
   resetPasswordConfirmation: string;
-  ok: string;
-  cancel: string;
-  send: string;
-  
-  // Помилки та повідомлення
+  registrationSuccessful: string;
+  accountCreated: string;
+
+  // Profile Screen
+  editProfile: string;
+  accountInfo: string;
+  viewHistory: string;
+  preferences: string;
+  aboutApp: string;
+  aboutAppInfo: string;
+  languageSettings: string;
+  dietarySettings: string;
+  notificationSettings: string;
   success: string;
   profileUpdateSuccess: string;
   profileUpdateError: string;
   nameEmpty: string;
   featureNotImplemented: string;
-  logoutConfirmation: string;
-  failedToLoadUser: string;
-  networkError: string;
-
-  // Компонент подібних продуктів
-  similarProducts: string;
-  noSimilarProducts: string;
-  
-  // Налаштування мови
-  language: string;
-  languageSettings: string;
-  selectLanguage: string;
+  languageChanged: string;
+  ok: string;
   ukrainian: string;
   english: string;
-  languageChanged: string;
-};
+  selectLanguage: string;
+  
+  // Admin Panel
+  products: string;
+  users: string;
+  addProduct: string;
+  productName: string;
+  imageUrl: string;
+  blockUser: string;
+  unblockUser: string;
+  enableComments: string;
+  disableComments: string;
+  confirmDelete: string;
+  deleteProductConfirmation: string;
+  addNewProduct: string;
+  productImageUrl: string;
+  nutriscoreGrade: string;
+  accessDenied: string;
+  
+  // Firebase Diagnostics
+  firebaseDiagnostics: string;
+  runPermissionTests: string;
+  firebaseConfiguration: string;
+  currentUser: string;
+  testResults: string;
+  productsCollection: string;
+  usersCollection: string;
+  commentsCollection: string;
+  accessGranted: string;
+  permissionDenied: string;
+  howToFix: string;
+  securityRulesUpdate: string;
+  copyInstructions: string;
+  quickFixSteps: string;
+  developmentRulesWarning: string;
+  rulesUpdateTime: string;
+  diagnostics: string;
+  role: string;
+  status: string;
+  active: string;
+  blocked: string;
+  projectId: string;
+  apiKey: string;
+  notLoggedIn: string;
+  runningTests: string;
+}
 
-// Український словник
-const ukTranslations: TranslationKeys = {
-  // Загальні фрази
-  appName: 'Оцінка якості продуктів',
-  loading: 'Завантаження...',
-  error: 'Помилка. Спробуйте знову.',
-  noResults: 'Результатів не знайдено. Спробуйте інший пошуковий запит.',
-  
-  // Навігація
-  home: 'Головна',
-  favorites: 'Улюблені',
-  profile: 'Профіль',
-  
-  // Екран авторизації
-  signIn: 'Увійти до облікового запису',
-  createAccount: 'Створити новий обліковий запис',
-  email: 'Електронна пошта',
-  password: 'Пароль',
-  confirmPassword: 'Підтвердіть пароль',
-  name: 'Ім\'я',
-  forgotPassword: 'Забули пароль?',
-  login: 'Увійти',
-  register: 'Зареєструватися',
-  signInWithGoogle: 'Увійти через Google',
-  alreadyHaveAccount: 'Вже маєте обліковий запис?',
-  dontHaveAccount: 'Ще немає облікового запису?',
-  
-  // Форма - повідомлення про помилки
-  emailRequired: 'Електронна пошта обов\'язкова',
-  validEmail: 'Введіть коректну адресу електронної пошти',
-  passwordRequired: 'Пароль обов\'язковий',
-  passwordLength: 'Пароль має містити щонайменше 8 символів',
-  nameRequired: 'Ім\'я обов\'язкове',
-  passwordsDoNotMatch: 'Паролі не співпадають',
-  
-  // Екран профілю
-  profileSettings: 'Налаштування профілю',
-  accountInfo: 'Інформація про обліковий запис',
-  preferences: 'Налаштування',
-  aboutApp: 'Про додаток',
-  logout: 'Вийти',
-  editProfile: 'Редагувати профіль',
-  viewHistory: 'Історія переглядів',
-  dietarySettings: 'Налаштування дієтичних обмежень',
-  notificationSettings: 'Налаштування сповіщень',
-  aboutAppInfo: 'Про додаток',
-  privacyPolicy: 'Політика конфіденційності',
-  contactSupport: 'Зв\'язатися з підтримкою',
-  retry: 'Спробувати знову',
-  
-  // Екран продуктів
-  search: 'Пошук продуктів...',
-  filter: 'Фільтр',
-  categories: 'Категорії',
-  recentProducts: 'Нещодавно переглянуті',
-  seeAll: 'Переглянути все',
-  
-  // Категорії продуктів
-  beverageCategory: 'Напої',
-  breadCategory: 'Хліб та випічка',
-  dairyCategory: 'Молочні продукти',
-  meatCategory: 'М\'ясо',
-  fishCategory: 'Риба',
-  produceCategory: 'Фрукти та овочі',
-  snacksCategory: 'Снеки',
-  eggsCategory: 'Яйця',
-  mealsCategory: 'Готові страви',
-  
-  // Екран деталей продукту
-  productDetails: 'Деталі продукту',
-  nutritionalFacts: 'Харчова цінність (на 100г)',
-  ingredients: 'Склад',
-  allergens: 'Алергени',
-  additives: 'Добавки',
-  nutrition: 'Харчування',
-  calories: 'Калорії',
-  proteins: 'Білки',
-  carbohydrates: 'Вуглеводи',
-  sugar: 'Цукор',
-  fats: 'Жири',
-  saturatedFats: 'Насичені жири',
-  salt: 'Сіль',
-  wholeProduct: 'Весь продукт',
-  noIngredientsListed: 'Складники не вказані.',
-  noAllergensListed: 'Алергени не вказані.',
-  
-  // Дієтичні властивості
-  vegan: 'Веган',
-  vegetarian: 'Вегетаріанець',
-  lactoseFree: 'Без лактози',
-  glutenFree: 'Без глютену',
-  
-  // Екран улюблених
-  yourFavorites: 'Ваші улюблені',
-  noFavorites: 'У вас ще немає улюблених продуктів',
-  startAdding: 'Почніть додавати продукти до улюблених!',
-  
-  // Повідомлення
-  registrationSuccessful: 'Реєстрація успішна',
-  accountCreated: 'Ваш обліковий запис створено. Тепер ви можете увійти.',
-  resetPassword: 'Скинути пароль',
-  resetPasswordPrompt: 'Введіть вашу електронну адресу, і ми надішлемо вам посилання для скидання пароля.',
-  resetEmailSent: 'Електронний лист надіслано',
-  resetPasswordConfirmation: 'Якщо обліковий запис існує для {email}, ви отримаєте електронний лист з інструкціями.',
-  ok: 'OK',
-  cancel: 'Скасувати',
-  send: 'Надіслати',
-  
-  // Помилки та повідомлення
-  success: 'Успіх',
-  profileUpdateSuccess: 'Профіль оновлено успішно',
-  profileUpdateError: 'Не вдалося оновити профіль',
-  nameEmpty: 'Ім\'я не може бути порожнім',
-  featureNotImplemented: 'Ця функція ще не реалізована',
-  logoutConfirmation: 'Ви впевнені, що хочете вийти з облікового запису?',
-  failedToLoadUser: 'Не вдалося завантажити дані користувача',
-  networkError: 'Помилка мережі. Помилка. Спробуйте знову.',
-
-  // Компонент подібних продуктів
-  similarProducts: 'Схожі продукти',
-  noSimilarProducts: 'Схожих продуктів не знайдено',
-  
-  // Налаштування мови
-  language: 'Мова',
-  languageSettings: 'Налаштування мови',
-  selectLanguage: 'Оберіть мову',
-  ukrainian: 'Українська',
-  english: 'Англійська',
-  languageChanged: 'Мову змінено',
-};
-
-// Англійський словник
-const enTranslations: TranslationKeys = {
-  // Загальні фрази
-  appName: 'Product Quality Assessment',
+// English translations
+const en: TranslationKeys = {
+  // Common
+  appName: 'Product Quality',
   loading: 'Loading...',
-  error: 'Error. Please try again.',
-  noResults: 'No results found. Try a different search term.',
+  error: 'An error occurred',
+  retry: 'Retry',
+  cancel: 'Cancel',
+  save: 'Save',
+  delete: 'Delete',
+  confirm: 'Confirm',
   
-  // Навігація
+  // Navigation
   home: 'Home',
   favorites: 'Favorites',
   profile: 'Profile',
+  admin: 'Admin',
   
-  // Екран авторизації
-  signIn: 'Sign in to your account',
-  createAccount: 'Create a new account',
-  email: 'Email',
-  password: 'Password',
-  confirmPassword: 'Confirm Password',
-  name: 'Name',
-  forgotPassword: 'Forgot password?',
+  // Screens
+  homeScreen: 'Home',
+  favoritesScreen: 'Favorites',
+  profileScreen: 'Profile',
+  adminScreen: 'Admin Panel',
+  productDetails: 'Product Details',
+  
+  // Product
+  noResults: 'No products found',
+  networkError: 'Could not connect to the server',
+  searchPlaceholder: 'Search products...',
+  categories: 'Categories',
+  ingredients: 'Ingredients',
+  nutrition: 'Nutrition Facts',
+  calories: 'Calories',
+  proteins: 'Proteins',
+  fats: 'Fats',
+  carbs: 'Carbohydrates',
+  salt: 'Salt',
+  
+  // User
   login: 'Login',
   register: 'Register',
-  signInWithGoogle: 'Sign in with Google',
-  alreadyHaveAccount: 'Already have an account?',
-  dontHaveAccount: 'Don\'t have an account?',
-  
-  // Форма - повідомлення про помилки
-  emailRequired: 'Email is required',
-  validEmail: 'Please enter a valid email address',
-  passwordRequired: 'Password is required',
-  passwordLength: 'Password must be at least 8 characters long',
-  nameRequired: 'Name is required',
-  passwordsDoNotMatch: 'Passwords do not match',
-  
-  // Екран профілю
-  profileSettings: 'Profile Settings',
-  accountInfo: 'Account Information',
-  preferences: 'Preferences',
-  aboutApp: 'About App',
+  email: 'Email',
+  password: 'Password',
+  displayName: 'Display Name',
   logout: 'Logout',
-  editProfile: 'Edit Profile',
-  viewHistory: 'View History',
-  dietarySettings: 'Dietary Settings',
-  notificationSettings: 'Notification Settings',
-  aboutAppInfo: 'About App',
-  privacyPolicy: 'Privacy Policy',
-  contactSupport: 'Contact Support',
-  retry: 'Try Again',
   
-  // Екран продуктів
-  search: 'Search products...',
-  filter: 'Filter',
-  categories: 'Categories',
-  recentProducts: 'Recently Viewed',
-  seeAll: 'See All',
+  // Additional translations
+  nutritionalFacts: 'Nutritional Facts',
+  allergens: 'Allergens',
+  additives: 'Additives',
+  logoutConfirmation: 'Are you sure you want to log out?',
+  failedToLoadUser: 'Failed to load user data',
   
-  // Категорії продуктів
+  // Product categories
   beverageCategory: 'Beverages',
   breadCategory: 'Bread & Bakery',
   dairyCategory: 'Dairy',
@@ -331,97 +229,291 @@ const enTranslations: TranslationKeys = {
   eggsCategory: 'Eggs',
   mealsCategory: 'Ready Meals',
   
-  // Екран деталей продукту
-  productDetails: 'Product Details',
-  nutritionalFacts: 'Nutritional Facts (per 100g)',
-  ingredients: 'Ingredients',
-  allergens: 'Allergens',
-  additives: 'Additives',
-  nutrition: 'Nutrition',
-  calories: 'Calories',
-  proteins: 'Proteins',
-  carbohydrates: 'Carbohydrates',
+  // Product detail
   sugar: 'Sugar',
-  fats: 'Fats',
   saturatedFats: 'Saturated Fats',
-  salt: 'Salt',
+  carbohydrates: 'Carbohydrates',
   wholeProduct: 'Whole Product',
-  noIngredientsListed: 'No ingredients listed.',
-  noAllergensListed: 'No allergens listed.',
-  
-  // Дієтичні властивості
+  noAllergensListed: 'No allergens listed',
   vegan: 'Vegan',
   vegetarian: 'Vegetarian',
   lactoseFree: 'Lactose-Free',
   glutenFree: 'Gluten-Free',
-  
-  // Екран улюблених
-  yourFavorites: 'Your Favorites',
-  noFavorites: 'You haven\'t added any favorites yet',
-  startAdding: 'Start adding products to favorites!',
-  
-  // Повідомлення
+  similarProducts: 'Similar Products',
+  noSimilarProducts: 'No similar products found',
+
+  // Auth Screen
+  signIn: 'Sign In',
+  createAccount: 'Create Account',
+  name: 'Name',
+  confirmPassword: 'Confirm Password',
+  forgotPassword: 'Forgot Password?',
+  or: 'OR',
+  continueWithGoogle: 'Continue with Google',
+  needAccount: 'Need an account?',
+  alreadyHaveAccount: 'Already have an account?',
+  emailRequired: 'Email is required',
+  validEmail: 'Please enter a valid email',
+  passwordRequired: 'Password is required',
+  passwordLength: 'Password must be at least 8 characters',
+  nameRequired: 'Name is required',
+  passwordsDoNotMatch: 'Passwords do not match',
+  resetPassword: 'Reset Password',
+  resetPasswordPrompt: 'Enter your email to receive a password reset link',
+  send: 'Send',
+  resetEmailSent: 'Reset Email Sent',
+  resetPasswordConfirmation: 'A password reset link has been sent to {email}',
   registrationSuccessful: 'Registration Successful',
   accountCreated: 'Your account has been created. You can now log in.',
-  resetPassword: 'Reset Password',
-  resetPasswordPrompt: 'Enter your email address and we will send you a password reset link.',
-  resetEmailSent: 'Reset Email Sent',
-  resetPasswordConfirmation: 'If an account exists for {email}, you will receive an email with instructions.',
-  ok: 'OK',
-  cancel: 'Cancel',
-  send: 'Send',
-  
-  // Помилки та повідомлення
+
+  // Profile Screen
+  editProfile: 'Edit Profile',
+  accountInfo: 'Account Information',
+  viewHistory: 'View History',
+  preferences: 'Preferences',
+  aboutApp: 'About App',
+  aboutAppInfo: 'About This App',
+  languageSettings: 'Language',
+  dietarySettings: 'Dietary Preferences',
+  notificationSettings: 'Notifications',
   success: 'Success',
   profileUpdateSuccess: 'Profile updated successfully',
   profileUpdateError: 'Failed to update profile',
   nameEmpty: 'Name cannot be empty',
   featureNotImplemented: 'This feature is not implemented yet',
-  logoutConfirmation: 'Are you sure you want to log out?',
-  failedToLoadUser: 'Failed to load user data',
-  networkError: 'Network Error. Error. Please try again.',
-
-  // Компонент подібних продуктів
-  similarProducts: 'Similar Products',
-  noSimilarProducts: 'No similar products found',
-  
-  // Налаштування мови
-  language: 'Language',
-  languageSettings: 'Language Settings',
-  selectLanguage: 'Select Language',
+  languageChanged: 'Language Changed',
+  ok: 'OK',
   ukrainian: 'Ukrainian',
   english: 'English',
-  languageChanged: 'Language Changed',
+  selectLanguage: 'Select Language',
+  
+  // Admin Panel
+  products: 'Products',
+  users: 'Users',
+  addProduct: 'Add Product',
+  productName: 'Product Name',
+  imageUrl: 'Image URL',
+  blockUser: 'Block User',
+  unblockUser: 'Unblock User',
+  enableComments: 'Enable Comments',
+  disableComments: 'Disable Comments',
+  confirmDelete: 'Are you sure you want to delete this product?',
+  deleteProductConfirmation: 'The product has been deleted.',
+  addNewProduct: 'Add New Product',
+  productImageUrl: 'Product Image URL',
+  nutriscoreGrade: 'Nutriscore Grade',
+  accessDenied: 'Access Denied',
+  
+  // Firebase Diagnostics
+  firebaseDiagnostics: 'Firebase Diagnostics',
+  runPermissionTests: 'Run Permission Tests',
+  firebaseConfiguration: 'Firebase Configuration',
+  currentUser: 'Current User',
+  testResults: 'Test Results',
+  productsCollection: 'Products Collection',
+  usersCollection: 'Users Collection',
+  commentsCollection: 'Comments Collection',
+  accessGranted: 'Access Granted',
+  permissionDenied: 'Permission Denied',
+  howToFix: 'How to Fix',
+  securityRulesUpdate: 'Security Rules Update',
+  copyInstructions: 'Copy Instructions',
+  quickFixSteps: 'Quick Fix Steps',
+  developmentRulesWarning: 'Development Rules Warning',
+  rulesUpdateTime: 'Rules Update Time',
+  diagnostics: 'Diagnostics',
+  role: 'Role',
+  status: 'Status',
+  active: 'Active',
+  blocked: 'Blocked',
+  projectId: 'Project ID',
+  apiKey: 'API Key',
+  notLoggedIn: 'Not Logged In',
+  runningTests: 'Running Tests'
 };
 
-// Словники для кожної мови
-const dictionaries = {
-  uk: ukTranslations,
-  en: enTranslations,
+// Ukrainian translations
+const uk: TranslationKeys = {
+  // Common
+  appName: 'Якість продуктів',
+  loading: 'Завантаження...',
+  error: 'Сталася помилка',
+  retry: 'Повторити',
+  cancel: 'Скасувати',
+  save: 'Зберегти',
+  delete: 'Видалити',
+  confirm: 'Підтвердити',
+  
+  // Navigation
+  home: 'Головна',
+  favorites: 'Улюблені',
+  profile: 'Профіль',
+  admin: 'Адмін',
+  
+  // Screens
+  homeScreen: 'Головна',
+  favoritesScreen: 'Улюблені',
+  profileScreen: 'Профіль',
+  adminScreen: 'Панель адміністратора',
+  productDetails: 'Деталі продукту',
+  
+  // Product
+  noResults: 'Продуктів не знайдено',
+  networkError: 'Не вдалося підключитися до сервера',
+  searchPlaceholder: 'Пошук продуктів...',
+  categories: 'Категорії',
+  ingredients: 'Інгредієнти',
+  nutrition: 'Поживна цінність',
+  calories: 'Калорії',
+  proteins: 'Білки',
+  fats: 'Жири',
+  carbs: 'Вуглеводи',
+  salt: 'Сіль',
+  
+  // User
+  login: 'Увійти',
+  register: 'Зареєструватися',
+  email: 'Електронна пошта',
+  password: 'Пароль',
+  displayName: 'Ім\'я користувача',
+  logout: 'Вийти',
+  
+  // Additional translations
+  nutritionalFacts: 'Харчова цінність',
+  allergens: 'Алергени',
+  additives: 'Добавки',
+  logoutConfirmation: 'Ви впевнені, що хочете вийти?',
+  failedToLoadUser: 'Не вдалося завантажити дані користувача',
+  
+  // Product categories
+  beverageCategory: 'Напої',
+  breadCategory: 'Хліб та випічка',
+  dairyCategory: 'Молочні продукти',
+  meatCategory: 'М\'ясо',
+  fishCategory: 'Риба',
+  produceCategory: 'Фрукти та овочі',
+  snacksCategory: 'Снеки',
+  eggsCategory: 'Яйця',
+  mealsCategory: 'Готові страви',
+  
+  // Product detail
+  sugar: 'Цукор',
+  saturatedFats: 'Насичені жири',
+  carbohydrates: 'Вуглеводи',
+  wholeProduct: 'Весь продукт',
+  noAllergensListed: 'Алергени не вказані',
+  vegan: 'Веганський',
+  vegetarian: 'Вегетаріанський',
+  lactoseFree: 'Без лактози',
+  glutenFree: 'Без глютену',
+  similarProducts: 'Схожі продукти',
+  noSimilarProducts: 'Схожих продуктів не знайдено',
+
+  // Auth Screen
+  signIn: 'Увійти',
+  createAccount: 'Створити обліковий запис',
+  name: 'Ім\'я',
+  confirmPassword: 'Підтвердіть пароль',
+  forgotPassword: 'Забули пароль?',
+  or: 'АБО',
+  continueWithGoogle: 'Продовжити з Google',
+  needAccount: 'Потрібен обліковий запис?',
+  alreadyHaveAccount: 'Вже маєте обліковий запис?',
+  emailRequired: 'Електронна пошта обов\'язкова',
+  validEmail: 'Введіть правильну електронну пошту',
+  passwordRequired: 'Пароль обов\'язковий',
+  passwordLength: 'Пароль повинен містити щонайменше 8 символів',
+  nameRequired: 'Ім\'я обов\'язкове',
+  passwordsDoNotMatch: 'Паролі не співпадають',
+  resetPassword: 'Скинути пароль',
+  resetPasswordPrompt: 'Введіть вашу електронну пошту для отримання посилання на скидання пароля',
+  send: 'Надіслати',
+  resetEmailSent: 'Лист для скидання пароля надіслано',
+  resetPasswordConfirmation: 'Посилання для скидання пароля надіслано на адресу {email}',
+  registrationSuccessful: 'Реєстрація успішна',
+  accountCreated: 'Ваш обліковий запис створено. Тепер ви можете увійти.',
+
+  // Profile Screen
+  editProfile: 'Редагувати профіль',
+  accountInfo: 'Інформація про обліковий запис',
+  viewHistory: 'Історія переглядів',
+  preferences: 'Налаштування',
+  aboutApp: 'Про додаток',
+  aboutAppInfo: 'Про цей додаток',
+  languageSettings: 'Мова',
+  dietarySettings: 'Дієтичні вподобання',
+  notificationSettings: 'Сповіщення',
+  success: 'Успіх',
+  profileUpdateSuccess: 'Профіль успішно оновлено',
+  profileUpdateError: 'Не вдалося оновити профіль',
+  nameEmpty: 'Ім\'я не може бути порожнім',
+  featureNotImplemented: 'Ця функція ще не реалізована',
+  languageChanged: 'Мову змінено',
+  ok: 'OK',
+  ukrainian: 'Українська',
+  english: 'Англійська',
+  selectLanguage: 'Виберіть мову',
+  
+  // Admin Panel
+  products: 'Продукти',
+  users: 'Користувачі',
+  addProduct: 'Додати продукт',
+  productName: 'Назва продукту',
+  imageUrl: 'URL зображення',
+  blockUser: 'Заблокувати користувача',
+  unblockUser: 'Розблокувати користувача',
+  enableComments: 'Дозволити коментарям',
+  disableComments: 'Заборонити коментарям',
+  confirmDelete: 'Ви впевнені, що хочете видалити цей продукт?',
+  deleteProductConfirmation: 'Продукт був успішно видалений.',
+  addNewProduct: 'Додати новий продукт',
+  productImageUrl: 'URL зображення продукту',
+  nutriscoreGrade: 'Рейтинг Nutriscore',
+  accessDenied: 'Доступ заборонено',
+  
+  // Firebase Diagnostics
+  firebaseDiagnostics: 'Firebase Диагностика',
+  runPermissionTests: 'Запустити тести дозволів',
+  firebaseConfiguration: 'Конфігурація Firebase',
+  currentUser: 'Поточний користувач',
+  testResults: 'Результати тестів',
+  productsCollection: 'Коллекція продуктів',
+  usersCollection: 'Коллекція користувачів',
+  commentsCollection: 'Коллекція коментарів',
+  accessGranted: 'Доступ надано',
+  permissionDenied: 'Доступ заборонено',
+  howToFix: 'Як виправити',
+  securityRulesUpdate: 'Оновлення правил безпеки',
+  copyInstructions: 'Інструкції для копіювання',
+  quickFixSteps: 'Швидкі кроки для виправлення',
+  developmentRulesWarning: 'Попередження про правила розробки',
+  rulesUpdateTime: 'Час оновлення правил',
+  diagnostics: 'Діагностика',
+  role: 'Роль',
+  status: 'Статус',
+  active: 'Активний',
+  blocked: 'Заблокований',
+  projectId: 'Ідентифікатор проекту',
+  apiKey: 'Ключ API',
+  notLoggedIn: 'Не увійшов',
+  runningTests: 'Виконуються тести'
 };
 
-// Глобальна змінна для збереження поточної мови
-let currentLanguage: Language = 'uk';
+export type Language = 'en' | 'uk';
+const translations = { en, uk };
+let currentLanguage: Language = 'en';
 
-// Функція для отримання поточної мови
-export const getCurrentLanguage = (): Language => {
-  return currentLanguage;
+// Translation function
+export const t = (key: keyof TranslationKeys): string => {
+  return translations[currentLanguage][key];
 };
 
-// Функція для зміни мови
+// Set language function
 export const setLanguage = (language: Language): void => {
   currentLanguage = language;
 };
 
-// Функція для отримання перекладів поточною мовою
-export const getTranslations = (): TranslationKeys => {
-  return dictionaries[currentLanguage];
-};
-
-// Експортуємо фунцію для отримання локалізованих рядків
-export const t = (key: keyof TranslationKeys): string => {
-  return dictionaries[currentLanguage][key];
-};
-
-// Експортуємо переклади
-export const translations = dictionaries[currentLanguage]; 
+// Get current language function
+export const getCurrentLanguage = (): Language => {
+  return currentLanguage;
+}; 

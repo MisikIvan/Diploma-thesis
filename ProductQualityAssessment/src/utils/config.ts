@@ -15,13 +15,13 @@ export const API = {
 
 // Firebase конфігурація 
 export const FIREBASE_CONFIG = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "productqualityapp.firebaseapp.com",
-  projectId: "productqualityapp",
-  storageBucket: "productqualityapp.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
-  measurementId: "YOUR_MEASUREMENT_ID"
+  apiKey: "AIzaSyB6tU6iVSC6vRBdfsWDknt-qXAL4cjZNco",
+  authDomain: "productqualityassessment.firebaseapp.com",
+  projectId: "productqualityassessment",
+  storageBucket: "productqualityassessment.firebasestorage.app",
+  messagingSenderId: "403026447266",
+  appId: "1:403026447266:web:be8dff870c9581bda5c0fb",
+  measurementId: "G-E106SS4E4W"
 };
 
 // Ключі локального сховища

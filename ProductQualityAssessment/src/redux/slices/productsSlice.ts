@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
-import { Product } from '../../types';
+import { Product, NutriScoreGrade } from '../../types/index';
 
 interface SearchParams {
   query: string;
@@ -20,6 +20,115 @@ interface ProductState {
   error: string | null;
 }
 
+// Mock data for demo mode when Firebase is not available
+const MOCK_PRODUCTS: Product[] = [
+  {
+    productId: 'mock-product-1',
+    name: 'Demo Product 1',
+    description: 'This is a demo product for testing',
+    imageUrl: 'https://via.placeholder.com/300x300?text=Demo+Product+1',
+    nutriscoreGrade: 'A' as NutriScoreGrade,
+    nutriscoreScore: 85,
+    categories: ['beverages'],
+    ingredients: 'Water, sugar, salt',
+    allergens: [],
+    additives: [],
+    nutriments: {
+      calories: 100,
+      proteins: 5,
+      fats: {
+        total: 2,
+        saturated: 1
+      },
+      carbohydrates: {
+        total: 20,
+        sugar: 10
+      },
+      salt: 0.1
+    },
+    isVegan: true,
+    isVegetarian: true,
+    hasLactose: false,
+    hasGluten: false,
+    weight: 500,
+    createdBy: 'admin',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    averageRating: 4.5,
+    ratingCount: 10
+  },
+  {
+    productId: 'mock-product-2',
+    name: 'Demo Product 2',
+    description: 'Another demo product for testing',
+    imageUrl: 'https://via.placeholder.com/300x300?text=Demo+Product+2',
+    nutriscoreGrade: 'B' as NutriScoreGrade,
+    nutriscoreScore: 70,
+    categories: ['dairy'],
+    ingredients: 'Milk, cocoa, sugar',
+    allergens: ['milk'],
+    additives: [],
+    nutriments: {
+      calories: 150,
+      proteins: 8,
+      fats: {
+        total: 5,
+        saturated: 3
+      },
+      carbohydrates: {
+        total: 15,
+        sugar: 12
+      },
+      salt: 0.2
+    },
+    isVegan: false,
+    isVegetarian: true,
+    hasLactose: true,
+    hasGluten: false,
+    weight: 250,
+    createdBy: 'admin',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    averageRating: 4.0,
+    ratingCount: 5
+  },
+  {
+    productId: 'mock-product-3',
+    name: 'Demo Product 3',
+    description: 'A third demo product',
+    imageUrl: 'https://via.placeholder.com/300x300?text=Demo+Product+3',
+    nutriscoreGrade: 'C' as NutriScoreGrade,
+    nutriscoreScore: 55,
+    categories: ['snacks'],
+    ingredients: 'Flour, sugar, vegetable oil',
+    allergens: ['gluten'],
+    additives: ['E330', 'E202'],
+    nutriments: {
+      calories: 450,
+      proteins: 3,
+      fats: {
+        total: 22,
+        saturated: 10
+      },
+      carbohydrates: {
+        total: 60,
+        sugar: 25
+      },
+      salt: 0.5
+    },
+    isVegan: false,
+    isVegetarian: true,
+    hasLactose: false,
+    hasGluten: true,
+    weight: 100,
+    createdBy: 'admin',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    averageRating: 3.5,
+    ratingCount: 8
+  }
+] as Product[];
+
 const initialState: ProductState = {
   currentProduct: null,
   similarProducts: [],
@@ -34,26 +143,62 @@ const initialState: ProductState = {
 
 export const searchProducts = createAsyncThunk(
   'products/searchProducts',
-  async (params: SearchParams) => {
-    const { query, page, pageSize } = params;
-    const response = await axios.get(`/api/products/search?q=${query}&page=${page}&limit=${pageSize}`);
-    return response.data.products;
+  async (params: SearchParams, { rejectWithValue }) => {
+    try {
+      // In a real app, this would be an API call
+      // For now, simulate a successful response with mock data
+      console.log('Searching products with query:', params.query);
+      
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Return mock products
+      return MOCK_PRODUCTS;
+    } catch (error) {
+      return rejectWithValue('Failed to search products');
+    }
   }
 );
 
 export const getProductDetails = createAsyncThunk(
   'products/getProductDetails',
-  async (productId: string) => {
-    const response = await axios.get(`/api/products/${productId}`);
-    return response.data;
+  async (productId: string, { rejectWithValue }) => {
+    try {
+      // In a real app, this would be an API call
+      // For now, find the product in mock data
+      const product = MOCK_PRODUCTS.find(p => p.productId === productId);
+      
+      if (!product) {
+        return rejectWithValue('Product not found');
+      }
+      
+      return product;
+    } catch (error) {
+      return rejectWithValue('Failed to fetch product details');
+    }
   }
 );
 
 export const getSimilarProducts = createAsyncThunk(
   'products/getSimilarProducts',
-  async (productId: string) => {
-    const response = await axios.get(`/api/products/${productId}/similar`);
-    return response.data;
+  async (productId: string, { rejectWithValue }) => {
+    try {
+      // In a real app, this would be an API call
+      // For now, return other products from mock data
+      const currentProduct = MOCK_PRODUCTS.find(p => p.productId === productId);
+      
+      if (!currentProduct) {
+        return rejectWithValue('Product not found');
+      }
+      
+      // Return products in the same category
+      return MOCK_PRODUCTS.filter(p => 
+        p.productId !== productId && 
+        p.categories.some(cat => currentProduct.categories.includes(cat))
+      );
+    } catch (error) {
+      return rejectWithValue('Failed to fetch similar products');
+    }
   }
 );
 

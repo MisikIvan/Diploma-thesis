@@ -6,6 +6,9 @@ export interface User {
   authMethod: 'email' | 'google';
   role: 'user' | 'admin';
   isBlocked: boolean;
+  canComment: boolean;
+  createdAt?: string;
+  lastLogin?: string;
 }
 
 export interface Product {
@@ -38,9 +41,11 @@ export interface Product {
   hasLactose: boolean;
   hasGluten: boolean;
   weight?: number; // in grams or ml
-  createdBy: 'admin' | 'api';
+  createdBy: 'admin' | 'api' | string;
   createdAt: string;
   updatedAt: string;
+  averageRating?: number;
+  ratingCount?: number;
 }
 
 export interface Comment {
@@ -48,10 +53,21 @@ export interface Comment {
   productId: string;
   userId: string;
   userName: string;
+  userAvatar?: string;
   rating: 1 | 2 | 3 | 4 | 5;
   text: string;
   createdAt: string;
   isModerated: boolean;
+  isDeleted?: boolean;
+}
+
+export interface AdminAction {
+  actionId: string;
+  adminId: string;
+  actionType: 'create_product' | 'update_product' | 'delete_product' | 'block_user' | 'unblock_user' | 'toggle_comment_permission' | 'moderate_comment';
+  targetId: string;
+  details: string;
+  timestamp: string;
 }
 
 export interface Favorite {

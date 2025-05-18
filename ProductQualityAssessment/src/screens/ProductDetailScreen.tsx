@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { RouteProp, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../navigation/index';
+import { RootStackParamList } from '../types/navigation';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import { getProductDetails, getSimilarProducts } from '../redux/slices/productsSlice';
 import {

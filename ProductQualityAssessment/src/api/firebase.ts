@@ -18,9 +18,11 @@ import { User, Product, Comment, AdminAction } from '../types/index';
 import { Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Initialize Firebase
 const app = initializeApp(FIREBASE_CONFIG);
+// Initialize Auth
 const auth = getAuth(app);
 const db = getFirestore(app);
 const storage = getStorage(app);
@@ -28,6 +30,10 @@ const googleProvider = new GoogleAuthProvider();
 
 // Configure web browser for auth sessions
 WebBrowser.maybeCompleteAuthSession();
+
+// Note: For React Native persistence, you would need to install:
+// npm install @react-native-firebase/auth
+// This is a known limitation with the current setup
 
 // Authentication Services
 export const registerWithEmail = async (email: string, password: string, displayName: string): Promise<User> => {
@@ -262,7 +268,7 @@ export const addProduct = async (product: Omit<Product, 'productId' | 'createdAt
     
     const newProduct: Omit<Product, 'productId'> = {
       ...product,
-      createdBy: adminId,
+      createdBy: 'admin' as const,
       createdAt: timestamp,
       updatedAt: timestamp,
       averageRating: 0,
@@ -382,8 +388,8 @@ export const addComment = async (
       rating,
       text,
       createdAt: new Date().toISOString(),
-      isDeleted: false,
-      isModerated: false
+      isModerated: false,
+      isDeleted: false
     };
     
     const docRef = await addDoc(commentsCollection, newComment);

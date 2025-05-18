@@ -20,63 +20,39 @@ const initialState: UserState = {
   error: null
 };
 
-export const registerUser = createAsyncThunk(
+export const register = createAsyncThunk(
   'user/register',
-  async ({ email, password, displayName }: { email: string; password: string; displayName: string }, { rejectWithValue }) => {
-    try {
-      const user = await registerWithEmail(email, password, displayName);
-      return user;
-    } catch (error) {
-      return rejectWithValue((error as Error).message);
-    }
+  async ({ email, password, displayName }: { email: string; password: string; displayName: string }) => {
+    return await registerWithEmail(email, password, displayName);
   }
 );
 
 export const login = createAsyncThunk(
   'user/login',
-  async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
-    try {
-      const user = await loginWithEmail(email, password);
-      return user;
-    } catch (error) {
-      return rejectWithValue((error as Error).message);
-    }
+  async ({ email, password }: { email: string; password: string }) => {
+    return await loginWithEmail(email, password);
   }
 );
 
 export const googleLogin = createAsyncThunk(
   'user/googleLogin',
-  async (_, { rejectWithValue }) => {
-    try {
-      const user = await loginWithGoogle();
-      return user;
-    } catch (error) {
-      return rejectWithValue((error as Error).message);
-    }
+  async () => {
+    return await loginWithGoogle();
   }
 );
 
 export const logout = createAsyncThunk(
   'user/logout',
-  async (_, { rejectWithValue }) => {
-    try {
-      await logoutUser();
-      return null;
-    } catch (error) {
-      return rejectWithValue((error as Error).message);
-    }
+  async () => {
+    await logoutUser();
+    return null;
   }
 );
 
-export const fetchCurrentUser = createAsyncThunk(
-  'user/fetchCurrentUser',
-  async (_, { rejectWithValue }) => {
-    try {
-      const user = await getCurrentUser();
-      return user;
-    } catch (error) {
-      return rejectWithValue((error as Error).message);
-    }
+export const checkAuth = createAsyncThunk(
+  'user/checkAuth',
+  async () => {
+    return await getCurrentUser();
   }
 );
 
@@ -91,17 +67,17 @@ const userSlice = createSlice({
   extraReducers: (builder) => {
     builder
       // Register
-      .addCase(registerUser.pending, (state) => {
+      .addCase(register.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(registerUser.fulfilled, (state, action: PayloadAction<User>) => {
+      .addCase(register.fulfilled, (state, action) => {
         state.loading = false;
         state.currentUser = action.payload;
       })
-      .addCase(registerUser.rejected, (state, action) => {
+      .addCase(register.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload as string;
+        state.error = action.error.message || 'Registration failed';
       })
       
       // Login
@@ -109,13 +85,13 @@ const userSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(login.fulfilled, (state, action: PayloadAction<User>) => {
+      .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
         state.currentUser = action.payload;
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload as string;
+        state.error = action.error.message || 'Login failed';
       })
       
       // Google Login
@@ -123,13 +99,13 @@ const userSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(googleLogin.fulfilled, (state, action: PayloadAction<User>) => {
+      .addCase(googleLogin.fulfilled, (state, action) => {
         state.loading = false;
         state.currentUser = action.payload;
       })
       .addCase(googleLogin.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload as string;
+        state.error = action.error.message || 'Google login failed';
       })
       
       // Logout
@@ -142,21 +118,20 @@ const userSlice = createSlice({
       })
       .addCase(logout.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload as string;
+        state.error = action.error.message || 'Logout failed';
       })
       
-      // Fetch Current User
-      .addCase(fetchCurrentUser.pending, (state) => {
+      // Check Auth
+      .addCase(checkAuth.pending, (state) => {
         state.loading = true;
-        state.error = null;
       })
-      .addCase(fetchCurrentUser.fulfilled, (state, action: PayloadAction<User | null>) => {
+      .addCase(checkAuth.fulfilled, (state, action) => {
         state.loading = false;
         state.currentUser = action.payload;
       })
-      .addCase(fetchCurrentUser.rejected, (state, action) => {
+      .addCase(checkAuth.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload as string;
+        state.error = action.error.message || 'Auth check failed';
       });
   }
 });

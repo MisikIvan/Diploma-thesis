@@ -32,8 +32,16 @@ export const loadLanguage = async (): Promise<Language | null> => {
  * або використовуючи українську мову за замовчуванням
  */
 export const initializeLanguage = async (): Promise<Language> => {
-  const savedLanguage = await loadLanguage();
-  const language = savedLanguage || 'uk';
-  setLanguage(language);
-  return language;
+  try {
+    const savedLanguage = await loadLanguage();
+    // Default to Ukrainian language
+    const language = savedLanguage || 'uk';
+    setLanguage(language);
+    return language;
+  } catch (error) {
+    console.error('Error initializing language:', error);
+    // Fall back to Ukrainian in case of errors
+    setLanguage('uk');
+    return 'uk';
+  }
 }; 
