@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { Product, NutriScoreGrade } from '../../types/index';
+import { getAllProducts as fetchProductsFromFirebase, getProduct as fetchProductFromFirebase } from '../../api/firebase';
 
 interface SearchParams {
   query: string;
@@ -145,14 +146,42 @@ export const searchProducts = createAsyncThunk(
   'products/searchProducts',
   async (params: SearchParams, { rejectWithValue }) => {
     try {
-      // In a real app, this would be an API call
-      // For now, simulate a successful response with mock data
       console.log('Searching products with query:', params.query);
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+    
+      try {
       
-      // Return mock products
+        const productsFromFirebase = await fetchProductsFromFirebase();
+        console.log('Loaded', productsFromFirebase.length, 'products from Firebase');
+        
+        if (productsFromFirebase.length > 0) {
+     
+          if (params.query) {
+       
+            return productsFromFirebase.filter(product => 
+              product.name.toLowerCase().includes(params.query.toLowerCase()) ||
+              product.categories.some(cat => cat.toLowerCase().includes(params.query.toLowerCase())) ||
+              (product.ingredients && product.ingredients.toLowerCase().includes(params.query.toLowerCase()))
+            );
+          }
+          return productsFromFirebase;
+        }
+      } catch (firebaseError) {
+        console.error('Failed to load products from Firebase, falling back to mock data:', firebaseError);
+      }
+      
+    
+      console.log('Using mock products as fallback');
+      
+   
+      if (params.query) {
+        return MOCK_PRODUCTS.filter(product => 
+          product.name.toLowerCase().includes(params.query.toLowerCase()) ||
+          product.categories.some(cat => cat.toLowerCase().includes(params.query.toLowerCase())) ||
+          (product.ingredients && product.ingredients.toLowerCase().includes(params.query.toLowerCase()))
+        );
+      }
+      
       return MOCK_PRODUCTS;
     } catch (error) {
       return rejectWithValue('Failed to search products');
@@ -164,8 +193,21 @@ export const getProductDetails = createAsyncThunk(
   'products/getProductDetails',
   async (productId: string, { rejectWithValue }) => {
     try {
-      // In a real app, this would be an API call
-      // For now, find the product in mock data
+    
+      try {
+   
+        const product = await fetchProductFromFirebase(productId);
+        
+        if (product) {
+          console.log('Product found in Firebase:', product.name);
+          return product;
+        }
+      } catch (firebaseError) {
+        console.error('Failed to load product from Firebase, falling back to mock data:', firebaseError);
+      }
+      
+  
+      console.log('Looking up product in mock data');
       const product = MOCK_PRODUCTS.find(p => p.productId === productId);
       
       if (!product) {
@@ -183,15 +225,39 @@ export const getSimilarProducts = createAsyncThunk(
   'products/getSimilarProducts',
   async (productId: string, { rejectWithValue }) => {
     try {
-      // In a real app, this would be an API call
-      // For now, return other products from mock data
+     
+      try {
+   
+        const currentProduct = await fetchProductFromFirebase(productId);
+        
+        if (currentProduct) {
+    
+          const allProducts = await fetchProductsFromFirebase();
+          
+      
+          const similarProducts = allProducts.filter(p => 
+            p.productId !== productId && 
+            p.categories.some(cat => currentProduct.categories.includes(cat))
+          );
+          
+          if (similarProducts.length > 0) {
+            console.log('Found', similarProducts.length, 'similar products in Firebase');
+            return similarProducts;
+          }
+        }
+      } catch (firebaseError) {
+        console.error('Failed to load similar products from Firebase, falling back to mock data:', firebaseError);
+      }
+      
+   
+      console.log('Looking up similar products in mock data');
       const currentProduct = MOCK_PRODUCTS.find(p => p.productId === productId);
       
       if (!currentProduct) {
         return rejectWithValue('Product not found');
       }
       
-      // Return products in the same category
+   
       return MOCK_PRODUCTS.filter(p => 
         p.productId !== productId && 
         p.categories.some(cat => currentProduct.categories.includes(cat))
@@ -208,7 +274,7 @@ const productsSlice = createSlice({
   reducers: {
     setCurrentProduct: (state, action: PayloadAction<Product>) => {
       state.currentProduct = action.payload;
-      // Add to recent products if not already there
+     
       if (!state.recentProducts.some((p: Product) => p.productId === action.payload.productId)) {
         state.recentProducts = [action.payload, ...state.recentProducts].slice(0, 5);
       }
@@ -226,7 +292,7 @@ const productsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // getProductDetails
+   
       .addCase(getProductDetails.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -234,7 +300,7 @@ const productsSlice = createSlice({
       .addCase(getProductDetails.fulfilled, (state, action) => {
         state.loading = false;
         state.currentProduct = action.payload;
-        // Add to recent products if not already there
+      
         if (!state.recentProducts.some((p: Product) => p.productId === action.payload.productId)) {
           state.recentProducts = [action.payload, ...state.recentProducts].slice(0, 5);
         }
@@ -244,7 +310,7 @@ const productsSlice = createSlice({
         state.error = action.error.message || 'Failed to fetch product details';
       })
       
-      // getSimilarProducts
+   
       .addCase(getSimilarProducts.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -258,7 +324,7 @@ const productsSlice = createSlice({
         state.error = action.error.message || 'Failed to fetch similar products';
       })
       
-      // searchProducts
+    
       .addCase(searchProducts.pending, (state, action) => {
         state.loading = true;
         state.error = null;
@@ -267,7 +333,7 @@ const productsSlice = createSlice({
       .addCase(searchProducts.fulfilled, (state, action) => {
         state.loading = false;
         state.products = action.payload;
-        // If there's a selected category, filter the products
+      
         if (state.selectedCategory) {
           state.filteredProducts = action.payload.filter((p: Product) => 
             p.categories.includes(state.selectedCategory as string)

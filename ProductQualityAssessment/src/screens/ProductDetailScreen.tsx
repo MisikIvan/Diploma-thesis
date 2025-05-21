@@ -22,7 +22,7 @@ import {
   calculateWholeProduct,
   truncateText,
 } from '../utils/helpers';
-import { Product, getNutriScoreColor } from '../types';
+import { Product, getNutriScoreColor } from '../types/index';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ProductCard from '../components/ProductCard';
 import LoadingScreen from '../components/LoadingScreen';
@@ -267,11 +267,10 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
       <ScrollView>
         <View style={styles.productHeader}>
           <Image 
-            source={{ uri: getProductImage(currentProduct.imageUrl) }} 
+            source={{ uri: getProductImage(currentProduct.imageUrl ?? '') }} 
             style={styles.productImage}
             resizeMode="contain"
           />
-          
           <View style={styles.productTitleContainer}>
             <Text style={styles.productName}>{currentProduct.name}</Text>
             

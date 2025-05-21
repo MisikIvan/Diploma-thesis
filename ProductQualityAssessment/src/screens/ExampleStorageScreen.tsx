@@ -5,9 +5,7 @@ import { FirebaseService } from '../utils/firebase';
 import type { Product, Favorite } from '../types/index';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-/**
- * Example screen demonstrating the hybrid storage approach with AsyncStorage + Firebase Firestore
- */
+
 const ExampleStorageScreen: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [user, setUser] = useState<any>(null);
@@ -15,13 +13,13 @@ const ExampleStorageScreen: React.FC = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [isSignedIn, setIsSignedIn] = useState<boolean>(false);
 
-  // Example product ID - replace with a valid ID in your database
+
   const sampleProductId = 'product123';
   
-  // Simulated user ID - in a real app, this would come from authentication
+ 
   const userId = 'user123';
 
-  // Check if user is signed in
+ 
   useEffect(() => {
     const checkUser = async () => {
       const currentUser = FirebaseService.auth.getCurrentUser();
@@ -40,14 +38,14 @@ const ExampleStorageScreen: React.FC = () => {
     checkUser();
   }, []);
 
-  // Example: Sign in with Firebase
+ 
   const handleSignIn = async () => {
     try {
       setIsLoading(true);
-      // This is a demonstration - you should never hardcode credentials in a real app
+    
       const firebaseUser = await FirebaseService.auth.signIn('demo@example.com', 'password123');
       
-      // Get user data
+     
       const userData = await DataService.user.getUser(firebaseUser.uid);
       setUser(userData);
       setIsSignedIn(true);
@@ -60,7 +58,7 @@ const ExampleStorageScreen: React.FC = () => {
     }
   };
 
-  // Example: Sign out
+ 
   const handleSignOut = async () => {
     try {
       setIsLoading(true);
@@ -76,7 +74,7 @@ const ExampleStorageScreen: React.FC = () => {
     }
   };
 
-  // Example: Get product data
+ 
   const handleGetProduct = async () => {
     try {
       setIsLoading(true);
@@ -84,7 +82,7 @@ const ExampleStorageScreen: React.FC = () => {
       setProduct(productData);
       
       if (productData) {
-        // Add to view history if product exists
+       
         if (isSignedIn) {
           await DataService.viewHistory.addToViewHistory(userId, productData);
         }
@@ -99,7 +97,7 @@ const ExampleStorageScreen: React.FC = () => {
     }
   };
 
-  // Example: Get favorites
+ 
   const handleGetFavorites = async () => {
     try {
       setIsLoading(true);
@@ -118,7 +116,7 @@ const ExampleStorageScreen: React.FC = () => {
     }
   };
 
-  // Example: Add product to favorites
+  
   const handleAddFavorite = async () => {
     try {
       setIsLoading(true);
@@ -151,7 +149,7 @@ const ExampleStorageScreen: React.FC = () => {
     }
   };
 
-  // Render favorites list item
+
   const renderFavoriteItem = ({ item }: { item: Favorite }) => (
     <View style={styles.favoriteItem}>
       <Text>Product ID: {item.productId}</Text>

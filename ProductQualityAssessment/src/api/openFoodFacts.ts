@@ -38,11 +38,9 @@ interface OpenFoodFactsSearchResponse {
   products: OpenFoodFactsProduct[];
 }
 
-/**
- * Transform OpenFoodFacts product to app's Product type
- */
+
 const transformProduct = (offProduct: OpenFoodFactsProduct): Product => {
-  // Extract weight from quantity string if available
+ 
   let weight: number | undefined;
   if (offProduct.quantity) {
     const match = offProduct.quantity.match(/(\d+)\s*(g|ml)/i);
@@ -51,7 +49,7 @@ const transformProduct = (offProduct: OpenFoodFactsProduct): Product => {
     }
   }
 
-  // Check for vegan/vegetarian status from ingredients_analysis_tags
+
   const isVegan = offProduct.ingredients_analysis_tags?.includes('en:vegan') || false;
   const isVegetarian = offProduct.ingredients_analysis_tags?.includes('en:vegetarian') || false;
   
@@ -111,13 +109,9 @@ const transformProduct = (offProduct: OpenFoodFactsProduct): Product => {
   };
 };
 
-/**
- * OpenFoodFacts API service
- */
+
 export const OpenFoodFactsAPI = {
-  /**
-   * Get product by barcode
-   */
+
   getProductByBarcode: async (barcode: string): Promise<Product | null> => {
     try {
       const response = await axios.get<OpenFoodFactsResponse>(
@@ -135,9 +129,7 @@ export const OpenFoodFactsAPI = {
     }
   },
   
-  /**
-   * Search products by query
-   */
+
   searchProducts: async (query: string, page: number = 1, pageSize: number = 20): Promise<{
     products: Product[],
     totalCount: number,

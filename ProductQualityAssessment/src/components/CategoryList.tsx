@@ -9,7 +9,7 @@ interface CategoryListProps {
 }
 
 const CategoryList: React.FC<CategoryListProps> = ({ selectedCategory, onSelectCategory }) => {
-  // Додаємо опцію "Усі" на початок з такою ж структурою як в інших категоріях
+
   const allCategories = [
     { id: 'all', nameKey: 'categories' as const, icon: '🔎' },
     ...PRODUCT_CATEGORIES

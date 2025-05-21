@@ -21,7 +21,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   const dispatch = useAppDispatch();
 
-  // Update local state when initialQuery changes
+
   useEffect(() => {
     setQuery(initialQuery);
   }, [initialQuery]);
@@ -29,12 +29,12 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const handleChangeText = (text: string) => {
     setQuery(text);
     
-    // Clear existing timeout
+
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
     
-    // Set a new timeout to debounce search
+ 
     const newTimeoutId = setTimeout(() => {
       dispatch(setSearchQuery(text));
       onSearch(text);

@@ -91,12 +91,12 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 
     try {
       if (isLogin) {
-        // Handle login with Firebase through Redux
+      
         console.log('Logging in with:', email, password);
         await dispatch(login({ email, password })).unwrap();
-        // No need to navigate, the Navigation component will handle it based on auth state
+      
       } else {
-        // Handle registration with Firebase through Redux
+
         console.log('Registering with:', email, password, name);
         await dispatch(register({ email, password, displayName: name })).unwrap();
         Alert.alert(
@@ -122,7 +122,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   };
 
   const handleForgotPassword = () => {
-    // Firebase password reset here
+    // Firebase password reset
     Alert.alert(
       t('resetPassword'),
       t('resetPasswordPrompt'),
@@ -136,7 +136,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
               return;
             }
             
-            // Firebase password reset here
+         
             Alert.alert(
               t('resetEmailSent'),
               t('resetPasswordConfirmation').replace('{email}', email)
@@ -151,7 +151,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     try {
       setIsLoading(true);
       await dispatch(googleLogin()).unwrap();
-      // No need to navigate, the Navigation component will handle it based on auth state
+    
       setIsLoading(false);
     } catch (err: any) {
       setIsLoading(false);
@@ -373,7 +373,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   buttonPrimary: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#5d8402',
     borderRadius: 10,
     paddingVertical: 15,
     alignItems: 'center',
@@ -439,7 +439,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   googleButtonText: {
-    color: '#333',
+    color: '#34572a',
     fontSize: 16,
     fontWeight: 'bold',
   },

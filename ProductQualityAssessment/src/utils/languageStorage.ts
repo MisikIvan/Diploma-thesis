@@ -3,9 +3,7 @@ import { Language, setLanguage } from './translations';
 
 const LANGUAGE_KEY = 'selected_language';
 
-/**
- * Зберігає вибрану мову в AsyncStorage
- */
+
 export const saveLanguage = async (language: Language): Promise<void> => {
   try {
     await AsyncStorage.setItem(LANGUAGE_KEY, language);
@@ -14,9 +12,7 @@ export const saveLanguage = async (language: Language): Promise<void> => {
   }
 };
 
-/**
- * Отримує збережену мову з AsyncStorage
- */
+
 export const loadLanguage = async (): Promise<Language | null> => {
   try {
     const language = await AsyncStorage.getItem(LANGUAGE_KEY);
@@ -27,20 +23,17 @@ export const loadLanguage = async (): Promise<Language | null> => {
   }
 };
 
-/**
- * Ініціалізує мову додатка, завантажуючи збережене значення
- * або використовуючи українську мову за замовчуванням
- */
+
 export const initializeLanguage = async (): Promise<Language> => {
   try {
     const savedLanguage = await loadLanguage();
-    // Default to Ukrainian language
+  
     const language = savedLanguage || 'uk';
     setLanguage(language);
     return language;
   } catch (error) {
     console.error('Error initializing language:', error);
-    // Fall back to Ukrainian in case of errors
+   
     setLanguage('uk');
     return 'uk';
   }

@@ -98,12 +98,12 @@ const Navigation = () => {
     dispatch(checkAuth());
   }, [dispatch]);
 
-  // Show loading screen while checking auth
+ 
   if (loading) {
     return <LoadingScreen />;
   }
 
-  // Show error screen if there's an error
+  
   if (error) {
     return <ErrorScreen message={error} />;
   }

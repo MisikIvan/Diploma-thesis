@@ -163,6 +163,33 @@ export interface TranslationKeys {
   apiKey: string;
   notLoggedIn: string;
   runningTests: string;
+
+  // Form fields and product information
+  weight: string;
+  nutritionalInfo: string;
+  perWholeProduct: string;
+  calculatedAutomatically: string;
+  dietaryInfo: string;
+  
+  // Firebase and demo mode
+  goOnline: string;
+  goOffline: string;
+  firebaseConnected: string;
+  firebaseConnectionFailed: string;
+  confirmDemoMode: string;
+  demoModeWarning: string;
+  demoModeActivated: string;
+  demoMode: string;
+  
+  // Product management
+  demoModeActive: string;
+  demoModeProductWarning: string;
+  tryFirebase: string;
+  firebaseProductAdded: string;
+  productAddedLocally: string;
+  continueDemo: string;
+  productAdded: string;
+  failedToAddProduct: string;
 }
 
 // English translations
@@ -329,8 +356,35 @@ const en: TranslationKeys = {
   projectId: 'Project ID',
   apiKey: 'API Key',
   notLoggedIn: 'Not Logged In',
-  runningTests: 'Running Tests'
-};
+  runningTests: 'Running Tests',
+
+  // Form fields and product information
+  weight: 'Weight',
+  nutritionalInfo: 'Nutritional Information',
+  perWholeProduct: 'Per Whole Product',
+  calculatedAutomatically: 'Values are calculated automatically based on weight and nutritional values',
+  dietaryInfo: 'Dietary Information',
+  
+  // Firebase and demo mode
+  goOnline: 'Go Online',
+  goOffline: 'Go Offline',
+  firebaseConnected: 'Connected to Firebase database',
+  firebaseConnectionFailed: 'Failed to connect to Firebase',
+  confirmDemoMode: 'Activate Demo Mode?',
+  demoModeWarning: 'In demo mode, all changes will be saved locally and will be lost when you reload the app. No data will be saved to Firebase.',
+  demoModeActivated: 'Demo mode activated',
+  demoMode: 'DEMO MODE',
+  
+  // Product management
+  demoModeActive: 'Demo Mode Active',
+  demoModeProductWarning: 'In demo mode, products are saved locally and will be lost when you reload the app. Would you like to try saving to Firebase instead?',
+  tryFirebase: 'Try Firebase',
+  firebaseProductAdded: 'Product successfully added to Firebase database',
+  productAddedLocally: 'Product was added to local storage only',
+  continueDemo: 'Continue in Demo Mode',
+  productAdded: 'Product added successfully',
+  failedToAddProduct: 'Failed to add product'
+}
 
 // Ukrainian translations
 const uk: TranslationKeys = {
@@ -496,24 +550,51 @@ const uk: TranslationKeys = {
   projectId: 'Ідентифікатор проекту',
   apiKey: 'Ключ API',
   notLoggedIn: 'Не увійшов',
-  runningTests: 'Виконуються тести'
-};
+  runningTests: 'Виконуються тести',
+
+  // Form fields and product information
+  weight: 'Вага',
+  nutritionalInfo: 'Харчова цінність',
+  perWholeProduct: 'На весь продукт',
+  calculatedAutomatically: 'Значення розраховуються автоматично на основі ваги та харчової цінності',
+  dietaryInfo: 'Дієтична інформація',
+  
+  // Firebase and demo mode
+  goOnline: 'Онлайн режим',
+  goOffline: 'Офлайн режим',
+  firebaseConnected: 'Підключено до бази даних Firebase',
+  firebaseConnectionFailed: 'Не вдалося підключитися до Firebase',
+  confirmDemoMode: 'Активувати демо-режим?',
+  demoModeWarning: 'У демо-режимі всі зміни будуть збережені локально та будуть втрачені при перезавантаженні додатку. Дані не будуть збережені в Firebase.',
+  demoModeActivated: 'Демо-режим активовано',
+  demoMode: 'ДЕМО-РЕЖИМ',
+  
+  // Product management
+  demoModeActive: 'Демо-режим активний',
+  demoModeProductWarning: 'У демо-режимі продукти зберігаються локально і будуть втрачені при перезавантаженні додатка. Бажаєте спробувати зберегти в Firebase?',
+  tryFirebase: 'Спробувати Firebase',
+  firebaseProductAdded: 'Продукт успішно додано до бази даних Firebase',
+  productAddedLocally: 'Продукт додано лише до локального сховища',
+  continueDemo: 'Продовжити в демо-режимі',
+  productAdded: 'Продукт успішно додано',
+  failedToAddProduct: 'Не вдалося додати продукт'
+}
 
 export type Language = 'en' | 'uk';
 const translations = { en, uk };
 let currentLanguage: Language = 'en';
 
-// Translation function
+
 export const t = (key: keyof TranslationKeys): string => {
   return translations[currentLanguage][key];
 };
 
-// Set language function
+
 export const setLanguage = (language: Language): void => {
   currentLanguage = language;
 };
 
-// Get current language function
+
 export const getCurrentLanguage = (): Language => {
   return currentLanguage;
 }; 

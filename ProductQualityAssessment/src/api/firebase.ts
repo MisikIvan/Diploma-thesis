@@ -9,7 +9,9 @@ import {
   onAuthStateChanged,
   updateProfile,
   User as FirebaseUser,
-  signInWithCredential
+  signInWithCredential,
+  setPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
 import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, query, where, getDocs, deleteDoc, addDoc, Timestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -28,12 +30,38 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const googleProvider = new GoogleAuthProvider();
 
-// Configure web browser for auth sessions
+
 WebBrowser.maybeCompleteAuthSession();
 
-// Note: For React Native persistence, you would need to install:
-// npm install @react-native-firebase/auth
-// This is a known limitation with the current setup
+
+if (typeof window !== 'undefined') {
+  setPersistence(auth, browserLocalPersistence)
+    .catch(error => {
+      console.error('Error setting auth persistence:', error);
+    });
+}
+
+// Create a service for storing auth state in AsyncStorage
+const storeUserInStorage = async (user: FirebaseUser | null) => {
+  try {
+    if (user) {
+      await AsyncStorage.setItem('auth_user', JSON.stringify({
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName
+      }));
+    } else {
+      await AsyncStorage.removeItem('auth_user');
+    }
+  } catch (error) {
+    console.error('Error storing auth state in AsyncStorage:', error);
+  }
+};
+
+// Monitor auth state changes to update AsyncStorage
+onAuthStateChanged(auth, (user) => {
+  storeUserInStorage(user);
+});
 
 // Authentication Services
 export const registerWithEmail = async (email: string, password: string, displayName: string): Promise<User> => {
@@ -50,8 +78,10 @@ export const registerWithEmail = async (email: string, password: string, display
       console.log(`Profile updated with displayName: ${displayName}`);
     } catch (profileError) {
       console.error('Error updating profile:', profileError);
-      // Continue despite profile update error
     }
+    
+    // Save user data to AsyncStorage
+    await storeUserInStorage(userCredential.user);
     
     // Create user document in Firestore
     const user: User = {
@@ -71,7 +101,6 @@ export const registerWithEmail = async (email: string, password: string, display
       console.log(`User document created in Firestore for UID: ${userCredential.user.uid}`);
     } catch (firestoreError) {
       console.error('Error creating user document in Firestore:', firestoreError);
-      // Continue despite Firestore error, as Auth user was created
     }
     
     return user;
@@ -86,6 +115,9 @@ export const registerWithEmail = async (email: string, password: string, display
 export const loginWithEmail = async (email: string, password: string): Promise<User> => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    
+    // Save user data to AsyncStorage
+    await storeUserInStorage(userCredential.user);
     
     // Update last login
     const userDocRef = doc(db, 'users', userCredential.user.uid);
@@ -102,35 +134,37 @@ export const loginWithEmail = async (email: string, password: string): Promise<U
   }
 };
 
-export const loginWithGoogle = async (): Promise<User> => {
-  try {
+export const loginWithGoogle = async (): Promise<User> => {  
+  try {    
     console.log('Starting Google login process');
-    
-    // On web, use Firebase popup method directly
-    if (Platform.OS === 'web') {
-      console.log('Using web Google login flow');
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
+          
+    if (Platform.OS === 'web') {      
+      console.log('Using web Google login flow');      
+      const result = await signInWithPopup(auth, googleProvider);      
+      const user = result.user;      
       console.log('Successfully logged in with Google on web:', user.uid);
-      
-      return await handleGoogleUser(user);
-    } else {
-      // For mobile, we'll need a more complex approach
-      // For simplicity in this fix, we'll use email login only on mobile
-      // A proper solution would require setting up expo-auth-session correctly
-      // with proper OAuth configuration
-      console.log('Google login on mobile not implemented in this version');
-      throw new Error('Google login is currently only supported on web. Please use email login on mobile.');
-    }
-  } catch (error) {
-    console.error('Error logging in with Google:', error);
-    throw error;
+            
+      // Save user data to AsyncStorage      
+      await storeUserInStorage(user);
+            
+      return await handleGoogleUser(user);    
+    } else {      
+   
+      console.log('Google login on mobile not implemented in this version');      
+      throw new Error('Google login is currently only supported on web. Please use email login on mobile.');    
+    }  
+  } catch (error) {    
+    console.error('Error logging in with Google:', error);    
+    throw error;  
   }
 };
 
-// Helper function to process Google user data
 const handleGoogleUser = async (user: FirebaseUser): Promise<User> => {
   console.log('Processing Google user:', user.uid);
+  
+  // Ensure user is saved to AsyncStorage
+  await storeUserInStorage(user);
+  
   // Check if user document exists
   const userDocRef = doc(db, 'users', user.uid);
   const userDoc = await getDoc(userDocRef);
@@ -168,6 +202,8 @@ const handleGoogleUser = async (user: FirebaseUser): Promise<User> => {
 export const logoutUser = async (): Promise<void> => {
   try {
     await signOut(auth);
+    // Clear user data from AsyncStorage
+    await storeUserInStorage(null);
   } catch (error) {
     console.error('Error signing out:', error);
     throw error;
@@ -192,7 +228,27 @@ export const getCurrentUser = async (): Promise<User | null> => {
           reject(error);
         }
       } else {
-        resolve(null);
+        // If not logged in with Firebase, try AsyncStorage
+        try {
+          const storedUser = await AsyncStorage.getItem('auth_user');
+          if (storedUser) {
+            const userData = JSON.parse(storedUser);
+            // Get full user data from Firestore using stored UID
+            if (userData.uid) {
+              const userDocRef = doc(db, 'users', userData.uid);
+              const userDoc = await getDoc(userDocRef);
+              
+              if (userDoc.exists()) {
+                resolve(userDoc.data() as User);
+                return;
+              }
+            }
+          }
+          resolve(null);
+        } catch (error) {
+          console.error('Error checking AsyncStorage for user:', error);
+          resolve(null);
+        }
       }
     }, reject);
   });

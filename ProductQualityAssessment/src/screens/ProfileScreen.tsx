@@ -28,7 +28,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState<Language>(getCurrentLanguage());
 
-  // Load user data when component mounts
+ 
   useEffect(() => {
     loadUserData();
   }, []);
@@ -36,26 +36,27 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const loadUserData = async () => {
     try {
       setIsLoading(true);
-      // Get user from storage
+    
       const userData = await StorageService.user.getUser();
       
       if (userData) {
         setUser(userData);
         setEditedName(userData.displayName);
       } else {
-        // For demo purposes, create a mock user if none exists
+      
         const mockUser: User = {
           userId: 'user123',
           email: 'demo@example.com',
           displayName: 'Demo User',
           avatarUrl: 'https://cdn.7tv.app/emote/01FSVRP2N00000QSWVVZJA08HV/4x.avif',
+          canComment: true,
           authMethod: 'email',
-          role: 'user',
+          role: 'admin',
           isBlocked: false,
         };
         setUser(mockUser);
         setEditedName(mockUser.displayName);
-        // Save mock user to storage
+     
         await StorageService.user.saveUser(mockUser);
       }
     } catch (error) {
@@ -74,9 +75,9 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         {
           text: t('logout'),
           onPress: async () => {
-            // Clear user data from storage
+          
             await StorageService.user.removeUser();
-            // Navigate to auth screen
+        
             navigation.reset({
               index: 0,
               routes: [{ name: 'Auth' }],
@@ -123,7 +124,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   };
 
   const handleViewHistory = () => {
-    // Navigate to history screen
+   
     Alert.alert(t('viewHistory'), t('featureNotImplemented'));
   };
 
@@ -131,10 +132,10 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     setCurrentLanguage(language);
     await saveLanguage(language);
     
-    // Повідомляємо користувача про зміну мови
+    
     Alert.alert(t('languageChanged'), '', [
       { text: t('ok'), onPress: () => {
-        // Оновлюємо екран, щоб застосувати нові переклади
+       
         loadUserData();
       }}
     ]);

@@ -29,10 +29,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   
   useEffect(() => {
-    if (products.length === 0) {
-      handleSearch('');
-    }
+    loadProducts();
   }, []);
+  
+
+  const loadProducts = () => {
+    console.log('Loading products from Firebase...');
+    dispatch(searchProducts({ query: '', page: 1, pageSize: 100 }));
+  };
 
   const handleSearch = (query: string) => {
     dispatch(searchProducts({ query, page: 1, pageSize: 20 }));
@@ -101,7 +105,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         />
       )}
 
-      {/* Тут буде модальне вікно фільтрації */}
+      {}
     </View>
   );
 };

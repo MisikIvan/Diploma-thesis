@@ -6,13 +6,13 @@ const store = configureStore({
   reducer: {
     products: productsReducer,
     user: userReducer,
-    // Add more reducers here
+ 
   },
-  // Enable Redux DevTools in development
+
   devTools: process.env.NODE_ENV !== 'production',
 });
 
-// Define RootState and AppDispatch types
+
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 

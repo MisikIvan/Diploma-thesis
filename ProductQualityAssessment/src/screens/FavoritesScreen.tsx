@@ -16,7 +16,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   
   const { products } = useAppSelector(state => state.products);
   
-  // Load favorite products when the component mounts
+ 
   useEffect(() => {
     loadFavorites();
   }, []);
@@ -25,16 +25,16 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
     try {
       setIsLoading(true);
       
-      // Get favorites from storage
+     
       const favorites = await StorageService.favorites.getFavorites();
       
-      // Mock user ID for now
+  
       const userId = 'currentUser';
       
-      // Filter favorites for the current user
+     
       const userFavorites = favorites.filter(fav => fav.userId === userId);
       
-      // Map favorites to products
+    
       const favoriteProductList = userFavorites.map(favorite => {
         return products.find(p => p.productId === favorite.productId);
       }).filter(product => product !== undefined) as Product[];

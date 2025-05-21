@@ -40,7 +40,7 @@ export interface Product {
   isVegetarian: boolean;
   hasLactose: boolean;
   hasGluten: boolean;
-  weight?: number; // in grams or ml
+  weight?: number; 
   createdBy: 'admin' | 'api' | string;
   createdAt: string;
   updatedAt: string;

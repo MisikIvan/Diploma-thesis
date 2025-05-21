@@ -17,28 +17,69 @@ import {
   DocumentData
 } from 'firebase/firestore';
 import { 
-  getAuth, 
+  getAuth,
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signOut, 
   updateProfile,
-  User as FirebaseUser
+  User as FirebaseUser,
+  setPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
 import { FIREBASE_CONFIG } from './config';
 import type { User, Product, Favorite, ViewHistory, Comment } from '../types/index';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Initialize Firebase
 const app = initializeApp(FIREBASE_CONFIG);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-/**
- * Firebase service for handling Firestore operations
- */
+
+if (typeof window !== 'undefined') {
+  setPersistence(auth, browserLocalPersistence)
+    .catch(error => {
+      console.error('Error setting auth persistence:', error);
+    });
+}
+
+
+const AuthStorage = {
+  setUser: async (user: FirebaseUser | null) => {
+    try {
+      if (user) {
+        await AsyncStorage.setItem('auth_user', JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName
+        }));
+      } else {
+        await AsyncStorage.removeItem('auth_user');
+      }
+    } catch (error) {
+      console.error('Error storing auth state in AsyncStorage:', error);
+    }
+  },
+  
+  getUser: async (): Promise<{uid: string, email: string | null, displayName: string | null} | null> => {
+    try {
+      const userData = await AsyncStorage.getItem('auth_user');
+      return userData ? JSON.parse(userData) : null;
+    } catch (error) {
+      console.error('Error retrieving auth state from AsyncStorage:', error);
+      return null;
+    }
+  }
+};
+
+
+auth.onAuthStateChanged(user => {
+  AuthStorage.setUser(user);
+});
+
+
 export const FirebaseService = {
-  /**
-   * Authentication methods
-   */
+
   auth: {
     getCurrentUser: (): FirebaseUser | null => {
       return auth.currentUser;
@@ -46,23 +87,24 @@ export const FirebaseService = {
 
     signIn: async (email: string, password: string): Promise<FirebaseUser> => {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await AuthStorage.setUser(userCredential.user);
       return userCredential.user;
     },
 
     signUp: async (email: string, password: string, displayName: string): Promise<FirebaseUser> => {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(userCredential.user, { displayName });
+      await AuthStorage.setUser(userCredential.user);
       return userCredential.user;
     },
 
     signOut: async (): Promise<void> => {
       await signOut(auth);
+      await AuthStorage.setUser(null);
     }
   },
 
-  /**
-   * User-related Firestore operations
-   */
+ 
   users: {
     createUser: async (user: User): Promise<void> => {
       await setDoc(doc(db, 'users', user.userId), user);
@@ -81,9 +123,7 @@ export const FirebaseService = {
     }
   },
 
-  /**
-   * Product-related Firestore operations
-   */
+ 
   products: {
     getProduct: async (productId: string): Promise<Product | null> => {
       const productDoc = await getDoc(doc(db, 'products', productId));
@@ -107,7 +147,7 @@ export const FirebaseService = {
     },
 
     searchProducts: async (searchTerm: string, maxResults = 20): Promise<Product[]> => {
-      // This is a simple implementation. For production, consider using Firebase Extensions like Algolia
+    
       const q = query(
         collection(db, 'products'),
         where('name', '>=', searchTerm),
@@ -119,9 +159,7 @@ export const FirebaseService = {
     }
   },
 
-  /**
-   * Favorites-related Firestore operations
-   */
+
   favorites: {
     getUserFavorites: async (userId: string): Promise<Favorite[]> => {
       const q = query(
@@ -156,9 +194,7 @@ export const FirebaseService = {
     }
   },
 
-  /**
-   * View history-related Firestore operations
-   */
+ 
   viewHistory: {
     addToViewHistory: async (viewHistory: ViewHistory): Promise<string> => {
       const docRef = await addDoc(collection(db, 'viewHistory'), viewHistory);
@@ -183,7 +219,7 @@ export const FirebaseService = {
       );
       const querySnapshot = await getDocs(q);
       
-      // Delete each document in a batch
+   
       const deletePromises = querySnapshot.docs.map(
         doc => deleteDoc(doc.ref)
       );
@@ -192,9 +228,7 @@ export const FirebaseService = {
     }
   },
 
-  /**
-   * Comments-related Firestore operations
-   */
+
   comments: {
     getProductComments: async (productId: string): Promise<Comment[]> => {
       const q = query(
@@ -211,7 +245,7 @@ export const FirebaseService = {
       const docRef = await addDoc(collection(db, 'comments'), {
         ...comment,
         createdAt: Timestamp.now().toDate().toISOString(),
-        isModerated: false // Default to unmoderated
+        isModerated: false 
       });
       return docRef.id;
     }

@@ -30,7 +30,7 @@ const initialState: ProductState = {
   currentPage: 1,
 };
 
-// Async thunks for API calls
+
 export const searchProducts = createAsyncThunk(
   'products/search',
   async ({ query, page, pageSize }: { query: string; page: number; pageSize: number }, { rejectWithValue }) => {
@@ -66,17 +66,17 @@ const productSlice = createSlice({
     setCurrentProduct: (state, action: PayloadAction<Product | null>) => {
       state.currentProduct = action.payload;
 
-      // Add to recent products if not null
+      
       if (action.payload) {
-        // Remove if already exists in recent products
+       
         state.recentProducts = state.recentProducts.filter(
           p => p.productId !== action.payload?.productId
         );
 
-        // Add to the beginning
+      
         state.recentProducts = [action.payload, ...state.recentProducts];
 
-        // Keep only the most recent 5 products
+    
         if (state.recentProducts.length > 5) {
           state.recentProducts = state.recentProducts.slice(0, 5);
         }
@@ -88,7 +88,7 @@ const productSlice = createSlice({
     setSelectedCategory: (state, action: PayloadAction<string | null>) => {
       state.selectedCategory = action.payload;
       
-      // Apply category filter if there's a selected category
+      
       if (action.payload) {
         state.filteredProducts = state.products.filter(
           product => product.categories.includes(action.payload!)
@@ -100,7 +100,7 @@ const productSlice = createSlice({
     setSortBy: (state, action: PayloadAction<'nutriscore' | 'popularity' | 'date'>) => {
       state.sortBy = action.payload;
       
-      // Apply sorting based on sort option
+     
       switch (action.payload) {
         case 'nutriscore':
           state.filteredProducts.sort((a, b) => {
@@ -124,12 +124,12 @@ const productSlice = createSlice({
       state.filteredProducts = state.products;
     },
     addToRecentProducts: (state, action: PayloadAction<Product>) => {
-      // Remove if already exists
+    
       state.recentProducts = state.recentProducts.filter(
         p => p.productId !== action.payload.productId
       );
       
-      // Add to the beginning
+   
       state.recentProducts = [action.payload, ...state.recentProducts];
       
       // Keep only the most recent 5 products
@@ -140,7 +140,7 @@ const productSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // searchProducts cases
+  
       .addCase(searchProducts.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -157,7 +157,7 @@ const productSlice = createSlice({
         state.error = action.payload as string;
       })
       
-      // getProductByBarcode cases
+     
       .addCase(getProductByBarcode.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -167,7 +167,7 @@ const productSlice = createSlice({
         state.currentProduct = action.payload;
         state.products = [...state.products.filter(p => p.productId !== action.payload.productId), action.payload];
         
-        // Add to recent products
+     
         const existingIndex = state.recentProducts.findIndex(p => p.productId === action.payload.productId);
         if (existingIndex >= 0) {
           state.recentProducts.splice(existingIndex, 1);
@@ -184,7 +184,7 @@ const productSlice = createSlice({
   },
 });
 
-// Export actions and reducer
+
 export const { 
   setCurrentProduct, 
   setSearchQuery, 

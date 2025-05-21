@@ -18,7 +18,7 @@ import { getAllProducts, getAllUsers, blockUser, unblockUser, toggleCommentPermi
 import { User, Product, NutriScoreGrade } from '../types/index';
 import { t } from '../utils/translations';
 
-// Extend the User type to include canComment property
+
 interface ExtendedUser extends User {
   canComment: boolean;
 }
@@ -119,12 +119,29 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
     nutriscoreGrade: 'C' as NutriScoreGrade,
     ingredients: '',
     categories: [],
+    nutriments: {
+      calories: 0,
+      proteins: 0,
+      fats: { 
+        total: 0, 
+        saturated: 0 
+      },
+      carbohydrates: { 
+        total: 0, 
+        sugar: 0 
+      },
+      salt: 0
+    },
+    isVegan: false,
+    isVegetarian: false,
+    hasGluten: false,
+    weight: 0
   });
 
-  // Current user from Redux
+
   const currentUser = useAppSelector(state => state.user.currentUser);
   
-  // Load data on component mount
+  
   useEffect(() => {
     if (currentUser?.role !== 'admin') {
       Alert.alert(t('accessDenied'), t('accessDenied'));
@@ -132,51 +149,173 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
       return;
     }
     
-    // Set navigation options with Firebase diagnostics button
+  
+    initializeFirebase();
+    
+  
     navigation.setOptions({
       title: t('adminScreen'),
       headerRight: () => (
-        <TouchableOpacity
-          style={styles.diagnosticButton}
-          onPress={() => navigation.navigate('FirebaseDiagnostic')}
-        >
-          <Text style={styles.diagnosticButtonText}>
-            <Ionicons name="medical" size={16} color="#fff" /> {t('diagnostics')}
-          </Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row' }}>
+          <TouchableOpacity
+            style={[styles.diagnosticButton, { marginRight: 10 }]}
+            onPress={() => checkFirebaseConnection()}
+          >
+            <Text style={styles.diagnosticButtonText}>
+              <Ionicons name={isDemo ? 'cloud-offline' : 'cloud-done'} size={16} color="#fff" /> 
+              {isDemo ? t('goOnline') : t('goOffline')}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.diagnosticButton}
+            onPress={() => navigation.navigate('FirebaseDiagnostic')}
+          >
+            <Text style={styles.diagnosticButtonText}>
+              <Ionicons name="medical" size={16} color="#fff" /> {t('diagnostics')}
+            </Text>
+          </TouchableOpacity>
+        </View>
       ),
     });
     
     loadData();
   }, [activeTab]);
 
+  const initializeFirebase = async () => {
+    setLoading(true);
+    try {
+  
+      const productsData = await getAllProducts();
+      if (productsData && productsData.length > 0) {
+    
+        setIsDemo(false);
+        setProducts(productsData);
+        console.log('Using real Firebase mode with', productsData.length, 'products');
+      } else {
+    
+        setIsDemo(false);
+        setProducts([]);
+        console.log('Using real Firebase mode with 0 products');
+      }
+    } catch (err) {
+   
+      console.error('Failed to connect to Firebase:', err);
+      setError('Failed to connect to Firebase. Using demo mode.');
+      setIsDemo(true);
+      setProducts(MOCK_PRODUCTS);
+      console.log('Using demo mode');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkFirebaseConnection = async () => {
+    if (isDemo) {
+    
+      setLoading(true);
+      try {
+        if (activeTab === 'products') {
+          const productsData = await getAllProducts();
+          if (productsData && productsData.length > 0) {
+            setIsDemo(false);
+            setProducts(productsData);
+            setError(null);
+            Alert.alert(t('success'), t('firebaseConnected'));
+          }
+        } else {
+          const usersData = await getAllUsers();
+          if (usersData && usersData.length > 0) {
+            setIsDemo(false);
+            setUsers(usersData as ExtendedUser[]);
+            setError(null);
+            Alert.alert(t('success'), t('firebaseConnected'));
+          }
+        }
+      } catch (err) {
+        console.error('Firebase connection check failed:', err);
+        Alert.alert(t('error'), t('firebaseConnectionFailed'));
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Switch to demo mode
+      Alert.alert(
+        t('confirmDemoMode'),
+        t('demoModeWarning'),
+        [
+          { text: t('cancel'), style: 'cancel' },
+          { 
+            text: t('confirm'), 
+            style: 'destructive',
+            onPress: () => {
+              setIsDemo(true);
+              setProducts(MOCK_PRODUCTS);
+              setUsers(MOCK_USERS);
+              Alert.alert(t('success'), t('demoModeActivated'));
+            }
+          }
+        ]
+      );
+    }
+  };
+
   const loadData = async () => {
     setLoading(true);
     setError(null);
+    
+  
+    if (isDemo) {
+      if (activeTab === 'products') {
+        setProducts(MOCK_PRODUCTS);
+      } else {
+        setUsers(MOCK_USERS);
+      }
+      setLoading(false);
+      return;
+    }
     
     try {
       if (activeTab === 'products') {
         try {
           const productsData = await getAllProducts();
           setProducts(productsData);
+          console.log('Successfully loaded', productsData.length, 'products from Firebase');
         } catch (err) {
           console.error('Error getting all products:', err);
           setError('Firebase permissions error. Please run diagnostics to fix Firebase permissions.');
-          setIsDemo(false); // Keep trying to use Firebase
+          
+       
+          if (isDemo) {
+            setProducts(MOCK_PRODUCTS);
+          }
         }
       } else {
         try {
           const usersData = await getAllUsers();
           setUsers(usersData as ExtendedUser[]);
+          console.log('Successfully loaded', usersData.length, 'users from Firebase');
         } catch (err) {
           console.error('Error getting users:', err);
           setError('Firebase permissions error. Please run diagnostics to fix Firebase permissions.');
-          setIsDemo(false); // Keep trying to use Firebase
+          
+       
+          if (isDemo) {
+            setUsers(MOCK_USERS);
+          }
         }
       }
     } catch (err) {
       setError('Failed to load data. Please run diagnostics to fix Firebase permissions.');
       console.error('Admin screen error:', err);
+      
+    
+      if (isDemo) {
+        if (activeTab === 'products') {
+          setProducts(MOCK_PRODUCTS);
+        } else {
+          setUsers(MOCK_USERS);
+        }
+      }
     } finally {
       setLoading(false);
     }
@@ -193,36 +332,90 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
     try {
       if (currentUser?.userId) {
         if (isDemo) {
-          // In demo mode, just add to local state
-          const mockProduct: Product = {
-            productId: `mock-product-${Date.now()}`,
-            name: newProduct.name || '',
-            imageUrl: newProduct.imageUrl || 'https://via.placeholder.com/300x300?text=No+Image',
-            nutriscoreGrade: newProduct.nutriscoreGrade || 'C',
-            ingredients: newProduct.ingredients || '',
-            categories: newProduct.categories || [],
-            allergens: [],
-            additives: [],
-            createdBy: 'admin',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            nutriments: {
-              calories: 0,
-              proteins: 0,
-              fats: { total: 0, saturated: 0 },
-              carbohydrates: { total: 0, sugar: 0 },
-              salt: 0
-            },
-            isVegan: false,
-            isVegetarian: false,
-            hasLactose: false,
-            hasGluten: false,
-          };
-          
-          setProducts([mockProduct, ...products]);
-          Alert.alert('Success', 'Product added in demo mode');
+        
+          Alert.alert(
+            t('demoModeActive'),
+            t('demoModeProductWarning'),
+            [
+              { text: t('cancel'), style: 'cancel' },
+              { 
+                text: t('tryFirebase'), 
+                onPress: async () => {
+                
+                  try {
+                    const newFirebaseProduct = await addProduct({
+                      name: newProduct.name || '',
+                      imageUrl: newProduct.imageUrl || 'https://via.placeholder.com/300x300?text=No+Image',
+                      nutriscoreGrade: newProduct.nutriscoreGrade || 'C',
+                      ingredients: newProduct.ingredients || '',
+                      categories: newProduct.categories || [],
+                      allergens: [],
+                      additives: [],
+                      createdBy: 'admin',
+                      nutriments: newProduct.nutriments || {
+                        calories: 0,
+                        proteins: 0,
+                        fats: { total: 0, saturated: 0 },
+                        carbohydrates: { total: 0, sugar: 0 },
+                        salt: 0
+                      },
+                      isVegan: newProduct.isVegan || false,
+                      isVegetarian: newProduct.isVegetarian || false,
+                      hasLactose: false,
+                      hasGluten: newProduct.hasGluten || false,
+                      weight: newProduct.weight || 0
+                    }, currentUser.userId);
+                    
+                  
+                    Alert.alert(
+                      t('success'),
+                      t('firebaseProductAdded'),
+                      [
+                        { 
+                          text: 'OK', 
+                          onPress: () => {
+                          
+                            setIsDemo(false);
+                          
+                            loadData();
+                       
+                            setShowAddProductModal(false);
+                         
+                            resetProductForm();
+                       
+                            navigation.navigate('Home');
+                          } 
+                        }
+                      ]
+                    );
+                  } catch (err) {
+                    console.error('Error adding product to Firebase:', err);
+                    
+                    const mockProduct: Product = createMockProduct();
+                    setProducts([mockProduct, ...products]);
+                    Alert.alert(t('error'), t('firebaseConnectionFailed') + ' ' + t('productAddedLocally'));
+                  
+                    setShowAddProductModal(false);
+                    resetProductForm();
+                  }
+                }
+              },
+              {
+                text: t('continueDemo'),
+                onPress: () => {
+                
+                  const mockProduct: Product = createMockProduct();
+                  setProducts([mockProduct, ...products]);
+                  Alert.alert(t('success'), t('productAddedLocally'));
+                
+                  setShowAddProductModal(false);
+                  resetProductForm();
+                }
+              }
+            ]
+          );
         } else {
-          // Real mode - use Firebase
+        
           await addProduct({
             name: newProduct.name || '',
             imageUrl: newProduct.imageUrl || 'https://via.placeholder.com/300x300?text=No+Image',
@@ -232,38 +425,105 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
             allergens: [],
             additives: [],
             createdBy: 'admin',
-            nutriments: {
+            nutriments: newProduct.nutriments || {
               calories: 0,
               proteins: 0,
               fats: { total: 0, saturated: 0 },
               carbohydrates: { total: 0, sugar: 0 },
               salt: 0
             },
-            isVegan: false,
-            isVegetarian: false,
+            isVegan: newProduct.isVegan || false,
+            isVegetarian: newProduct.isVegetarian || false,
             hasLactose: false,
-            hasGluten: false,
+            hasGluten: newProduct.hasGluten || false,
+            weight: newProduct.weight || 0
           }, currentUser.userId);
           
-          // Reload products
+          Alert.alert(
+            t('success'), 
+            t('productAdded'), 
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                
+                  setShowAddProductModal(false);
+                  resetProductForm();
+                  
+                
+                  navigation.navigate('Home');
+                }
+              }
+            ]
+          );
+          
+        
           loadData();
         }
-        
-        setShowAddProductModal(false);
-        setNewProduct({
-          name: '',
-          imageUrl: '',
-          nutriscoreGrade: 'C' as NutriScoreGrade,
-          ingredients: '',
-          categories: [],
-        });
       }
     } catch (err) {
-      Alert.alert('Error', 'Failed to add product');
+      Alert.alert(t('error'), t('failedToAddProduct'));
       console.error('Add product error:', err);
     } finally {
       setLoading(false);
     }
+  };
+  
+  
+  const createMockProduct = (): Product => {
+    return {
+      productId: `mock-product-${Date.now()}`,
+      name: newProduct.name || '',
+      imageUrl: newProduct.imageUrl || 'https://via.placeholder.com/300x300?text=No+Image',
+      nutriscoreGrade: newProduct.nutriscoreGrade || 'C',
+      ingredients: newProduct.ingredients || '',
+      categories: newProduct.categories || [],
+      allergens: [],
+      additives: [],
+      createdBy: 'admin',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      nutriments: newProduct.nutriments || {
+        calories: 0,
+        proteins: 0,
+        fats: { total: 0, saturated: 0 },
+        carbohydrates: { total: 0, sugar: 0 },
+        salt: 0
+      },
+      isVegan: newProduct.isVegan || false,
+      isVegetarian: newProduct.isVegetarian || false,
+      hasLactose: false,
+      hasGluten: newProduct.hasGluten || false,
+      weight: newProduct.weight || 0
+    };
+  };
+  
+
+  const resetProductForm = () => {
+    setNewProduct({
+      name: '',
+      imageUrl: '',
+      nutriscoreGrade: 'C' as NutriScoreGrade,
+      ingredients: '',
+      categories: [],
+      nutriments: {
+        calories: 0,
+        proteins: 0,
+        fats: { 
+          total: 0, 
+          saturated: 0 
+        },
+        carbohydrates: { 
+          total: 0, 
+          sugar: 0 
+        },
+        salt: 0
+      },
+      isVegan: false,
+      isVegetarian: false,
+      hasGluten: false,
+      weight: 0
+    });
   };
 
   const handleDeleteProduct = async (productId: string) => {
@@ -279,11 +539,11 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
             setLoading(true);
             try {
               if (isDemo) {
-                // In demo mode, just remove from local state
+           
                 setProducts(products.filter(p => p.productId !== productId));
                 Alert.alert('Success', 'Product deleted in demo mode');
               } else if (currentUser?.userId) {
-                // Real mode - use Firebase
+          
                 await deleteProduct(productId, currentUser.userId);
                 setProducts(products.filter(p => p.productId !== productId));
               }
@@ -305,7 +565,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
     setLoading(true);
     try {
       if (isDemo) {
-        // In demo mode, just update local state
+      
         setUsers(users.map(u => 
           u.userId === user.userId 
             ? { ...u, isBlocked: !u.isBlocked } 
@@ -313,14 +573,14 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
         ));
         Alert.alert('Success', `User ${user.isBlocked ? 'unblocked' : 'blocked'} in demo mode`);
       } else {
-        // Real mode - use Firebase
+     
         if (user.isBlocked) {
           await unblockUser(user.userId, currentUser.userId);
         } else {
           await blockUser(user.userId, currentUser.userId);
         }
         
-        // Update local state
+     
         setUsers(users.map(u => 
           u.userId === user.userId 
             ? { ...u, isBlocked: !u.isBlocked } 
@@ -341,7 +601,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
     setLoading(true);
     try {
       if (isDemo) {
-        // In demo mode, just update local state
+       
         setUsers(users.map(u => 
           u.userId === user.userId 
             ? { ...u, canComment: !u.canComment } 
@@ -349,10 +609,10 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
         ));
         Alert.alert('Success', `Comment permission updated in demo mode`);
       } else {
-        // Real mode - use Firebase
+    
         await toggleCommentPermission(user.userId, !user.canComment, currentUser.userId);
         
-        // Update local state
+     
         setUsers(users.map(u => 
           u.userId === user.userId 
             ? { ...u, canComment: !u.canComment } 
@@ -448,6 +708,161 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
               placeholder="https://example.com/image.jpg"
             />
             
+            <Text style={styles.inputLabel}>{t('weight')} (g)</Text>
+            <TextInput
+              style={styles.input}
+              value={newProduct.weight?.toString()}
+              onChangeText={(text) => {
+                const weight = parseFloat(text) || 0;
+                setNewProduct({...newProduct, weight});
+              }}
+              placeholder="0"
+              keyboardType="numeric"
+            />
+            
+            <Text style={styles.sectionTitle}>{t('nutritionalInfo')}</Text>
+            
+            <Text style={styles.inputLabel}>{t('calories')}</Text>
+            <TextInput
+              style={styles.input}
+              value={newProduct.nutriments?.calories?.toString()}
+              onChangeText={(text) => {
+                const calories = parseFloat(text) || 0;
+                setNewProduct({
+                  ...newProduct, 
+                  nutriments: {
+                    ...newProduct.nutriments!,
+                    calories
+                  }
+                });
+              }}
+              placeholder="0"
+              keyboardType="numeric"
+            />
+            
+            <Text style={styles.inputLabel}>{t('proteins')} (g)</Text>
+            <TextInput
+              style={styles.input}
+              value={newProduct.nutriments?.proteins?.toString()}
+              onChangeText={(text) => {
+                const proteins = parseFloat(text) || 0;
+                setNewProduct({
+                  ...newProduct, 
+                  nutriments: {
+                    ...newProduct.nutriments!,
+                    proteins
+                  }
+                });
+              }}
+              placeholder="0"
+              keyboardType="numeric"
+            />
+            
+            <Text style={styles.inputLabel}>{t('carbohydrates')} (g)</Text>
+            <TextInput
+              style={styles.input}
+              value={newProduct.nutriments?.carbohydrates?.total?.toString()}
+              onChangeText={(text) => {
+                const carbs = parseFloat(text) || 0;
+                setNewProduct({
+                  ...newProduct, 
+                  nutriments: {
+                    ...newProduct.nutriments!,
+                    carbohydrates: {
+                      ...newProduct.nutriments?.carbohydrates!,
+                      total: carbs
+                    }
+                  }
+                });
+              }}
+              placeholder="0"
+              keyboardType="numeric"
+            />
+            
+            <Text style={[styles.inputLabel, styles.indentedLabel]}>{t('sugar')} (g)</Text>
+            <TextInput
+              style={[styles.input, styles.indentedInput]}
+              value={newProduct.nutriments?.carbohydrates?.sugar?.toString()}
+              onChangeText={(text) => {
+                const sugar = parseFloat(text) || 0;
+                setNewProduct({
+                  ...newProduct, 
+                  nutriments: {
+                    ...newProduct.nutriments!,
+                    carbohydrates: {
+                      ...newProduct.nutriments?.carbohydrates!,
+                      sugar
+                    }
+                  }
+                });
+              }}
+              placeholder="0"
+              keyboardType="numeric"
+            />
+            
+            <Text style={styles.inputLabel}>{t('fats')} (g)</Text>
+            <TextInput
+              style={styles.input}
+              value={newProduct.nutriments?.fats?.total?.toString()}
+              onChangeText={(text) => {
+                const fats = parseFloat(text) || 0;
+                setNewProduct({
+                  ...newProduct, 
+                  nutriments: {
+                    ...newProduct.nutriments!,
+                    fats: {
+                      ...newProduct.nutriments?.fats!,
+                      total: fats
+                    }
+                  }
+                });
+              }}
+              placeholder="0"
+              keyboardType="numeric"
+            />
+            
+            <Text style={[styles.inputLabel, styles.indentedLabel]}>{t('saturatedFats')} (g)</Text>
+            <TextInput
+              style={[styles.input, styles.indentedInput]}
+              value={newProduct.nutriments?.fats?.saturated?.toString()}
+              onChangeText={(text) => {
+                const saturated = parseFloat(text) || 0;
+                setNewProduct({
+                  ...newProduct, 
+                  nutriments: {
+                    ...newProduct.nutriments!,
+                    fats: {
+                      ...newProduct.nutriments?.fats!,
+                      saturated
+                    }
+                  }
+                });
+              }}
+              placeholder="0"
+              keyboardType="numeric"
+            />
+            
+            <Text style={styles.inputLabel}>{t('salt')} (g)</Text>
+            <TextInput
+              style={styles.input}
+              value={newProduct.nutriments?.salt?.toString()}
+              onChangeText={(text) => {
+                const salt = parseFloat(text) || 0;
+                setNewProduct({
+                  ...newProduct, 
+                  nutriments: {
+                    ...newProduct.nutriments!,
+                    salt
+                  }
+                });
+              }}
+              placeholder="0"
+              keyboardType="numeric"
+            />
+            
+            <Text style={styles.sectionTitle}>{t('perWholeProduct')}</Text>
+            <Text style={styles.inputHelper}>{t('calculatedAutomatically')}</Text>
+            
             <Text style={styles.inputLabel}>{t('nutriscoreGrade')}</Text>
             <View style={styles.nutriScoreSelector}>
               {['A', 'B', 'C', 'D', 'E'].map((grade) => (
@@ -484,6 +899,53 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
               })}
               placeholder={`${t('dairyCategory')}, ${t('beverageCategory')}`}
             />
+            
+            <Text style={styles.sectionTitle}>{t('dietaryInfo')}</Text>
+            
+            <View style={styles.checkboxRow}>
+              <TouchableOpacity 
+                style={styles.checkbox}
+                onPress={() => setNewProduct({...newProduct, isVegan: !newProduct.isVegan})}
+              >
+                <View style={[
+                  styles.checkboxInner, 
+                  newProduct.isVegan && styles.checkboxChecked
+                ]}>
+                  {newProduct.isVegan && <Ionicons name="checkmark" size={16} color="#fff" />}
+                </View>
+              </TouchableOpacity>
+              <Text style={styles.checkboxLabel}>{t('vegan')}</Text>
+            </View>
+            
+            <View style={styles.checkboxRow}>
+              <TouchableOpacity 
+                style={styles.checkbox}
+                onPress={() => setNewProduct({...newProduct, isVegetarian: !newProduct.isVegetarian})}
+              >
+                <View style={[
+                  styles.checkboxInner, 
+                  newProduct.isVegetarian && styles.checkboxChecked
+                ]}>
+                  {newProduct.isVegetarian && <Ionicons name="checkmark" size={16} color="#fff" />}
+                </View>
+              </TouchableOpacity>
+              <Text style={styles.checkboxLabel}>{t('vegetarian')}</Text>
+            </View>
+            
+            <View style={styles.checkboxRow}>
+              <TouchableOpacity 
+                style={styles.checkbox}
+                onPress={() => setNewProduct({...newProduct, hasGluten: !newProduct.hasGluten})}
+              >
+                <View style={[
+                  styles.checkboxInner, 
+                  !newProduct.hasGluten && styles.checkboxChecked
+                ]}>
+                  {!newProduct.hasGluten && <Ionicons name="checkmark" size={16} color="#fff" />}
+                </View>
+              </TouchableOpacity>
+              <Text style={styles.checkboxLabel}>{t('glutenFree')}</Text>
+            </View>
           </ScrollView>
           
           <View style={styles.modalActions}>
@@ -509,6 +971,11 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('adminScreen')}</Text>
+        {isDemo && (
+          <View style={styles.demoBadge}>
+            <Text style={styles.demoBadgeText}>{t('demoMode')}</Text>
+          </View>
+        )}
       </View>
       
       {error && (
@@ -906,6 +1373,72 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 20,
+    marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    paddingBottom: 5,
+  },
+  indentedLabel: {
+    marginLeft: 15,
+    color: '#555',
+  },
+  indentedInput: {
+    marginLeft: 15,
+    width: '92%',
+  },
+  inputHelper: {
+    fontSize: 12,
+    color: '#777',
+    marginBottom: 10,
+    fontStyle: 'italic',
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
+  checkboxInner: {
+    width: 16,
+    height: 16,
+    borderRadius: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#5d8402',
+  },
+  checkboxLabel: {
+    fontSize: 16,
+    color: '#333',
+  },
+  demoBadge: {
+    position: 'absolute',
+    right: 20,
+    backgroundColor: '#FF9800',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  demoBadgeText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 12,
   },
 });
 
