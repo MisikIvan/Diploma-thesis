@@ -12,9 +12,12 @@ import {
 } from 'react-native';
 import { User } from '../types/index';
 import { StorageService } from '../utils/storage';
+import { DataService } from '../utils/dataService';
 import { Language, t, getCurrentLanguage } from '../utils/translations';
 import { saveLanguage } from '../utils/languageStorage';
 import LanguageSelector from '../components/LanguageSelector';
+import { useAppDispatch } from '../redux/hooks';
+import { logout } from '../redux/slices/userSlice';
 
 interface ProfileScreenProps {
   navigation: any;
@@ -28,7 +31,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState<Language>(getCurrentLanguage());
 
- 
+  const dispatch = useAppDispatch();
+
   useEffect(() => {
     loadUserData();
   }, []);
@@ -61,6 +65,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Failed to load user data:', error);
+      Alert.alert(t('error'), t('error'));
     } finally {
       setIsLoading(false);
     }
@@ -75,13 +80,16 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         {
           text: t('logout'),
           onPress: async () => {
-          
-            await StorageService.user.removeUser();
-        
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Auth' }],
-            });
+            try {
+              setIsLoading(true);
+              await dispatch(logout()).unwrap();
+              console.log('Logout successful');
+            } catch (error) {
+              console.error('Logout failed:', error);
+              Alert.alert(t('error'), t('error'));
+            } finally {
+              setIsLoading(false);
+            }
           },
         },
       ]
@@ -206,14 +214,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           <Text style={styles.menuItemText}>{t('viewHistory')}</Text>
           <Text style={styles.menuItemIcon}>📖</Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.menuItem}
-          onPress={() => navigation.navigate('Favorites')}
-        >
-          <Text style={styles.menuItemText}>{t('favorites')}</Text>
-          <Text style={styles.menuItemIcon}>❤️</Text>
-        </TouchableOpacity>
       </View>
 
       <View style={styles.sectionContainer}>
@@ -250,13 +250,8 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemText}>{t('privacyPolicy')}</Text>
-          <Text style={styles.menuItemIcon}>🔒</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuItemText}>{t('contactSupport')}</Text>
-          <Text style={styles.menuItemIcon}>📞</Text>
+          <Text style={styles.menuItemText}>{t('aboutApp')}</Text>
+          <Text style={styles.menuItemIcon}>👨‍💻</Text>
         </TouchableOpacity>
       </View>
 
