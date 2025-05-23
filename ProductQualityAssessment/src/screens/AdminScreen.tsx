@@ -143,16 +143,29 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
   
   
   useEffect(() => {
-    if (currentUser?.role !== 'admin') {
-      Alert.alert(t('accessDenied'), t('accessDenied'));
-      navigation.goBack();
-      return;
+    if (!currentUser || currentUser.role !== 'admin') {
+      console.log('Unauthorized access attempt to AdminScreen');
+      Alert.alert(
+        t('accessDenied'), 
+        t('accessDenied'), 
+        [{ 
+          text: 'OK', 
+          onPress: () => navigation.navigate('Home')
+        }]
+      );
     }
-    
+  }, []);
   
+
+  if (!currentUser || currentUser.role !== 'admin') {
+    return <View style={styles.container}><ActivityIndicator size="large" /></View>;
+  }
+  
+  useEffect(() => {
+ 
     initializeFirebase();
     
-  
+   
     navigation.setOptions({
       title: t('adminScreen'),
       headerRight: () => (

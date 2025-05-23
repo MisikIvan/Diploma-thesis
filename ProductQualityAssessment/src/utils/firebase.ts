@@ -167,7 +167,13 @@ export const FirebaseService = {
         where('userId', '==', userId)
       );
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => doc.data() as Favorite);
+      return querySnapshot.docs.map(doc => {
+        return {
+          ...doc.data(),
+      
+          favoriteId: doc.id
+        } as Favorite;
+      });
     },
 
     addFavorite: async (favorite: Favorite): Promise<string> => {
@@ -175,11 +181,81 @@ export const FirebaseService = {
         ...favorite,
         addedAt: Timestamp.now().toDate().toISOString()
       });
+      
+
+      await updateDoc(docRef, { favoriteId: docRef.id });
+      
       return docRef.id;
     },
 
     removeFavorite: async (favoriteId: string): Promise<void> => {
-      await deleteDoc(doc(db, 'favorites', favoriteId));
+      console.log(`Firebase: Attempting to remove favorite with ID: ${favoriteId}`);
+      
+      try {
+
+        const favRef = doc(db, 'favorites', favoriteId);
+        const docSnap = await getDoc(favRef);
+        
+        if (docSnap.exists()) {
+          console.log(`Firebase: Found document to delete with ID: ${favoriteId}`);
+          await deleteDoc(favRef);
+          console.log(`Firebase: Successfully deleted document with ID: ${favoriteId}`);
+        } else {
+          console.error(`Firebase: Document with ID ${favoriteId} does not exist!`);
+          
+    
+          console.log(`Firebase: Trying to find document by direct query...`);
+          const q = query(collection(db, 'favorites'), where('favoriteId', '==', favoriteId));
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            const docToDelete = querySnapshot.docs[0];
+            console.log(`Firebase: Found favorite via query, actual ID: ${docToDelete.id}`);
+            await deleteDoc(docToDelete.ref);
+            console.log(`Firebase: Successfully deleted document via query`);
+          } else {
+            console.error(`Firebase: Could not find favorite with favoriteId: ${favoriteId}`);
+          }
+        }
+      } catch (error) {
+        console.error(`Firebase: Error removing favorite: ${error}`);
+        throw error;
+      }
+    },
+    
+ 
+    removeFavoriteByUserAndProduct: async (userId: string, productId: string): Promise<void> => {
+      console.log(`Firebase: Directly removing favorites for user ${userId} and product ${productId}`);
+      
+      try {
+     
+        const q = query(
+          collection(db, 'favorites'),
+          where('userId', '==', userId),
+          where('productId', '==', productId)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+          console.log(`Firebase: No favorites found to delete for this combination`);
+          return;
+        }
+        
+        console.log(`Firebase: Found ${querySnapshot.docs.length} favorites to delete`);
+        
+ 
+        const deletePromises = querySnapshot.docs.map(doc => {
+          console.log(`Firebase: Deleting document with ID: ${doc.id}`);
+          return deleteDoc(doc.ref);
+        });
+        
+        await Promise.all(deletePromises);
+        console.log(`Firebase: Successfully deleted all matching favorites`);
+      } catch (error) {
+        console.error(`Firebase: Error removing favorites by user/product: ${error}`);
+        throw error;
+      }
     },
 
     isFavorite: async (userId: string, productId: string): Promise<boolean> => {

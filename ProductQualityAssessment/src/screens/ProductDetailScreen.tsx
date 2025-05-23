@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,14 @@ import {
   TouchableOpacity,
   FlatList,
   SafeAreaView,
+  Alert,
+  ToastAndroid,
 } from 'react-native';
 import { RouteProp, useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
-import { getProductDetails, getSimilarProducts } from '../redux/slices/productsSlice';
+import { getProductDetails, getSimilarProducts, updateProductFavoriteStatus } from '../redux/slices/productsSlice';
 import {
   formatDate,
   getProductImage,
@@ -22,12 +24,13 @@ import {
   calculateWholeProduct,
   truncateText,
 } from '../utils/helpers';
-import { Product, getNutriScoreColor } from '../types/index';
+import { Product, getNutriScoreColor, Favorite } from '../types/index';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ProductCard from '../components/ProductCard';
 import LoadingScreen from '../components/LoadingScreen';
 import ErrorScreen from '../components/ErrorScreen';
 import { t } from '../utils/translations';
+import { DataService } from '../utils/dataService';
 
 type ProductDetailScreenProps = {
   route: RouteProp<RootStackParamList, 'ProductDetail'>;
@@ -38,13 +41,132 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
   const dispatch = useAppDispatch();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const [activeTab, setActiveTab] = useState<string>('nutrition');
+  const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const [localLoading, setLocalLoading] = useState<boolean>(false);
+  const [productFetchRetried, setProductFetchRetried] = useState<boolean>(false);
   
   const { currentProduct, similarProducts, loading, error } = useAppSelector((state) => state.products);
+  const { currentUser } = useAppSelector(state => state.user);
+
+
+  const loadProductData = useCallback(() => {
+    setProductFetchRetried(true);
+    dispatch(getProductDetails(productId))
+      .unwrap()
+      .then(() => {
+        dispatch(getSimilarProducts(productId));
+      })
+      .catch(err => {
+        console.error('Error fetching product:', err);
+   
+        ToastAndroid.show('Could not load product details. Trying offline mode...', ToastAndroid.SHORT);
+      });
+  }, [dispatch, productId]);
 
   useEffect(() => {
-    dispatch(getProductDetails(productId));
-    dispatch(getSimilarProducts(productId));
-  }, [dispatch, productId]);
+    loadProductData();
+    
+
+    checkFavoriteStatus();
+  }, [loadProductData, currentUser]);
+
+  const checkFavoriteStatus = async () => {
+    if (!currentUser) {
+      setIsFavorite(false);
+      return;
+    }
+    
+    try {
+      console.log(`Checking favorite status for product: ${productId} and user: ${currentUser.userId}`);
+      
+    
+      const userFavorites = await DataService.favorites.getUserFavorites(currentUser.userId);
+      
+   
+      const isProductFavorite = userFavorites.some(fav => fav.productId === productId);
+      
+      console.log(`Checked favorite status for ${productId}: ${isProductFavorite} (found in ${userFavorites.length} favorites)`);
+      setIsFavorite(isProductFavorite);
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    if (!currentUser) {
+      navigation.navigate('Auth');
+      return;
+    }
+
+    try {
+      setLocalLoading(true);
+      console.log(`Toggling favorite for product: ${productId} from ${isFavorite} to ${!isFavorite}`);
+      
+      const newFavoriteStatus = !isFavorite;
+      
+      if (newFavoriteStatus) {
+      
+        const favorite: Favorite = {
+          favoriteId: '', 
+          userId: currentUser.userId,
+          productId: productId,
+          addedAt: new Date().toISOString()
+        };
+        await DataService.favorites.addFavorite(favorite);
+        console.log(`Added product ${productId} to favorites`);
+      } else {
+    
+        await DataService.favorites.removeFavorite(currentUser.userId, productId);
+        console.log(`Removed product ${productId} from favorites`);
+        
+      
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+   
+        const stillFavorite = await DataService.favorites.isFavorite(currentUser.userId, productId);
+        if (stillFavorite) {
+          console.error(`Failed to remove favorite - still exists in system!`);
+          
+      
+          console.log('Attempting removal again with longer timeout...');
+          await DataService.favorites.removeFavorite(currentUser.userId, productId);
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+    
+          const finalCheck = await DataService.favorites.isFavorite(currentUser.userId, productId);
+          if (finalCheck) {
+            Alert.alert('Error', 'Failed to remove from favorites. Please try again later.');
+            setIsFavorite(true); 
+            setLocalLoading(false);
+            return;
+          }
+        }
+      }
+      
+  
+      await checkFavoriteStatus();
+      
+  
+      dispatch(updateProductFavoriteStatus({
+        productId,
+        isFavorite: newFavoriteStatus
+      }));
+      
+   
+      ToastAndroid.show(
+        newFavoriteStatus ? 'Added to favorites' : 'Removed from favorites',
+        ToastAndroid.SHORT
+      );
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      Alert.alert('Error', 'Failed to update favorites');
+      
+   
+      await checkFavoriteStatus();
+    } finally {
+      setLocalLoading(false);
+    }
+  };
 
   const renderTabContent = () => {
     if (!currentProduct) return null;
@@ -250,16 +372,33 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
     );
   };
 
+
+  if (error && currentProduct && productFetchRetried) {
+  
+    console.log('Showing product despite error, using cached data');
+
+  } else if (error && !currentProduct) {
+    console.error('Product detail error:', error);
+    return (
+      <ErrorScreen 
+        message={`${t('error')}. ${t('tryAgain')}`} 
+        onRetry={loadProductData} 
+      />
+    );
+  }
+
   if (loading && !currentProduct) {
     return <LoadingScreen message={t('loading')} />;
   }
 
-  if (error) {
-    return <ErrorScreen message={t('error')} onRetry={() => dispatch(getProductDetails(productId))} />;
-  }
-
   if (!currentProduct) {
-    return <ErrorScreen message={t('noResults')} onRetry={() => dispatch(getProductDetails(productId))} />;
+    console.log('No product found for ID:', productId);
+    return (
+      <ErrorScreen 
+        message={t('noResults')} 
+        onRetry={loadProductData} 
+      />
+    );
   }
 
   return (
@@ -272,7 +411,24 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
             resizeMode="contain"
           />
           <View style={styles.productTitleContainer}>
-            <Text style={styles.productName}>{currentProduct.name}</Text>
+            <View style={styles.productNameContainer}>
+              <Text style={styles.productName}>{currentProduct.name}</Text>
+              <TouchableOpacity
+                style={styles.favoriteButton}
+                onPress={toggleFavorite}
+                disabled={localLoading}
+              >
+                {localLoading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Icon 
+                    name={isFavorite ? "heart" : "heart-outline"} 
+                    size={24} 
+                    color={isFavorite ? "#FF0000" : "#FFFFFF"} 
+                  />
+                )}
+              </TouchableOpacity>
+            </View>
             
             <View style={styles.nutriScoreContainer}>
               <Text style={styles.nutriScoreText}>
@@ -365,10 +521,25 @@ const styles = StyleSheet.create({
   productTitleContainer: {
     marginBottom: 16,
   },
+  productNameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   productName: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 8,
+    flex: 1,
+  },
+  favoriteButton: {
+    padding: 8,
+    backgroundColor: '#000000',
+    borderRadius: 5,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 10,
   },
   productDescription: {
     fontSize: 16,
