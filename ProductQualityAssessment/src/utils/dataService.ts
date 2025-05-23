@@ -85,80 +85,183 @@ export const DataService = {
   favorites: {
    
     getUserFavorites: async (userId: string): Promise<Favorite[]> => {
-     
-      const localFavorites = await StorageService.favorites.getFavorites();
-      const userFavorites = localFavorites.filter(fav => fav.userId === userId);
+      console.log(`DataService: Getting favorites for user ${userId}`);
       
-    
       try {
+      
         const remoteFavorites = await FirebaseService.favorites.getUserFavorites(userId);
+        console.log(`DataService: Got ${remoteFavorites.length} favorites from Firebase`);
         
       
-        if (remoteFavorites && remoteFavorites.length > 0) {
-         
-          const allFavorites = [...localFavorites];
-          
-       
-          for (const remoteFav of remoteFavorites) {
-            const exists = allFavorites.some(
-              fav => fav.productId === remoteFav.productId && fav.userId === remoteFav.userId
-            );
-            
-            if (!exists) {
-              allFavorites.push(remoteFav);
-            }
-          }
-          
-         
-          await StorageService.favorites.saveFavorites(allFavorites);
-          
-       
-          return allFavorites.filter(fav => fav.userId === userId);
-        }
-      } catch (error) {
-        console.error('Error getting remote favorites:', error);
+        if (remoteFavorites.length > 0) {
+          try {
      
+            const localFavorites = await StorageService.favorites.getFavorites();
+            
+     
+            const otherUserFavorites = localFavorites.filter(f => f.userId !== userId);
+            
+        
+            const updatedFavorites = [...otherUserFavorites, ...remoteFavorites];
+            
+    
+            await StorageService.favorites.saveFavorites(updatedFavorites);
+            console.log(`DataService: Updated local storage with ${remoteFavorites.length} favorites from Firebase`);
+          } catch (storageError) {
+            console.error(`DataService: Error updating local storage:`, storageError);
+          }
+        }
+        
+        return remoteFavorites;
+      } catch (firebaseError) {
+        console.error(`DataService: Failed to get favorites from Firebase:`, firebaseError);
+        
+ 
+        try {
+          const localFavorites = await StorageService.favorites.getFavorites();
+          const userFavorites = localFavorites.filter(fav => fav.userId === userId);
+          console.log(`DataService: Using ${userFavorites.length} favorites from local storage`);
+          return userFavorites;
+        } catch (storageError) {
+          console.error(`DataService: Error getting favorites from local storage:`, storageError);
+          return [];
+        }
       }
-      
-      return userFavorites;
     },
     
+
+    isFavorite: async (userId: string, productId: string): Promise<boolean> => {
+      console.log(`DataService: Checking if product ${productId} is favorite for user ${userId}`);
+      
+      try {
+     
+        const isFav = await FirebaseService.favorites.isFavorite(userId, productId);
+        console.log(`DataService: Firebase says product is favorite: ${isFav}`);
+        return isFav;
+      } catch (firebaseError) {
+        console.error(`DataService: Error checking favorite status in Firebase:`, firebaseError);
+        
+     
+        try {
+          const localFavorites = await StorageService.favorites.getFavorites();
+          const isLocalFavorite = localFavorites.some(
+            fav => fav.userId === userId && fav.productId === productId
+          );
+          console.log(`DataService: Local storage says product is favorite: ${isLocalFavorite}`);
+          return isLocalFavorite;
+        } catch (storageError) {
+          console.error(`DataService: Error checking favorite in local storage:`, storageError);
+          return false;
+        }
+      }
+    },
+    
+   
+    clearCache: async (): Promise<void> => {
+      try {
+        console.log(`DataService: Clearing favorites cache`);
+        return Promise.resolve();
+      } catch (error) {
+        console.error('Error clearing favorites cache:', error);
+        return Promise.resolve();
+      }
+    },
   
     addFavorite: async (favorite: Favorite): Promise<Favorite[]> => {
-   
-      const updatedLocalFavorites = await StorageService.favorites.addFavorite(favorite);
+      console.log(`DataService: Adding product ${favorite.productId} to favorites for user ${favorite.userId}`);
       
+      try {
+      
+        const favoriteId = await FirebaseService.favorites.addFavorite(favorite);
+        console.log(`DataService: Added to Firebase with ID: ${favoriteId}`);
+        
      
-      FirebaseService.favorites.addFavorite(favorite)
-        .catch(error => console.error('Error adding favorite to Firebase:', error));
-      
-      return updatedLocalFavorites;
+        const favoriteWithId = {
+          ...favorite,
+          favoriteId
+        };
+        
+  
+        const localFavorites = await StorageService.favorites.getFavorites();
+        
+    
+        const existingIndex = localFavorites.findIndex(
+          f => f.userId === favorite.userId && f.productId === favorite.productId
+        );
+        
+        let updatedFavorites;
+        if (existingIndex >= 0) {
+  
+          updatedFavorites = [...localFavorites];
+          updatedFavorites[existingIndex] = favoriteWithId;
+        } else {
+     
+          updatedFavorites = [...localFavorites, favoriteWithId];
+        }
+        
+        await StorageService.favorites.saveFavorites(updatedFavorites);
+        console.log(`DataService: Updated local storage with new favorite`);
+        
+     
+        return updatedFavorites.filter(f => f.userId === favorite.userId);
+      } catch (error) {
+        console.error(`DataService: Error adding favorite:`, error);
+        
+     
+        try {
+          const updatedLocalFavorites = await StorageService.favorites.addFavorite(favorite);
+          console.log(`DataService: Added to local storage only (Firebase failed)`);
+          return updatedLocalFavorites;
+        } catch (storageError) {
+          console.error(`DataService: Local storage fallback failed:`, storageError);
+          return [];
+        }
+      }
     },
     
-  
     removeFavorite: async (userId: string, productId: string): Promise<Favorite[]> => {
-    
-      const updatedLocalFavorites = await StorageService.favorites.removeFavorite(userId, productId);
+      console.log(`DataService: Removing product ${productId} from favorites for user ${userId}`);
+      
+      try {
+
+        await FirebaseService.favorites.removeFavoriteByUserAndProduct(userId, productId);
+        console.log(`DataService: Successfully removed favorite from Firebase`);
+      } catch (firebaseError) {
+        console.error(`DataService: Error removing from Firebase:`, firebaseError);
+      }
       
     
       try {
-        const q = await FirebaseService.favorites.isFavorite(userId, productId);
-        if (q) {
-
-          FirebaseService.favorites.getUserFavorites(userId)
-            .then(favorites => {
-              const favorite = favorites.find(f => f.productId === productId && f.userId === userId);
-              if (favorite && favorite.favoriteId) {
-                return FirebaseService.favorites.removeFavorite(favorite.favoriteId);
-              }
-            })
-            .catch(error => console.error('Error removing favorite from Firebase:', error));
+        const localFavorites = await StorageService.favorites.getFavorites();
+        console.log(`DataService: Local storage has ${localFavorites.length} favorites before removal`);
+        
+        const updatedFavorites = localFavorites.filter(
+          f => !(f.userId === userId && f.productId === productId)
+        );
+        
+        await StorageService.favorites.saveFavorites(updatedFavorites);
+        console.log(`DataService: Local storage has ${updatedFavorites.length} favorites after removal`);
+        
+ 
+        try {
+       
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          const freshFavorites = await FirebaseService.favorites.getUserFavorites(userId);
+          console.log(`DataService: Verified ${freshFavorites.length} favorites remain in Firebase`);
+          
+       
+          return freshFavorites;
+        } catch (verifyError) {
+          console.error(`DataService: Error verifying Firebase favorites:`, verifyError);
+          
+     
+          return updatedFavorites.filter(f => f.userId === userId);
         }
-      } catch (error) {
-        console.error('Error checking favorite in Firebase:', error);
+      } catch (localError) {
+        console.error(`DataService: Error updating local storage:`, localError);
+        return [];
       }
-      
-      return updatedLocalFavorites;
     }
   },
   

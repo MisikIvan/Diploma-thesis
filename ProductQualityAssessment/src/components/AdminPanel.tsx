@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, TextInput, Alert, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, TextInput, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { useAppSelector } from '../redux/hooks';
+import { useNavigation } from '@react-navigation/native';
 import { t } from '../utils/translations';
 import { User, Product, AdminAction } from '../types/index';
 import { 
@@ -21,6 +22,7 @@ enum Tab {
 
 const AdminPanel: React.FC = () => {
   const { currentUser } = useAppSelector(state => state.user);
+  const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState<Tab>(Tab.PRODUCTS);
   const [users, setUsers] = useState<User[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -29,12 +31,26 @@ const AdminPanel: React.FC = () => {
   const [productSearchQuery, setProductSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   
-  // Check if user is admin
+
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'admin') {
+      console.log('Unauthorized access attempt to AdminPanel');
+      Alert.alert(
+        t('accessDenied'), 
+        t('accessDenied'), 
+        [{ 
+          text: 'OK', 
+          onPress: () => (navigation as any).navigate('Home')
+        }]
+      );
+    }
+  }, [currentUser]);
+  
+ 
   if (!currentUser || currentUser.role !== 'admin') {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>{t('adminPanelTitle')}</Text>
-        <Text style={styles.errorText}>{t('featureNotImplemented')}</Text>
+        <ActivityIndicator size="large" color="#007AFF" />
       </View>
     );
   }
