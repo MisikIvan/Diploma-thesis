@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { AirbnbRating } from 'react-native-ratings';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import { addNewComment, fetchProductComments, removeComment } from '../redux/slices/commentsSlice';
 import { Comment } from '../types/index';
 import { t } from '../utils/translations';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../api/firebase';
 
 interface CommentSectionProps {
   productId: string;
@@ -19,7 +21,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({ productId }) => {
   const [rating, setRating] = useState(0);
   
   useEffect(() => {
-    dispatch(fetchProductComments(productId));
+    dispatch(fetchProductComments(productId))
+      .then((action) => {
+        if (action.payload && typeof action.payload === 'object' && 'comments' in action.payload) {
+          console.log('Fetched comments:', action.payload.comments);
+        }
+      });
   }, [dispatch, productId]);
   
   const comments = productComments[productId] || [];
@@ -29,6 +36,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({ productId }) => {
       Alert.alert(t('error'), t('featureNotImplemented'));
       return;
     }
+    
+    console.log('Стан користувача:', {
+      userId: currentUser.userId,
+      canComment: currentUser.canComment,
+      isBlocked: currentUser.isBlocked,
+      role: currentUser.role
+    });
     
     if (rating === 0) {
       Alert.alert(t('error'), t('ratingRequired'));
@@ -46,17 +60,32 @@ const CommentSection: React.FC<CommentSectionProps> = ({ productId }) => {
       setNewComment('');
       setRating(0);
       Alert.alert(t('success'), t('commentSuccess'));
+    }).catch((error) => {
+      console.error('Failed to add comment:', error);
+      Alert.alert(t('error'), error.message || t('error'));
     });
   };
   
   const handleDeleteComment = (commentId: string) => {
     if (!currentUser || currentUser.role !== 'admin') {
+      console.log('Cannot delete comment: User is not admin');
+      return;
+    }
+    
+    console.log('Delete button clicked for comment ID:', commentId);
+    console.log('Comment ID type:', typeof commentId);
+    console.log('Comment ID is empty?', commentId === '');
+    console.log('Comment ID is undefined?', commentId === undefined);
+    
+    if (!commentId) {
+      console.error('Cannot delete comment: no comment ID provided');
+      Alert.alert(t('error'), t('error'));
       return;
     }
     
     Alert.alert(
-      t('areYouSure'),
-      t('thisActionCannot'),
+      t('confirmDelete'),
+      t('deleteProductConfirmation'),
       [
         {
           text: t('cancel'),
@@ -64,12 +93,20 @@ const CommentSection: React.FC<CommentSectionProps> = ({ productId }) => {
         },
         {
           text: t('deleteComment'),
-          onPress: () => {
-            dispatch(removeComment({ commentId, adminId: currentUser.userId }))
-              .then(() => {
-                Alert.alert(t('success'), t('commentDeleted'));
-                dispatch(fetchProductComments(productId));
-              });
+          onPress: async () => {
+            try {
+              console.log('Confirm delete for comment with ID:', commentId);
+              await dispatch(removeComment({ 
+                commentId, 
+                adminId: currentUser.userId 
+              }));
+              console.log('Comment successfully deleted:', commentId);
+              Alert.alert(t('success'), t('commentDeleted'));
+              dispatch(fetchProductComments(productId));
+            } catch (error) {
+              console.error('Error deleting comment:', error);
+              Alert.alert(t('error'), t('error'));
+            }
           },
           style: 'destructive'
         }
@@ -77,11 +114,17 @@ const CommentSection: React.FC<CommentSectionProps> = ({ productId }) => {
     );
   };
   
-  const renderComment = ({ item }: { item: Comment }) => {
+  const renderComment = (item: Comment) => {
     const isAdmin = currentUser?.role === 'admin';
     
+    const commentId = item.commentId || item.userId + '_' + item.createdAt;
+    
+    if (!item.commentId) {
+      console.warn('Comment missing commentId, using fallback:', commentId);
+    }
+    
     return (
-      <View style={styles.commentContainer}>
+      <View style={styles.commentContainer} key={commentId}>
         <View style={styles.commentHeader}>
           <Text style={styles.userName}>{item.userName}</Text>
           <View style={styles.ratingContainer}>
@@ -103,7 +146,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({ productId }) => {
         {isAdmin && (
           <TouchableOpacity
             style={styles.deleteButton}
-            onPress={() => handleDeleteComment(item.commentId)}
+            onPress={() => {
+              const safeCommentId = commentId;
+              console.log('CommentID при натисканні на видалення:', safeCommentId, typeof safeCommentId);
+              handleDeleteComment(safeCommentId);
+            }}
           >
             <Text style={styles.deleteButtonText}>{t('deleteComment')}</Text>
           </TouchableOpacity>
@@ -158,12 +205,9 @@ const CommentSection: React.FC<CommentSectionProps> = ({ productId }) => {
             <Text style={styles.beFirstText}>{t('beFirstToComment')}</Text>
           </View>
         ) : (
-          <FlatList
-            data={comments}
-            renderItem={renderComment}
-            keyExtractor={(item) => item.commentId}
-            style={styles.commentsList}
-          />
+          <View style={styles.commentsList}>
+            {comments.map(item => renderComment(item))}
+          </View>
         )}
       </View>
     </View>

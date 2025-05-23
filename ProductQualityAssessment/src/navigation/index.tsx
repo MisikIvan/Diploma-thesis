@@ -15,7 +15,7 @@ import FavoritesScreen from '../screens/FavoritesScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import AuthScreen from '../screens/AuthScreen';
 import AdminScreen from '../screens/AdminScreen';
-import FirebaseDiagnosticScreen from '../screens/FirebaseDiagnosticScreen';
+import DiagnosticsScreen from '../screens/DiagnosticsScreen';
 
 // Types
 import { RootStackParamList, BottomTabParamList } from '../types/navigation';
@@ -49,19 +49,19 @@ const MainTabs = () => {
         tabBarInactiveTintColor: 'gray',
       })}
     >
-      <Tab.Screen 
-        name="Home" 
-        component={HomeScreen} 
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
         options={{ title: t('home') }} 
       />
-      <Tab.Screen 
-        name="Favorites" 
-        component={FavoritesScreen} 
+      <Tab.Screen
+        name="Favorites"
+        component={FavoritesScreen}
         options={{ title: t('favorites') }} 
       />
-      <Tab.Screen 
-        name="Profile" 
-        component={ProfileScreen} 
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
         options={{ title: t('profile') }} 
       />
       {isAdmin && (
@@ -69,7 +69,7 @@ const MainTabs = () => {
           name="Admin" 
           component={AdminScreen} 
           options={{ title: t('admin') }} 
-        />
+      />
       )}
     </Tab.Navigator>
   );
@@ -112,25 +112,25 @@ const Navigation = () => {
     <NavigationContainer>
       <Stack.Navigator>
         {!currentUser ? (
-          <Stack.Screen 
-            name="Auth" 
-            component={AuthScreen} 
-            options={{ headerShown: false }}
-          />
+      <Stack.Screen
+        name="Auth"
+        component={AuthScreen}
+        options={{ headerShown: false }}
+      />
         ) : (
           <>
-            <Stack.Screen 
-              name="Main" 
+      <Stack.Screen
+        name="Main"
               component={MainTabs} 
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen 
-              name="ProductDetail" 
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="ProductDetail"
               component={ProductDetailScreen as any} 
               options={({ route }: { route: any }) => ({ 
                 title: route.params?.productName || t('productDetails')
-              })}
-            />
+        })}
+      />
             {currentUser.role === 'admin' && (
               <>
                 <Stack.Screen 
@@ -139,15 +139,15 @@ const Navigation = () => {
                   options={{ title: t('adminScreen') }}
                 />
                 <Stack.Screen 
-                  name="FirebaseDiagnostic" 
-                  component={FirebaseDiagnosticScreen} 
-                  options={{ title: t('firebaseDiagnostics') }}
+                  name="Diagnostics" 
+                  component={DiagnosticsScreen} 
+                  options={{ title: t('diagnostics') }}
                 />
               </>
             )}
           </>
         )}
-      </Stack.Navigator>
+    </Stack.Navigator>
     </NavigationContainer>
   );
 };

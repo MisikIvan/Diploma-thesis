@@ -27,6 +27,7 @@ import {
 import { Product, getNutriScoreColor, Favorite } from '../types/index';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import ProductCard from '../components/ProductCard';
+import CommentSection from '../components/CommentSection';
 import LoadingScreen from '../components/LoadingScreen';
 import ErrorScreen from '../components/ErrorScreen';
 import { t } from '../utils/translations';
@@ -199,7 +200,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
             </View>
 
             <View style={styles.nutritionRow}>
-              <Text style={styles.nutritionLabel}>└ {t('sugar')}</Text>
+              <Text style={styles.nutritionLabel}>{t('sugar')}</Text>
               <Text style={styles.nutritionValue}>
                 {formatNutrient(currentProduct.nutriments.carbohydrates.sugar)}
               </Text>
@@ -213,7 +214,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
             </View>
 
             <View style={styles.nutritionRow}>
-              <Text style={styles.nutritionLabel}>└ {t('saturatedFats')}</Text>
+              <Text style={styles.nutritionLabel}>{t('saturatedFats')}</Text>
               <Text style={styles.nutritionValue}>
                 {formatNutrient(currentProduct.nutriments.fats.saturated)}
               </Text>
@@ -270,27 +271,9 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
             <Text style={styles.sectionTitle}>{t('ingredients')}</Text>
             <Text style={styles.ingredientsText}>{currentProduct.ingredients}</Text>
 
-            {currentProduct.additives.length > 0 && (
-              <>
-                <Text style={[styles.sectionTitle, { marginTop: 16 }]}>{t('additives')}</Text>
-                <View style={styles.additivesList}>
-                  {currentProduct.additives.map((additive, index) => (
-                    <View key={index} style={styles.additiveTag}>
-                      <Text style={styles.additiveText}>{additive}</Text>
-                    </View>
-                  ))}
-                </View>
-              </>
-            )}
-          </View>
-        );
-      
-      case 'allergens':
-        return (
-          <View style={styles.tabContainer}>
+            {/* Allergens */}
             <Text style={styles.sectionTitle}>{t('allergens')}</Text>
-            
-            {currentProduct.allergens.length > 0 ? (
+            {currentProduct.allergens && currentProduct.allergens.length > 0 ? (
               <View style={styles.allergensList}>
                 {currentProduct.allergens.map((allergen, index) => (
                   <View key={index} style={styles.allergenTag}>
@@ -302,43 +285,52 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
               <Text style={styles.noAllergensText}>{t('noAllergensListed')}</Text>
             )}
 
+            {/* Additives */}
+            {currentProduct.additives && currentProduct.additives.length > 0 && (
+              <>
+                <Text style={styles.sectionTitle}>{t('additives')}</Text>
+                <View style={styles.additivesList}>
+                  {currentProduct.additives.map((additive, index) => (
+                    <View key={index} style={styles.additiveTag}>
+                      <Text style={styles.additiveText}>{additive}</Text>
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
+
+            {/* Dietary Information */}
             <View style={styles.dietaryInfoContainer}>
+              <Text style={styles.sectionTitle}>{t('dietaryInfo')}</Text>
+              
               <View style={styles.dietaryInfoRow}>
-                <Icon 
-                  name={currentProduct.isVegan ? 'check-circle' : 'close-circle'} 
-                  size={22} 
-                  color={currentProduct.isVegan ? '#4CAF50' : '#F44336'} 
-                />
+                <Icon name={currentProduct.isVegan ? 'check-circle' : 'close-circle'} size={24} color={currentProduct.isVegan ? '#4CAF50' : '#F44336'} />
                 <Text style={styles.dietaryInfoText}>{t('vegan')}</Text>
               </View>
-
+              
               <View style={styles.dietaryInfoRow}>
-                <Icon 
-                  name={currentProduct.isVegetarian ? 'check-circle' : 'close-circle'} 
-                  size={22} 
-                  color={currentProduct.isVegetarian ? '#4CAF50' : '#F44336'} 
-                />
+                <Icon name={currentProduct.isVegetarian ? 'check-circle' : 'close-circle'} size={24} color={currentProduct.isVegetarian ? '#4CAF50' : '#F44336'} />
                 <Text style={styles.dietaryInfoText}>{t('vegetarian')}</Text>
               </View>
-
+              
               <View style={styles.dietaryInfoRow}>
-                <Icon 
-                  name={!currentProduct.hasLactose ? 'check-circle' : 'close-circle'} 
-                  size={22} 
-                  color={!currentProduct.hasLactose ? '#4CAF50' : '#F44336'} 
-                />
+                <Icon name={!currentProduct.hasLactose ? 'check-circle' : 'close-circle'} size={24} color={!currentProduct.hasLactose ? '#4CAF50' : '#F44336'} />
                 <Text style={styles.dietaryInfoText}>{t('lactoseFree')}</Text>
               </View>
-
+              
               <View style={styles.dietaryInfoRow}>
-                <Icon 
-                  name={!currentProduct.hasGluten ? 'check-circle' : 'close-circle'} 
-                  size={22} 
-                  color={!currentProduct.hasGluten ? '#4CAF50' : '#F44336'} 
-                />
+                <Icon name={!currentProduct.hasGluten ? 'check-circle' : 'close-circle'} size={24} color={!currentProduct.hasGluten ? '#4CAF50' : '#F44336'} />
                 <Text style={styles.dietaryInfoText}>{t('glutenFree')}</Text>
               </View>
             </View>
+          </View>
+        );
+        
+      case 'reviews':
+        return (
+          <View style={styles.tabContainer}>
+            <Text style={styles.sectionTitle}>{t('reviews')}</Text>
+            <CommentSection productId={productId} />
           </View>
         );
       
@@ -478,6 +470,15 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
           >
             <Text style={[styles.tabButtonText, activeTab === 'allergens' && styles.activeTabButtonText]}>
               {t('allergens')}
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'reviews' && styles.activeTabButton]}
+            onPress={() => setActiveTab('reviews')}
+          >
+            <Text style={[styles.tabButtonText, activeTab === 'reviews' && styles.activeTabButtonText]}>
+              {t('reviews')}
             </Text>
           </TouchableOpacity>
         </View>

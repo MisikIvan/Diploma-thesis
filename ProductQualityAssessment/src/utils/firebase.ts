@@ -318,11 +318,13 @@ export const FirebaseService = {
     },
 
     addComment: async (comment: Comment): Promise<string> => {
-      const docRef = await addDoc(collection(db, 'comments'), {
+      const commentData = {
         ...comment,
+        userAvatar: comment.userAvatar || null,
         createdAt: Timestamp.now().toDate().toISOString(),
         isModerated: false 
-      });
+      };
+      const docRef = await addDoc(collection(db, 'comments'), commentData);
       return docRef.id;
     }
   }

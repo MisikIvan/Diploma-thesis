@@ -2,8 +2,10 @@ export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
   ProductDetail: { productId: string; productName?: string };
+  EditProduct: { productId: string };
+  AddProduct: undefined;
   Admin: undefined;
-  FirebaseDiagnostic: undefined;
+  Diagnostics: undefined;
 };
 
 export type BottomTabParamList = {

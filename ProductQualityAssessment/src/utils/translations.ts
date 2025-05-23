@@ -141,10 +141,24 @@ export interface TranslationKeys {
   nutriscoreGrade: string;
   accessDenied: string;
   
+  // Comments and Reviews
+  reviews: string;
+  comments: string;
+  leaveComment: string;
+  yourRating: string;
+  commentPlaceholder: string;
+  submitComment: string;
+  allComments: string;
+  noComments: string;
+  beFirstToComment: string;
+  ratingRequired: string;
+  commentSuccess: string;
+  commentDeleted: string;
+  deleteComment: string;
+  
   // Firebase Diagnostics
   firebaseDiagnostics: string;
   runPermissionTests: string;
-  firebaseConfiguration: string;
   currentUser: string;
   testResults: string;
   productsCollection: string;
@@ -152,21 +166,14 @@ export interface TranslationKeys {
   commentsCollection: string;
   accessGranted: string;
   permissionDenied: string;
-  howToFix: string;
-  securityRulesUpdate: string;
-  copyInstructions: string;
-  quickFixSteps: string;
-  developmentRulesWarning: string;
-  rulesUpdateTime: string;
-  diagnostics: string;
+  notLoggedIn: string;
+  runningTests: string;
+  canComment: string;
   role: string;
   status: string;
   active: string;
   blocked: string;
-  projectId: string;
-  apiKey: string;
-  notLoggedIn: string;
-  runningTests: string;
+  diagnostics: string;
 
   // Form fields and product information
   weight: string;
@@ -339,10 +346,24 @@ const en: TranslationKeys = {
   nutriscoreGrade: 'Nutriscore Grade',
   accessDenied: 'Access Denied',
   
+  // Comments and Reviews
+  reviews: 'Reviews',
+  comments: 'Comments',
+  leaveComment: 'Leave a Comment',
+  yourRating: 'Your Rating',
+  commentPlaceholder: 'Write your comment here...',
+  submitComment: 'Submit Comment',
+  allComments: 'All Comments',
+  noComments: 'No comments yet for this product.',
+  beFirstToComment: 'Be the first to comment!',
+  ratingRequired: 'Please select a rating before submitting',
+  commentSuccess: 'Comment added successfully',
+  commentDeleted: 'Comment deleted successfully',
+  deleteComment: 'Delete Comment',
+  
   // Firebase Diagnostics
   firebaseDiagnostics: 'Firebase Diagnostics',
   runPermissionTests: 'Run Permission Tests',
-  firebaseConfiguration: 'Firebase Configuration',
   currentUser: 'Current User',
   testResults: 'Test Results',
   productsCollection: 'Products Collection',
@@ -350,21 +371,14 @@ const en: TranslationKeys = {
   commentsCollection: 'Comments Collection',
   accessGranted: 'Access Granted',
   permissionDenied: 'Permission Denied',
-  howToFix: 'How to Fix',
-  securityRulesUpdate: 'Security Rules Update',
-  copyInstructions: 'Copy Instructions',
-  quickFixSteps: 'Quick Fix Steps',
-  developmentRulesWarning: 'Development Rules Warning',
-  rulesUpdateTime: 'Rules Update Time',
-  diagnostics: 'Diagnostics',
+  notLoggedIn: 'Not Logged In',
+  runningTests: 'Running Tests',
+  canComment: 'Can Comment',
   role: 'Role',
   status: 'Status',
   active: 'Active',
   blocked: 'Blocked',
-  projectId: 'Project ID',
-  apiKey: 'API Key',
-  notLoggedIn: 'Not Logged In',
-  runningTests: 'Running Tests',
+  diagnostics: 'Diagnostics',
 
   // Form fields and product information
   weight: 'Weight',
@@ -492,12 +506,12 @@ const uk: TranslationKeys = {
   nameRequired: 'Ім\'я обов\'язкове',
   passwordsDoNotMatch: 'Паролі не співпадають',
   resetPassword: 'Скинути пароль',
-  resetPasswordPrompt: 'Введіть вашу електронну пошту для отримання посилання на скидання пароля',
+  resetPasswordPrompt: 'Введіть електронну пошту для отримання посилання на скидання пароля',
   send: 'Надіслати',
   resetEmailSent: 'Лист для скидання пароля надіслано',
   resetPasswordConfirmation: 'Посилання для скидання пароля надіслано на адресу {email}',
   registrationSuccessful: 'Реєстрація успішна',
-  accountCreated: 'Ваш обліковий запис створено. Тепер ви можете увійти.',
+  accountCreated: 'Обліковий запис створено. Тепер ви можете увійти.',
 
   // Profile Screen
   editProfile: 'Редагувати профіль',
@@ -537,10 +551,24 @@ const uk: TranslationKeys = {
   nutriscoreGrade: 'Рейтинг Nutriscore',
   accessDenied: 'Доступ заборонено',
   
+  // Comments and Reviews
+  reviews: 'Відгуки',
+  comments: 'Коментарі',
+  leaveComment: 'Залишити коментар',
+  yourRating: 'Оцінка',
+  commentPlaceholder: 'Напишіть коментар тут...',
+  submitComment: 'Надіслати коментар',
+  allComments: 'Всі коментарі',
+  noComments: 'Поки немає коментарів для цього продукту.',
+  beFirstToComment: 'Будьте першим, хто залишить коментар!',
+  ratingRequired: 'Будь ласка, виберіть оцінку перед відправкою',
+  commentSuccess: 'Коментар успішно додано',
+  commentDeleted: 'Коментар успішно видалено',
+  deleteComment: 'Видалити коментар',
+  
   // Firebase Diagnostics
-  firebaseDiagnostics: 'Firebase Диагностика',
+  firebaseDiagnostics: 'Firebase Діагностика',
   runPermissionTests: 'Запустити тести дозволів',
-  firebaseConfiguration: 'Конфігурація Firebase',
   currentUser: 'Поточний користувач',
   testResults: 'Результати тестів',
   productsCollection: 'Коллекція продуктів',
@@ -548,21 +576,14 @@ const uk: TranslationKeys = {
   commentsCollection: 'Коллекція коментарів',
   accessGranted: 'Доступ надано',
   permissionDenied: 'Доступ заборонено',
-  howToFix: 'Як виправити',
-  securityRulesUpdate: 'Оновлення правил безпеки',
-  copyInstructions: 'Інструкції для копіювання',
-  quickFixSteps: 'Швидкі кроки для виправлення',
-  developmentRulesWarning: 'Попередження про правила розробки',
-  rulesUpdateTime: 'Час оновлення правил',
-  diagnostics: 'Діагностика',
+  notLoggedIn: 'Не увійшов',
+  runningTests: 'Виконуються тести',
+  canComment: 'Може коментувати',
   role: 'Роль',
   status: 'Статус',
   active: 'Активний',
   blocked: 'Заблокований',
-  projectId: 'Ідентифікатор проекту',
-  apiKey: 'Ключ API',
-  notLoggedIn: 'Не увійшов',
-  runningTests: 'Виконуються тести',
+  diagnostics: 'Діагностика',
 
   // Form fields and product information
   weight: 'Вага',

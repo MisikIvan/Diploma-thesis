@@ -141,7 +141,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
 
   const currentUser = useAppSelector(state => state.user.currentUser);
   
-  
+ 
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'admin') {
       console.log('Unauthorized access attempt to AdminScreen');
@@ -156,16 +156,14 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
     }
   }, []);
   
-
+ 
   if (!currentUser || currentUser.role !== 'admin') {
     return <View style={styles.container}><ActivityIndicator size="large" /></View>;
   }
   
   useEffect(() => {
- 
     initializeFirebase();
     
-   
     navigation.setOptions({
       title: t('adminScreen'),
       headerRight: () => (
@@ -181,7 +179,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.diagnosticButton}
-            onPress={() => navigation.navigate('FirebaseDiagnostic')}
+            onPress={() => navigation.navigate('Diagnostics')}
           >
             <Text style={styles.diagnosticButtonText}>
               <Ionicons name="medical" size={16} color="#fff" /> {t('diagnostics')}
@@ -996,7 +994,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity 
             style={styles.diagnosticButton} 
-            onPress={() => navigation.navigate('FirebaseDiagnostic')}
+            onPress={() => navigation.navigate('Diagnostics')}
           >
             <Text style={styles.diagnosticButtonText}>
               <Ionicons name="medical" size={16} color="#fff" /> {t('diagnostics')}

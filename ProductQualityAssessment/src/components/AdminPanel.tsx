@@ -31,7 +31,7 @@ const AdminPanel: React.FC = () => {
   const [productSearchQuery, setProductSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   
-  // Check if user is admin and redirect if not
+  
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'admin') {
       console.log('Unauthorized access attempt to AdminPanel');
@@ -46,7 +46,7 @@ const AdminPanel: React.FC = () => {
     }
   }, [currentUser]);
   
-  // If user is not admin, show loading while redirecting
+ 
   if (!currentUser || currentUser.role !== 'admin') {
     return (
       <View style={styles.container}>
@@ -93,7 +93,7 @@ const AdminPanel: React.FC = () => {
         Alert.alert(t('success'), t('blockUser'));
       }
       
-      // Refresh user list
+    
       loadData();
     } catch (error) {
       Alert.alert(t('error'), (error as Error).message);
@@ -107,7 +107,7 @@ const AdminPanel: React.FC = () => {
       await toggleCommentPermission(user.userId, !user.canComment, currentUser.userId);
       Alert.alert(t('success'), user.canComment ? t('disableComments') : t('enableComments'));
       
-      // Refresh user list
+    
       loadData();
     } catch (error) {
       Alert.alert(t('error'), (error as Error).message);
@@ -309,6 +309,13 @@ const AdminPanel: React.FC = () => {
       
       {activeTab === Tab.ACTIVITY && (
         <View style={styles.tabContent}>
+          <TouchableOpacity 
+            style={styles.diagnosticButton}
+            onPress={() => (navigation as any).navigate('Diagnostics')}
+          >
+            <Text style={styles.diagnosticButtonText}>{t('diagnostics')}</Text>
+          </TouchableOpacity>
+
           <FlatList
             data={adminActions}
             renderItem={renderActionItem}
@@ -508,6 +515,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 24,
     color: '#888',
+  },
+  diagnosticButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 4,
+    marginBottom: 16,
+  },
+  diagnosticButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 
