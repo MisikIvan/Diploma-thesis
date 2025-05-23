@@ -5,6 +5,7 @@ export interface TranslationKeys {
   loading: string;
   error: string;
   retry: string;
+  tryAgain: string;
   cancel: string;
   save: string;
   delete: string;
@@ -74,6 +75,9 @@ export interface TranslationKeys {
   glutenFree: string;
   similarProducts: string;
   noSimilarProducts: string;
+  noFavorites: string;
+  startAdding: string;
+  loginToSeeFavorites: string;
 
   // Auth Screen
   signIn: string;
@@ -199,6 +203,7 @@ const en: TranslationKeys = {
   loading: 'Loading...',
   error: 'An error occurred',
   retry: 'Retry',
+  tryAgain: 'Try Again',
   cancel: 'Cancel',
   save: 'Save',
   delete: 'Delete',
@@ -268,6 +273,9 @@ const en: TranslationKeys = {
   glutenFree: 'Gluten-Free',
   similarProducts: 'Similar Products',
   noSimilarProducts: 'No similar products found',
+  noFavorites: 'No favorites found',
+  startAdding: 'Start adding favorites',
+  loginToSeeFavorites: 'Login to see favorites',
 
   // Auth Screen
   signIn: 'Sign In',
@@ -393,6 +401,7 @@ const uk: TranslationKeys = {
   loading: 'Завантаження...',
   error: 'Сталася помилка',
   retry: 'Повторити',
+  tryAgain: 'Спробувати ще раз',
   cancel: 'Скасувати',
   save: 'Зберегти',
   delete: 'Видалити',
@@ -462,6 +471,9 @@ const uk: TranslationKeys = {
   glutenFree: 'Без глютену',
   similarProducts: 'Схожі продукти',
   noSimilarProducts: 'Схожих продуктів не знайдено',
+  noFavorites: 'Улюблених продуктів не знайдено',
+  startAdding: 'Почати додавати улюблені',
+  loginToSeeFavorites: 'Увійдіть для перегляду улюблених',
 
   // Auth Screen
   signIn: 'Увійти',
@@ -597,4 +609,4 @@ export const setLanguage = (language: Language): void => {
 
 export const getCurrentLanguage = (): Language => {
   return currentLanguage;
-}; 
+};

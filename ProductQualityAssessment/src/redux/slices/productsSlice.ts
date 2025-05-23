@@ -21,7 +21,7 @@ interface ProductState {
   error: string | null;
 }
 
-// Mock data for demo mode when Firebase is not available
+
 const MOCK_PRODUCTS: Product[] = [
   {
     productId: 'mock-product-1',
@@ -289,6 +289,13 @@ const productsSlice = createSlice({
         state.filteredProducts = [];
       }
     },
+    updateProductFavoriteStatus: (state, action: PayloadAction<{productId: string, isFavorite: boolean}>) => {
+  
+      if (state.currentProduct && state.currentProduct.productId === action.payload.productId) {
+
+        console.log(`Updated favorite status for ${action.payload.productId}: ${action.payload.isFavorite}`);
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -349,5 +356,5 @@ const productsSlice = createSlice({
   },
 });
 
-export const { setCurrentProduct, setSelectedCategory } = productsSlice.actions;
+export const { setCurrentProduct, setSelectedCategory, updateProductFavoriteStatus } = productsSlice.actions;
 export default productsSlice.reducer; 
