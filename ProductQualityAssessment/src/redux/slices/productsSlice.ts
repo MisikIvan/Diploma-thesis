@@ -144,36 +144,38 @@ const initialState: ProductState = {
 
 export const searchProducts = createAsyncThunk(
   'products/searchProducts',
-  async (params: SearchParams, { rejectWithValue }) => {
+  async (params: SearchParams, { rejectWithValue, getState }) => {
     try {
-      console.log('Searching products with query:', params.query);
+      console.log('🔍 searchProducts called with:', params);
+      console.log('🔍 Current state before search:', (getState() as any).products);
       
-    
+     
       try {
-      
+        console.log('🔍 Attempting Firebase fetch...');
         const productsFromFirebase = await fetchProductsFromFirebase();
-        console.log('Loaded', productsFromFirebase.length, 'products from Firebase');
+        console.log('🔍 Firebase returned:', productsFromFirebase.length, 'products');
         
         if (productsFromFirebase.length > 0) {
-     
+         
           if (params.query) {
-       
+            console.log('🔍 Filtering products with query:', params.query);
             return productsFromFirebase.filter(product => 
               product.name.toLowerCase().includes(params.query.toLowerCase()) ||
               product.categories.some(cat => cat.toLowerCase().includes(params.query.toLowerCase())) ||
               (product.ingredients && product.ingredients.toLowerCase().includes(params.query.toLowerCase()))
             );
           }
+          console.log('🔍 Returning all Firebase products');
           return productsFromFirebase;
         }
       } catch (firebaseError) {
-        console.error('Failed to load products from Firebase, falling back to mock data:', firebaseError);
+        console.error('🔥 Firebase error in searchProducts:', firebaseError);
       }
       
-    
-      console.log('Using mock products as fallback');
+  
+      console.log('🔍 Using mock products as fallback');
       
-   
+    
       if (params.query) {
         return MOCK_PRODUCTS.filter(product => 
           product.name.toLowerCase().includes(params.query.toLowerCase()) ||
@@ -184,6 +186,7 @@ export const searchProducts = createAsyncThunk(
       
       return MOCK_PRODUCTS;
     } catch (error) {
+      console.error('🔥 searchProducts completely failed:', error);
       return rejectWithValue('Failed to search products');
     }
   }
@@ -225,13 +228,13 @@ export const getSimilarProducts = createAsyncThunk(
   'products/getSimilarProducts',
   async (productId: string, { rejectWithValue }) => {
     try {
-     
+    
       try {
    
         const currentProduct = await fetchProductFromFirebase(productId);
         
         if (currentProduct) {
-    
+      
           const allProducts = await fetchProductsFromFirebase();
           
       
@@ -240,30 +243,35 @@ export const getSimilarProducts = createAsyncThunk(
             p.categories.some(cat => currentProduct.categories.includes(cat))
           );
           
-          if (similarProducts.length > 0) {
-            console.log('Found', similarProducts.length, 'similar products in Firebase');
-            return similarProducts;
-          }
+          console.log('Found', similarProducts.length, 'similar products in Firebase for categories:', currentProduct.categories);
+          return similarProducts;
         }
       } catch (firebaseError) {
         console.error('Failed to load similar products from Firebase, falling back to mock data:', firebaseError);
       }
       
-   
-      console.log('Looking up similar products in mock data');
+  
+      console.log('Looking up similar products in mock data for productId:', productId);
       const currentProduct = MOCK_PRODUCTS.find(p => p.productId === productId);
       
       if (!currentProduct) {
-        return rejectWithValue('Product not found');
+        console.log('Product not found in mock data, returning empty similar products array');
+       
+        return [];
       }
       
-   
-      return MOCK_PRODUCTS.filter(p => 
+     
+      const similarMockProducts = MOCK_PRODUCTS.filter(p => 
         p.productId !== productId && 
         p.categories.some(cat => currentProduct.categories.includes(cat))
       );
+      
+      console.log('Found', similarMockProducts.length, 'similar mock products');
+      return similarMockProducts;
     } catch (error) {
-      return rejectWithValue('Failed to fetch similar products');
+      console.error('getSimilarProducts completely failed:', error);
+     
+      return [];
     }
   }
 );
@@ -299,45 +307,66 @@ const productsSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-   
+    
       .addCase(getProductDetails.pending, (state) => {
+        console.log('📱 getProductDetails.pending - setting loading true');
         state.loading = true;
         state.error = null;
       })
       .addCase(getProductDetails.fulfilled, (state, action) => {
+        console.log('📱 getProductDetails.fulfilled - product loaded:', action.payload.name);
         state.loading = false;
         state.currentProduct = action.payload;
-      
+    
         if (!state.recentProducts.some((p: Product) => p.productId === action.payload.productId)) {
           state.recentProducts = [action.payload, ...state.recentProducts].slice(0, 5);
         }
       })
       .addCase(getProductDetails.rejected, (state, action) => {
+        console.log('📱 getProductDetails.rejected - error:', action.error.message);
+        console.log('📱 Current products count before error handling:', state.products.length);
         state.loading = false;
-        state.error = action.error.message || 'Failed to fetch product details';
+        
+       
+        const productId = action.meta.arg;
+        const existingProduct = state.products.find(p => p.productId === productId) ||
+                               MOCK_PRODUCTS.find(p => p.productId === productId);
+        
+        if (existingProduct) {
+          console.log('📱 Found existing product, using as fallback:', existingProduct.name);
+          state.currentProduct = existingProduct;
+          state.error = null; 
+        } else {
+          console.log('📱 No existing product found, setting error');
+          state.error = 'Product not found';
+        }
+        console.log('📱 Products count after error handling:', state.products.length);
       })
       
    
       .addCase(getSimilarProducts.pending, (state) => {
-        state.loading = true;
-        state.error = null;
+        console.log('📱 getSimilarProducts.pending');
       })
       .addCase(getSimilarProducts.fulfilled, (state, action) => {
-        state.loading = false;
+        console.log('📱 getSimilarProducts.fulfilled - found:', action.payload.length, 'similar products');
         state.similarProducts = action.payload;
       })
       .addCase(getSimilarProducts.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Failed to fetch similar products';
+        console.log('📱 getSimilarProducts.rejected - this is normal, setting empty array');
+        state.similarProducts = []; 
       })
       
-    
+     
       .addCase(searchProducts.pending, (state, action) => {
+        console.log('📱 searchProducts.pending - query:', action.meta.arg.query);
+        console.log('📱 Current products count before search:', state.products.length);
         state.loading = true;
         state.error = null;
         state.searchQuery = action.meta.arg.query;
       })
       .addCase(searchProducts.fulfilled, (state, action) => {
+        console.log('📱 searchProducts.fulfilled - received:', action.payload.length, 'products');
+        console.log('📱 Products received:', action.payload.map(p => p.name));
         state.loading = false;
         state.products = action.payload;
       
@@ -348,10 +377,17 @@ const productsSlice = createSlice({
         } else {
           state.filteredProducts = [];
         }
+        console.log('📱 Final products count:', state.products.length);
+        console.log('📱 Final filtered products count:', state.filteredProducts.length);
       })
       .addCase(searchProducts.rejected, (state, action) => {
+        console.log('📱 searchProducts.rejected - error:', action.error.message);
+        console.log('📱 Setting fallback to MOCK_PRODUCTS, count:', MOCK_PRODUCTS.length);
         state.loading = false;
-        state.error = action.error.message || 'Failed to search products';
+        console.warn('Search products failed, but not showing error to user:', action.error.message);
+        state.products = MOCK_PRODUCTS; 
+        state.error = null; 
+        console.log('📱 Final products count after reject:', state.products.length);
       });
   },
 });

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { t } from '../utils/translations';
 
@@ -10,25 +10,33 @@ interface ErrorScreenProps {
 
 const ErrorScreen: React.FC<ErrorScreenProps> = ({ message, onRetry }) => {
   return (
-    <View style={styles.container}>
-      <Icon name="alert-circle" size={48} color="#dc3545" />
-      <Text style={styles.message}>{message}</Text>
-      {onRetry && (
-        <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
-          <Text style={styles.retryButtonText}>{t('retry')}</Text>
-        </TouchableOpacity>
-      )}
-    </View>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.container}>
+        <Icon name="alert-circle" size={48} color="#dc3545" />
+        <Text style={styles.message}>{message}</Text>
+        {onRetry && (
+          <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
+            <Text style={styles.retryButtonText}>{t('retry')}</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    backgroundColor: '#f8f9fa',
+  },
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f8f9fa',
     padding: 16,
+    minHeight: 300,
   },
   message: {
     marginTop: 16,
@@ -45,6 +53,8 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    maxWidth: '90%',
+    lineHeight: 22,
   },
   retryButton: {
     marginTop: 24,

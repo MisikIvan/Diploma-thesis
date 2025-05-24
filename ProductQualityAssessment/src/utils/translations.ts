@@ -159,31 +159,13 @@ export interface TranslationKeys {
   commentDeleted: string;
   deleteComment: string;
   
-  // Firebase Diagnostics
-  firebaseDiagnostics: string;
-  runPermissionTests: string;
-  currentUser: string;
-  testResults: string;
-  productsCollection: string;
-  usersCollection: string;
-  commentsCollection: string;
-  accessGranted: string;
-  permissionDenied: string;
-  notLoggedIn: string;
-  runningTests: string;
-  canComment: string;
-  role: string;
-  status: string;
-  active: string;
-  blocked: string;
-  diagnostics: string;
-
   // Form fields and product information
   weight: string;
   nutritionalInfo: string;
   perWholeProduct: string;
   calculatedAutomatically: string;
   dietaryInfo: string;
+  role: string;
   
   // Firebase and demo mode
   goOnline: string;
@@ -205,15 +187,15 @@ export interface TranslationKeys {
   productAdded: string;
   failedToAddProduct: string;
 
-
+  // New key
   composition: string;
 
- 
+  // Short versions for navigation
   nutritionShort: string;
   compositionShort: string;
   reviewsShort: string;
 
- 
+  // New translations for admin form
   containsLactose: string;
   containsGluten: string;
 }
@@ -379,31 +361,13 @@ const en: TranslationKeys = {
   commentDeleted: 'Comment deleted successfully',
   deleteComment: 'Delete Comment',
   
-  // Firebase Diagnostics
-  firebaseDiagnostics: 'Firebase Diagnostics',
-  runPermissionTests: 'Run Permission Tests',
-  currentUser: 'Current User',
-  testResults: 'Test Results',
-  productsCollection: 'Products Collection',
-  usersCollection: 'Users Collection',
-  commentsCollection: 'Comments Collection',
-  accessGranted: 'Access Granted',
-  permissionDenied: 'Permission Denied',
-  notLoggedIn: 'Not Logged In',
-  runningTests: 'Running Tests',
-  canComment: 'Can Comment',
-  role: 'Role',
-  status: 'Status',
-  active: 'Active',
-  blocked: 'Blocked',
-  diagnostics: 'Diagnostics',
-
   // Form fields and product information
   weight: 'Weight',
   nutritionalInfo: 'Nutritional Information',
   perWholeProduct: 'Per Whole Product',
   calculatedAutomatically: 'Values are calculated automatically based on weight and nutritional values',
   dietaryInfo: 'Dietary Information',
+  role: 'Role',
   
   // Firebase and demo mode
   goOnline: 'Go Online',
@@ -599,31 +563,13 @@ const uk: TranslationKeys = {
   commentDeleted: 'Коментар успішно видалено',
   deleteComment: 'Видалити коментар',
   
-  // Firebase Diagnostics
-  firebaseDiagnostics: 'Firebase Діагностика',
-  runPermissionTests: 'Запустити тести дозволів',
-  currentUser: 'Поточний користувач',
-  testResults: 'Результати тестів',
-  productsCollection: 'Коллекція продуктів',
-  usersCollection: 'Коллекція користувачів',
-  commentsCollection: 'Коллекція коментарів',
-  accessGranted: 'Доступ надано',
-  permissionDenied: 'Доступ заборонено',
-  notLoggedIn: 'Не увійшов',
-  runningTests: 'Виконуються тести',
-  canComment: 'Може коментувати',
-  role: 'Роль',
-  status: 'Статус',
-  active: 'Активний',
-  blocked: 'Заблокований',
-  diagnostics: 'Діагностика',
-
   // Form fields and product information
   weight: 'Вага',
   nutritionalInfo: 'Харчова цінність',
   perWholeProduct: 'На весь продукт',
   calculatedAutomatically: 'Значення розраховуються автоматично на основі ваги та харчової цінності',
   dietaryInfo: 'Дієтична інформація',
+  role: 'Роль',
   
   // Firebase and demo mode
   goOnline: 'Онлайн режим',

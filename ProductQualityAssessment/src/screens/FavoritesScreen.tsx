@@ -36,25 +36,14 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
       
       console.log('Loading favorites for user:', currentUser.userId);
       
- 
-      await DataService.favorites.clearCache?.();
-      
-
+     
       let favorites;
       try {
-      
         const firebaseFavorites = await FirebaseService.favorites.getUserFavorites(currentUser.userId);
         console.log(`Loaded ${firebaseFavorites.length} favorites directly from Firebase`);
         favorites = firebaseFavorites;
-        
-    
-        const allLocalFavorites = await StorageService.favorites.getFavorites();
-        const nonUserFavorites = allLocalFavorites.filter((f: Favorite) => f.userId !== currentUser.userId);
-        const updatedLocalFavorites = [...nonUserFavorites, ...firebaseFavorites];
-        await StorageService.favorites.saveFavorites(updatedLocalFavorites);
       } catch (firebaseError) {
-        console.error('Error loading from Firebase, falling back to local storage:', firebaseError);
-       
+        console.error('Error loading from Firebase, falling back to DataService:', firebaseError);
         favorites = await DataService.favorites.getUserFavorites(currentUser.userId);
       }
       
@@ -85,12 +74,11 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   
 
   useEffect(() => {
-  
-    if (currentProduct) {
+    if (currentProduct && !isLoading) {
       console.log('Product state changed in Redux, refreshing favorites list');
-      loadFavorites(false); 
+      loadFavorites(false);
     }
-  }, [currentProduct, loadFavorites]);
+  }, [currentProduct?.productId]);
   
   const onRefresh = useCallback(() => {
     setRefreshing(true);

@@ -5,7 +5,6 @@ export type RootStackParamList = {
   EditProduct: { productId: string };
   AddProduct: undefined;
   Admin: undefined;
-  Diagnostics: undefined;
 };
 
 export type BottomTabParamList = {

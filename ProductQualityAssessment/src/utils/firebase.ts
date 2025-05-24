@@ -1,47 +1,4 @@
-import { initializeApp } from 'firebase/app';
-import { 
-  getFirestore, 
-  collection, 
-  doc, 
-  getDoc, 
-  getDocs, 
-  setDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  orderBy, 
-  limit,
-  addDoc,
-  Timestamp,
-  DocumentData
-} from 'firebase/firestore';
-import { 
-  getAuth,
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
-  updateProfile,
-  User as FirebaseUser,
-  setPersistence,
-  browserLocalPersistence
-} from 'firebase/auth';
-import { FIREBASE_CONFIG } from './config';
-import type { User, Product, Favorite, ViewHistory, Comment } from '../types/index';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// Initialize Firebase
-const app = initializeApp(FIREBASE_CONFIG);
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-
-if (typeof window !== 'undefined') {
-  setPersistence(auth, browserLocalPersistence)
-    .catch(error => {
-      console.error('Error setting auth persistence:', error);
-    });
-}
+import {   collection,   doc,   getDoc,   getDocs,   setDoc,   updateDoc,   deleteDoc,   query,   where,   orderBy,   limit,  addDoc,  Timestamp,  DocumentData} from 'firebase/firestore';import {   signInWithEmailAndPassword,   createUserWithEmailAndPassword,   signOut,   updateProfile,  User as FirebaseUser} from 'firebase/auth';import { auth, db } from '../api/firebase';import type { User, Product, Favorite, ViewHistory, Comment } from '../types/index';import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const AuthStorage = {

@@ -142,15 +142,15 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
     weight: 0
   });
 
-  // Функція для отримання кольору NutriScore
+ 
   const getNutriScoreColor = (grade: string) => {
     switch (grade) {
-      case 'A': return '#00C851'; // Зелений
-      case 'B': return '#8BC34A'; // Світло-зелений
-      case 'C': return '#FFC107'; // Жовтий
-      case 'D': return '#FF9800'; // Помаранчевий
-      case 'E': return '#F44336'; // Червоний
-      default: return '#34572a'; // За замовчуванням
+      case 'A': return '#00C851'; 
+      case 'B': return '#8BC34A'; 
+      case 'C': return '#FFC107'; 
+      case 'D': return '#FF9800'; 
+      case 'E': return '#F44336'; 
+      default: return '#34572a'; 
     }
   };
 
@@ -183,16 +183,10 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
       headerRight: () => (
         <View style={{ flexDirection: 'row' }}>
           <TouchableOpacity
-            style={[styles.headerButton, { marginRight: 10 }]}
+            style={styles.headerButton}
             onPress={() => checkFirebaseConnection()}
           >
             <Ionicons name={isDemo ? 'cloud-offline' : 'cloud-done'} size={16} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => navigation.navigate('Diagnostics')}
-          >
-            <Ionicons name="medical" size={16} color="#fff" />
           </TouchableOpacity>
         </View>
       ),
@@ -1060,14 +1054,6 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
       {error && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity 
-            style={styles.diagnosticButton} 
-            onPress={() => navigation.navigate('Diagnostics')}
-          >
-            <Text style={styles.diagnosticButtonText}>
-              <Ionicons name="medical" size={16} color="#fff" /> {t('diagnostics')}
-            </Text>
-          </TouchableOpacity>
         </View>
       )}
       
@@ -1198,23 +1184,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 16,
     fontWeight: '500',
-  },
-  diagnosticButton: {
-    backgroundColor: '#34572a',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 4,
-  },
-  diagnosticButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
   },
   tabContainer: {
     flexDirection: 'row',

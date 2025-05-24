@@ -55,7 +55,6 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
   const { currentProduct, similarProducts, loading, error } = useAppSelector((state) => state.products);
   const { currentUser } = useAppSelector(state => state.user);
 
-
   const loadProductData = useCallback(() => {
     setProductFetchRetried(true);
     dispatch(getProductDetails(productId))
@@ -65,15 +64,12 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
       })
       .catch(err => {
         console.error('Error fetching product:', err);
-   
         ToastAndroid.show('Could not load product details. Trying offline mode...', ToastAndroid.SHORT);
       });
   }, [dispatch, productId]);
 
   useEffect(() => {
     loadProductData();
-    
-
     checkFavoriteStatus();
   }, [loadProductData, currentUser]);
 
@@ -87,15 +83,13 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
       console.log(`Checking favorite status for product: ${productId} and user: ${currentUser.userId}`);
       
     
-      const userFavorites = await DataService.favorites.getUserFavorites(currentUser.userId);
+      const isProductFavorite = await DataService.favorites.isFavorite(currentUser.userId, productId);
       
-   
-      const isProductFavorite = userFavorites.some(fav => fav.productId === productId);
-      
-      console.log(`Checked favorite status for ${productId}: ${isProductFavorite} (found in ${userFavorites.length} favorites)`);
+      console.log(`Checked favorite status for ${productId}: ${isProductFavorite}`);
       setIsFavorite(isProductFavorite);
     } catch (error) {
-      console.error('Error checking favorite status:', error);
+      console.warn('Error checking favorite status, defaulting to false:', error);
+      setIsFavorite(false);
     }
   };
 
@@ -105,14 +99,19 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
       return;
     }
 
+    const originalFavoriteStatus = isFavorite;
+    
     try {
       setLocalLoading(true);
       console.log(`Toggling favorite for product: ${productId} from ${isFavorite} to ${!isFavorite}`);
       
       const newFavoriteStatus = !isFavorite;
       
-      if (newFavoriteStatus) {
+    
+      setIsFavorite(newFavoriteStatus);
       
+      if (newFavoriteStatus) {
+     
         const favorite: Favorite = {
           favoriteId: '', 
           userId: currentUser.userId,
@@ -122,54 +121,32 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
         await DataService.favorites.addFavorite(favorite);
         console.log(`Added product ${productId} to favorites`);
       } else {
-    
+   
         await DataService.favorites.removeFavorite(currentUser.userId, productId);
         console.log(`Removed product ${productId} from favorites`);
-        
-      
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-   
-        const stillFavorite = await DataService.favorites.isFavorite(currentUser.userId, productId);
-        if (stillFavorite) {
-          console.error(`Failed to remove favorite - still exists in system!`);
-          
-      
-          console.log('Attempting removal again with longer timeout...');
-          await DataService.favorites.removeFavorite(currentUser.userId, productId);
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          
-    
-          const finalCheck = await DataService.favorites.isFavorite(currentUser.userId, productId);
-          if (finalCheck) {
-            Alert.alert('Error', 'Failed to remove from favorites. Please try again later.');
-            setIsFavorite(true); 
-            setLocalLoading(false);
-            return;
-          }
-        }
       }
       
-  
-      await checkFavoriteStatus();
-      
-  
+ 
       dispatch(updateProductFavoriteStatus({
         productId,
         isFavorite: newFavoriteStatus
       }));
       
-   
+ 
       ToastAndroid.show(
         newFavoriteStatus ? 'Added to favorites' : 'Removed from favorites',
         ToastAndroid.SHORT
       );
     } catch (error) {
-      console.error('Error toggling favorite:', error);
-      Alert.alert('Error', 'Failed to update favorites');
+      console.warn('Error toggling favorite:', error);
       
-   
-      await checkFavoriteStatus();
+      
+      setIsFavorite(originalFavoriteStatus);
+      
+      ToastAndroid.show(
+        'Failed to update favorites. Changes saved locally.',
+        ToastAndroid.SHORT
+      );
     } finally {
       setLocalLoading(false);
     }
@@ -427,11 +404,8 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
     );
   };
 
-
   if (error && currentProduct && productFetchRetried) {
-  
     console.log('Showing product despite error, using cached data');
-
   } else if (error && !currentProduct) {
     console.error('Product detail error:', error);
     return (

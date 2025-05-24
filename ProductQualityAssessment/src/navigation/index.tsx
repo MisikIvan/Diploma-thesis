@@ -15,7 +15,6 @@ import FavoritesScreen from '../screens/FavoritesScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import AuthScreen from '../screens/AuthScreen';
 import AdminScreen from '../screens/AdminScreen';
-import DiagnosticsScreen from '../screens/DiagnosticsScreen';
 
 // Types
 import { RootStackParamList, BottomTabParamList } from '../types/navigation';
@@ -162,11 +161,6 @@ const Navigation = () => {
                   name="Admin" 
                   component={AdminScreen} 
                   options={{ title: t('adminScreen') }}
-                />
-                <Stack.Screen 
-                  name="Diagnostics" 
-                  component={DiagnosticsScreen} 
-                  options={{ title: t('diagnostics') }}
                 />
               </>
             )}
