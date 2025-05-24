@@ -29,6 +29,7 @@ export interface TranslationKeys {
   networkError: string;
   searchPlaceholder: string;
   categories: string;
+  recentProducts: string;
   ingredients: string;
   nutrition: string;
   calories: string;
@@ -51,6 +52,8 @@ export interface TranslationKeys {
   additives: string;
   logoutConfirmation: string;
   failedToLoadUser: string;
+  description: string;
+  productDescription: string;
   
   // Product categories
   beverageCategory: string;
@@ -201,6 +204,18 @@ export interface TranslationKeys {
   continueDemo: string;
   productAdded: string;
   failedToAddProduct: string;
+
+
+  composition: string;
+
+ 
+  nutritionShort: string;
+  compositionShort: string;
+  reviewsShort: string;
+
+ 
+  containsLactose: string;
+  containsGluten: string;
 }
 
 // English translations
@@ -234,6 +249,7 @@ const en: TranslationKeys = {
   networkError: 'Could not connect to the server',
   searchPlaceholder: 'Search products...',
   categories: 'Categories',
+  recentProducts: 'Recent Products',
   ingredients: 'Ingredients',
   nutrition: 'Nutrition Facts',
   calories: 'Calories',
@@ -256,6 +272,8 @@ const en: TranslationKeys = {
   additives: 'Additives',
   logoutConfirmation: 'Are you sure you want to log out?',
   failedToLoadUser: 'Failed to load user data',
+  description: 'Description',
+  productDescription: 'Product Description',
   
   // Product categories
   beverageCategory: 'Beverages',
@@ -405,7 +423,19 @@ const en: TranslationKeys = {
   productAddedLocally: 'Product was added to local storage only',
   continueDemo: 'Continue in Demo Mode',
   productAdded: 'Product added successfully',
-  failedToAddProduct: 'Failed to add product'
+  failedToAddProduct: 'Failed to add product',
+
+  // New key
+  composition: 'Composition',
+
+  // Short versions for navigation
+  nutritionShort: 'KCPF',
+  compositionShort: 'Composition',
+  reviewsShort: 'Reviews',
+
+  // New translations for admin form
+  containsLactose: 'Contains Lactose',
+  containsGluten: 'Contains Gluten',
 }
 
 // Ukrainian translations
@@ -439,6 +469,7 @@ const uk: TranslationKeys = {
   networkError: 'Не вдалося підключитися до сервера',
   searchPlaceholder: 'Пошук продуктів...',
   categories: 'Категорії',
+  recentProducts: 'Нещодавні продукти',
   ingredients: 'Інгредієнти',
   nutrition: 'Поживна цінність',
   calories: 'Калорії',
@@ -461,6 +492,8 @@ const uk: TranslationKeys = {
   additives: 'Добавки',
   logoutConfirmation: 'Ви впевнені, що хочете вийти?',
   failedToLoadUser: 'Не вдалося завантажити дані користувача',
+  description: 'Опис',
+  productDescription: 'Опис продукту',
   
   // Product categories
   beverageCategory: 'Напої',
@@ -610,11 +643,23 @@ const uk: TranslationKeys = {
   productAddedLocally: 'Продукт додано лише до локального сховища',
   continueDemo: 'Продовжити в демо-режимі',
   productAdded: 'Продукт успішно додано',
-  failedToAddProduct: 'Не вдалося додати продукт'
+  failedToAddProduct: 'Не вдалося додати продукт',
+
+  // New key
+  composition: 'Склад',
+
+  // Short versions for navigation
+  nutritionShort: 'КБЖВ',
+  compositionShort: 'Склад',
+  reviewsShort: 'Відгуки',
+
+  // New translations for admin form
+  containsLactose: 'Містить лактозу',
+  containsGluten: 'Містить глютен',
 }
 
 export type Language = 'en' | 'uk';
-const translations = { en, uk };
+const translations = { en, uk } as const;
 let currentLanguage: Language = 'en';
 
 

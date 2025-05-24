@@ -104,7 +104,7 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   if (isLoading && !refreshing) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#34572a" />
       </View>
     );
   }
@@ -139,7 +139,8 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#007AFF"]}
+            colors={["#34572a"]}
+            tintColor="#34572a"
           />
         }
       />
@@ -150,27 +151,41 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#f8f9fa',
   },
   emptyText: {
-    fontSize: 16,
-    color: '#888',
+    fontSize: 18,
+    color: '#495057',
     textAlign: 'center',
+    fontWeight: '600',
+    backgroundColor: '#fff',
+    padding: 24,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    marginBottom: 12,
   },
   emptySubText: {
     fontSize: 14,
-    color: '#888',
+    color: '#6c757d',
     textAlign: 'center',
-    marginTop: 10,
+    fontStyle: 'italic',
   },
   listContent: {
-    paddingVertical: 10,
+    paddingVertical: 16,
+    paddingBottom: 100,
   },
 });
 

@@ -42,26 +42,38 @@ const RecentProducts: React.FC<RecentProductsProps> = ({ products, onProductPres
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 15,
+    marginVertical: 16,
+    backgroundColor: '#f8f9fa',
   },
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 15,
-    marginBottom: 10,
+    marginLeft: 16,
+    marginBottom: 12,
+    color: '#34572a',
   },
   listContent: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 16,
   },
   emptyContainer: {
-    marginVertical: 15,
-    padding: 20,
+    marginVertical: 16,
+    padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   emptyText: {
     fontSize: 16,
-    color: '#888',
+    color: '#6c757d',
     textAlign: 'center',
   },
 });

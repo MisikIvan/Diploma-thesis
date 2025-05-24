@@ -49,7 +49,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         <Text style={styles.searchIcon}>🔍</Text>
         <TextInput
           style={styles.input}
-          placeholder={t('search')}
+          placeholder={t('searchPlaceholder')}
           value={query}
           onChangeText={handleChangeText}
           returnKeyType="search"
@@ -68,21 +68,30 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    backgroundColor: '#f8f9fa',
   },
   searchContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 25,
-    paddingHorizontal: 15,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    paddingHorizontal: 16,
     height: 50,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   searchIcon: {
     fontSize: 16,
-    marginRight: 10,
+    marginRight: 12,
+    color: '#6c757d',
   },
   input: {
     flex: 1,
@@ -91,16 +100,21 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   filterButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#34572a',
     width: 50,
     height: 50,
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 10,
+    marginLeft: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
   filterIcon: {
-    fontSize: 20,
+    fontSize: 18,
     color: 'white',
   },
 });

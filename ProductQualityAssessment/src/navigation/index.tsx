@@ -45,8 +45,33 @@ const MainTabs = () => {
 
           return <Ionicons name={iconName as any} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: '#ffffff',
+        tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
+        tabBarStyle: {
+          backgroundColor: '#34572a',
+          borderTopWidth: 0,
+          height: 60,
+          borderRadius: 30,
+          position: 'absolute',
+          bottom: 20,
+          left: 20,
+          right: 20,
+          elevation: 5,
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: 4,
+          },
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          marginBottom: 5,
+        },
+        tabBarItemStyle: {
+          padding: 5,
+        },
       })}
     >
       <Tab.Screen
