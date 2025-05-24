@@ -20,7 +20,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, compact = f
       onPress={() => onPress(product)}
     >
       <Image 
-        source={{ uri: getProductImage(imageUrl) }} 
+        source={{ uri: getProductImage(imageUrl || '') }} 
         style={[styles.image, compact && styles.compactImage]}
         resizeMode="cover" 
       />
@@ -41,48 +41,58 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, compact = f
 const styles = StyleSheet.create({
   card: {
     backgroundColor: 'white',
-    borderRadius: 10,
+    borderRadius: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 6,
     margin: 8,
     overflow: 'hidden',
     width: '95%',
     alignSelf: 'center',
+    borderWidth: 1,
+    borderColor: '#f1f3f4',
   },
   compactCard: {
-    width: 150,
-    margin: 5,
+    width: 160,
+    margin: 6,
+    borderRadius: 14,
   },
   image: {
     width: '100%',
     height: 180,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#f8f9fa',
   },
   compactImage: {
     height: 120,
   },
   content: {
-    padding: 12,
+    padding: 16,
   },
   name: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 8,
+    color: '#212529',
+    lineHeight: 22,
   },
   scoreContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 5,
+    marginTop: 6,
+    backgroundColor: '#f8f9fa',
+    padding: 8,
+    borderRadius: 8,
   },
   scoreText: {
-    fontSize: 14,
-    color: '#555',
+    fontSize: 13,
+    color: '#495057',
+    fontWeight: '500',
   },
   grade: {
     fontWeight: 'bold',
+    color: '#34572a',
   },
 });
 

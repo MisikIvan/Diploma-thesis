@@ -29,6 +29,7 @@ export interface TranslationKeys {
   networkError: string;
   searchPlaceholder: string;
   categories: string;
+  recentProducts: string;
   ingredients: string;
   nutrition: string;
   calories: string;
@@ -51,6 +52,8 @@ export interface TranslationKeys {
   additives: string;
   logoutConfirmation: string;
   failedToLoadUser: string;
+  description: string;
+  productDescription: string;
   
   // Product categories
   beverageCategory: string;
@@ -141,10 +144,24 @@ export interface TranslationKeys {
   nutriscoreGrade: string;
   accessDenied: string;
   
+  // Comments and Reviews
+  reviews: string;
+  comments: string;
+  leaveComment: string;
+  yourRating: string;
+  commentPlaceholder: string;
+  submitComment: string;
+  allComments: string;
+  noComments: string;
+  beFirstToComment: string;
+  ratingRequired: string;
+  commentSuccess: string;
+  commentDeleted: string;
+  deleteComment: string;
+  
   // Firebase Diagnostics
   firebaseDiagnostics: string;
   runPermissionTests: string;
-  firebaseConfiguration: string;
   currentUser: string;
   testResults: string;
   productsCollection: string;
@@ -152,21 +169,14 @@ export interface TranslationKeys {
   commentsCollection: string;
   accessGranted: string;
   permissionDenied: string;
-  howToFix: string;
-  securityRulesUpdate: string;
-  copyInstructions: string;
-  quickFixSteps: string;
-  developmentRulesWarning: string;
-  rulesUpdateTime: string;
-  diagnostics: string;
+  notLoggedIn: string;
+  runningTests: string;
+  canComment: string;
   role: string;
   status: string;
   active: string;
   blocked: string;
-  projectId: string;
-  apiKey: string;
-  notLoggedIn: string;
-  runningTests: string;
+  diagnostics: string;
 
   // Form fields and product information
   weight: string;
@@ -194,6 +204,18 @@ export interface TranslationKeys {
   continueDemo: string;
   productAdded: string;
   failedToAddProduct: string;
+
+
+  composition: string;
+
+ 
+  nutritionShort: string;
+  compositionShort: string;
+  reviewsShort: string;
+
+ 
+  containsLactose: string;
+  containsGluten: string;
 }
 
 // English translations
@@ -227,6 +249,7 @@ const en: TranslationKeys = {
   networkError: 'Could not connect to the server',
   searchPlaceholder: 'Search products...',
   categories: 'Categories',
+  recentProducts: 'Recent Products',
   ingredients: 'Ingredients',
   nutrition: 'Nutrition Facts',
   calories: 'Calories',
@@ -249,6 +272,8 @@ const en: TranslationKeys = {
   additives: 'Additives',
   logoutConfirmation: 'Are you sure you want to log out?',
   failedToLoadUser: 'Failed to load user data',
+  description: 'Description',
+  productDescription: 'Product Description',
   
   // Product categories
   beverageCategory: 'Beverages',
@@ -339,10 +364,24 @@ const en: TranslationKeys = {
   nutriscoreGrade: 'Nutriscore Grade',
   accessDenied: 'Access Denied',
   
+  // Comments and Reviews
+  reviews: 'Reviews',
+  comments: 'Comments',
+  leaveComment: 'Leave a Comment',
+  yourRating: 'Your Rating',
+  commentPlaceholder: 'Write your comment here...',
+  submitComment: 'Submit Comment',
+  allComments: 'All Comments',
+  noComments: 'No comments yet for this product.',
+  beFirstToComment: 'Be the first to comment!',
+  ratingRequired: 'Please select a rating before submitting',
+  commentSuccess: 'Comment added successfully',
+  commentDeleted: 'Comment deleted successfully',
+  deleteComment: 'Delete Comment',
+  
   // Firebase Diagnostics
   firebaseDiagnostics: 'Firebase Diagnostics',
   runPermissionTests: 'Run Permission Tests',
-  firebaseConfiguration: 'Firebase Configuration',
   currentUser: 'Current User',
   testResults: 'Test Results',
   productsCollection: 'Products Collection',
@@ -350,21 +389,14 @@ const en: TranslationKeys = {
   commentsCollection: 'Comments Collection',
   accessGranted: 'Access Granted',
   permissionDenied: 'Permission Denied',
-  howToFix: 'How to Fix',
-  securityRulesUpdate: 'Security Rules Update',
-  copyInstructions: 'Copy Instructions',
-  quickFixSteps: 'Quick Fix Steps',
-  developmentRulesWarning: 'Development Rules Warning',
-  rulesUpdateTime: 'Rules Update Time',
-  diagnostics: 'Diagnostics',
+  notLoggedIn: 'Not Logged In',
+  runningTests: 'Running Tests',
+  canComment: 'Can Comment',
   role: 'Role',
   status: 'Status',
   active: 'Active',
   blocked: 'Blocked',
-  projectId: 'Project ID',
-  apiKey: 'API Key',
-  notLoggedIn: 'Not Logged In',
-  runningTests: 'Running Tests',
+  diagnostics: 'Diagnostics',
 
   // Form fields and product information
   weight: 'Weight',
@@ -391,7 +423,19 @@ const en: TranslationKeys = {
   productAddedLocally: 'Product was added to local storage only',
   continueDemo: 'Continue in Demo Mode',
   productAdded: 'Product added successfully',
-  failedToAddProduct: 'Failed to add product'
+  failedToAddProduct: 'Failed to add product',
+
+  // New key
+  composition: 'Composition',
+
+  // Short versions for navigation
+  nutritionShort: 'KCPF',
+  compositionShort: 'Composition',
+  reviewsShort: 'Reviews',
+
+  // New translations for admin form
+  containsLactose: 'Contains Lactose',
+  containsGluten: 'Contains Gluten',
 }
 
 // Ukrainian translations
@@ -425,6 +469,7 @@ const uk: TranslationKeys = {
   networkError: 'Не вдалося підключитися до сервера',
   searchPlaceholder: 'Пошук продуктів...',
   categories: 'Категорії',
+  recentProducts: 'Нещодавні продукти',
   ingredients: 'Інгредієнти',
   nutrition: 'Поживна цінність',
   calories: 'Калорії',
@@ -447,6 +492,8 @@ const uk: TranslationKeys = {
   additives: 'Добавки',
   logoutConfirmation: 'Ви впевнені, що хочете вийти?',
   failedToLoadUser: 'Не вдалося завантажити дані користувача',
+  description: 'Опис',
+  productDescription: 'Опис продукту',
   
   // Product categories
   beverageCategory: 'Напої',
@@ -492,12 +539,12 @@ const uk: TranslationKeys = {
   nameRequired: 'Ім\'я обов\'язкове',
   passwordsDoNotMatch: 'Паролі не співпадають',
   resetPassword: 'Скинути пароль',
-  resetPasswordPrompt: 'Введіть вашу електронну пошту для отримання посилання на скидання пароля',
+  resetPasswordPrompt: 'Введіть електронну пошту для отримання посилання на скидання пароля',
   send: 'Надіслати',
   resetEmailSent: 'Лист для скидання пароля надіслано',
   resetPasswordConfirmation: 'Посилання для скидання пароля надіслано на адресу {email}',
   registrationSuccessful: 'Реєстрація успішна',
-  accountCreated: 'Ваш обліковий запис створено. Тепер ви можете увійти.',
+  accountCreated: 'Обліковий запис створено. Тепер ви можете увійти.',
 
   // Profile Screen
   editProfile: 'Редагувати профіль',
@@ -537,10 +584,24 @@ const uk: TranslationKeys = {
   nutriscoreGrade: 'Рейтинг Nutriscore',
   accessDenied: 'Доступ заборонено',
   
+  // Comments and Reviews
+  reviews: 'Відгуки',
+  comments: 'Коментарі',
+  leaveComment: 'Залишити коментар',
+  yourRating: 'Оцінка',
+  commentPlaceholder: 'Напишіть коментар тут...',
+  submitComment: 'Надіслати коментар',
+  allComments: 'Всі коментарі',
+  noComments: 'Поки немає коментарів для цього продукту.',
+  beFirstToComment: 'Будьте першим, хто залишить коментар!',
+  ratingRequired: 'Будь ласка, виберіть оцінку перед відправкою',
+  commentSuccess: 'Коментар успішно додано',
+  commentDeleted: 'Коментар успішно видалено',
+  deleteComment: 'Видалити коментар',
+  
   // Firebase Diagnostics
-  firebaseDiagnostics: 'Firebase Диагностика',
+  firebaseDiagnostics: 'Firebase Діагностика',
   runPermissionTests: 'Запустити тести дозволів',
-  firebaseConfiguration: 'Конфігурація Firebase',
   currentUser: 'Поточний користувач',
   testResults: 'Результати тестів',
   productsCollection: 'Коллекція продуктів',
@@ -548,21 +609,14 @@ const uk: TranslationKeys = {
   commentsCollection: 'Коллекція коментарів',
   accessGranted: 'Доступ надано',
   permissionDenied: 'Доступ заборонено',
-  howToFix: 'Як виправити',
-  securityRulesUpdate: 'Оновлення правил безпеки',
-  copyInstructions: 'Інструкції для копіювання',
-  quickFixSteps: 'Швидкі кроки для виправлення',
-  developmentRulesWarning: 'Попередження про правила розробки',
-  rulesUpdateTime: 'Час оновлення правил',
-  diagnostics: 'Діагностика',
+  notLoggedIn: 'Не увійшов',
+  runningTests: 'Виконуються тести',
+  canComment: 'Може коментувати',
   role: 'Роль',
   status: 'Статус',
   active: 'Активний',
   blocked: 'Заблокований',
-  projectId: 'Ідентифікатор проекту',
-  apiKey: 'Ключ API',
-  notLoggedIn: 'Не увійшов',
-  runningTests: 'Виконуються тести',
+  diagnostics: 'Діагностика',
 
   // Form fields and product information
   weight: 'Вага',
@@ -589,11 +643,23 @@ const uk: TranslationKeys = {
   productAddedLocally: 'Продукт додано лише до локального сховища',
   continueDemo: 'Продовжити в демо-режимі',
   productAdded: 'Продукт успішно додано',
-  failedToAddProduct: 'Не вдалося додати продукт'
+  failedToAddProduct: 'Не вдалося додати продукт',
+
+  // New key
+  composition: 'Склад',
+
+  // Short versions for navigation
+  nutritionShort: 'КБЖВ',
+  compositionShort: 'Склад',
+  reviewsShort: 'Відгуки',
+
+  // New translations for admin form
+  containsLactose: 'Містить лактозу',
+  containsGluten: 'Містить глютен',
 }
 
 export type Language = 'en' | 'uk';
-const translations = { en, uk };
+const translations = { en, uk } as const;
 let currentLanguage: Language = 'en';
 
 

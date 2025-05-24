@@ -45,7 +45,21 @@ export const fetchProductComments = createAsyncThunk(
   async (productId: string, { rejectWithValue }) => {
     try {
       const comments = await getProductComments(productId);
-      return { productId, comments };
+      
+   
+      const validatedComments = comments.map(comment => {
+        if (!comment.commentId) {
+     
+          console.warn('Comment missing commentId, creating fallback:', comment);
+          return {
+            ...comment,
+            commentId: comment.userId + '_' + comment.createdAt
+          };
+        }
+        return comment;
+      });
+      
+      return { productId, comments: validatedComments };
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -56,9 +70,22 @@ export const removeComment = createAsyncThunk(
   'comments/removeComment',
   async ({ commentId, adminId }: { commentId: string; adminId: string }, { rejectWithValue }) => {
     try {
+      if (!commentId) {
+        console.error('Cannot delete comment: commentId is missing in action payload');
+        return rejectWithValue('Missing comment ID');
+      }
+      
+      if (!adminId) {
+        console.error('Cannot delete comment: adminId is missing in action payload');
+        return rejectWithValue('Missing admin ID');
+      }
+      
+      console.log('Removing comment:', { commentId, adminId });
       await deleteComment(commentId, adminId);
+      console.log('Comment successfully marked as deleted');
       return { commentId };
     } catch (error) {
+      console.error('Error in removeComment thunk:', error);
       return rejectWithValue((error as Error).message);
     }
   }
@@ -92,7 +119,7 @@ const commentsSlice = createSlice({
         state.error = action.payload as string;
       })
       
-      // Fetch product comments
+     
       .addCase(fetchProductComments.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -107,7 +134,7 @@ const commentsSlice = createSlice({
         state.error = action.payload as string;
       })
       
-      // Remove comment
+    
       .addCase(removeComment.pending, (state) => {
         state.loading = true;
       })
@@ -115,11 +142,18 @@ const commentsSlice = createSlice({
         state.loading = false;
         const { commentId } = action.payload;
         
-        // Find and remove the comment from the product comments
+        if (!commentId) {
+          console.error('No comment ID returned from removeComment');
+          return;
+        }
+        
+     
         Object.keys(state.productComments).forEach(productId => {
-          state.productComments[productId] = state.productComments[productId].filter(
-            comment => comment.commentId !== commentId
-          );
+          if (state.productComments[productId]) {
+            state.productComments[productId] = state.productComments[productId].filter(
+              comment => comment.commentId !== commentId
+            );
+          }
         });
       })
       .addCase(removeComment.rejected, (state, action) => {

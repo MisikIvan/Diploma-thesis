@@ -115,10 +115,13 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [newProduct, setNewProduct] = useState<Partial<Product>>({
     name: '',
+    description: '',
     imageUrl: '',
     nutriscoreGrade: 'C' as NutriScoreGrade,
     ingredients: '',
     categories: [],
+    allergens: [],
+    additives: [],
     nutriments: {
       calories: 0,
       proteins: 0,
@@ -134,14 +137,26 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
     },
     isVegan: false,
     isVegetarian: false,
+    hasLactose: false,
     hasGluten: false,
     weight: 0
   });
 
+  // Функція для отримання кольору NutriScore
+  const getNutriScoreColor = (grade: string) => {
+    switch (grade) {
+      case 'A': return '#00C851'; // Зелений
+      case 'B': return '#8BC34A'; // Світло-зелений
+      case 'C': return '#FFC107'; // Жовтий
+      case 'D': return '#FF9800'; // Помаранчевий
+      case 'E': return '#F44336'; // Червоний
+      default: return '#34572a'; // За замовчуванням
+    }
+  };
 
   const currentUser = useAppSelector(state => state.user.currentUser);
   
-  
+ 
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'admin') {
       console.log('Unauthorized access attempt to AdminScreen');
@@ -156,36 +171,28 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
     }
   }, []);
   
-
+ 
   if (!currentUser || currentUser.role !== 'admin') {
     return <View style={styles.container}><ActivityIndicator size="large" /></View>;
   }
   
   useEffect(() => {
- 
     initializeFirebase();
     
-   
     navigation.setOptions({
-      title: t('adminScreen'),
       headerRight: () => (
         <View style={{ flexDirection: 'row' }}>
           <TouchableOpacity
-            style={[styles.diagnosticButton, { marginRight: 10 }]}
+            style={[styles.headerButton, { marginRight: 10 }]}
             onPress={() => checkFirebaseConnection()}
           >
-            <Text style={styles.diagnosticButtonText}>
-              <Ionicons name={isDemo ? 'cloud-offline' : 'cloud-done'} size={16} color="#fff" /> 
-              {isDemo ? t('goOnline') : t('goOffline')}
-            </Text>
+            <Ionicons name={isDemo ? 'cloud-offline' : 'cloud-done'} size={16} color="#fff" />
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.diagnosticButton}
-            onPress={() => navigation.navigate('FirebaseDiagnostic')}
+            style={styles.headerButton}
+            onPress={() => navigation.navigate('Diagnostics')}
           >
-            <Text style={styles.diagnosticButtonText}>
-              <Ionicons name="medical" size={16} color="#fff" /> {t('diagnostics')}
-            </Text>
+            <Ionicons name="medical" size={16} color="#fff" />
           </TouchableOpacity>
         </View>
       ),
@@ -358,12 +365,13 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
                   try {
                     const newFirebaseProduct = await addProduct({
                       name: newProduct.name || '',
+                      description: newProduct.description || '',
                       imageUrl: newProduct.imageUrl || 'https://via.placeholder.com/300x300?text=No+Image',
                       nutriscoreGrade: newProduct.nutriscoreGrade || 'C',
                       ingredients: newProduct.ingredients || '',
                       categories: newProduct.categories || [],
-                      allergens: [],
-                      additives: [],
+                      allergens: newProduct.allergens || [],
+                      additives: newProduct.additives || [],
                       createdBy: 'admin',
                       nutriments: newProduct.nutriments || {
                         calories: 0,
@@ -374,7 +382,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
                       },
                       isVegan: newProduct.isVegan || false,
                       isVegetarian: newProduct.isVegetarian || false,
-                      hasLactose: false,
+                      hasLactose: newProduct.hasLactose || false,
                       hasGluten: newProduct.hasGluten || false,
                       weight: newProduct.weight || 0
                     }, currentUser.userId);
@@ -431,12 +439,13 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
         
           await addProduct({
             name: newProduct.name || '',
+            description: newProduct.description || '',
             imageUrl: newProduct.imageUrl || 'https://via.placeholder.com/300x300?text=No+Image',
             nutriscoreGrade: newProduct.nutriscoreGrade || 'C',
             ingredients: newProduct.ingredients || '',
             categories: newProduct.categories || [],
-            allergens: [],
-            additives: [],
+            allergens: newProduct.allergens || [],
+            additives: newProduct.additives || [],
             createdBy: 'admin',
             nutriments: newProduct.nutriments || {
               calories: 0,
@@ -447,7 +456,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
             },
             isVegan: newProduct.isVegan || false,
             isVegetarian: newProduct.isVegetarian || false,
-            hasLactose: false,
+            hasLactose: newProduct.hasLactose || false,
             hasGluten: newProduct.hasGluten || false,
             weight: newProduct.weight || 0
           }, currentUser.userId);
@@ -487,12 +496,13 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
     return {
       productId: `mock-product-${Date.now()}`,
       name: newProduct.name || '',
+      description: newProduct.description || '',
       imageUrl: newProduct.imageUrl || 'https://via.placeholder.com/300x300?text=No+Image',
       nutriscoreGrade: newProduct.nutriscoreGrade || 'C',
       ingredients: newProduct.ingredients || '',
       categories: newProduct.categories || [],
-      allergens: [],
-      additives: [],
+      allergens: newProduct.allergens || [],
+      additives: newProduct.additives || [],
       createdBy: 'admin',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -505,7 +515,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
       },
       isVegan: newProduct.isVegan || false,
       isVegetarian: newProduct.isVegetarian || false,
-      hasLactose: false,
+      hasLactose: newProduct.hasLactose || false,
       hasGluten: newProduct.hasGluten || false,
       weight: newProduct.weight || 0
     };
@@ -515,10 +525,13 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
   const resetProductForm = () => {
     setNewProduct({
       name: '',
+      description: '',
       imageUrl: '',
       nutriscoreGrade: 'C' as NutriScoreGrade,
       ingredients: '',
       categories: [],
+      allergens: [],
+      additives: [],
       nutriments: {
         calories: 0,
         proteins: 0,
@@ -534,6 +547,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
       },
       isVegan: false,
       isVegetarian: false,
+      hasLactose: false,
       hasGluten: false,
       weight: 0
     });
@@ -649,7 +663,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
       <View style={styles.productInfo}>
         <Text style={styles.productName}>{item.name}</Text>
         <Text style={styles.productBrand}>{item.createdBy}</Text>
-        <View style={styles.nutriscoreBadge}>
+        <View style={[styles.nutriscoreBadge, { backgroundColor: getNutriScoreColor(item.nutriscoreGrade) }]}>
           <Text style={styles.nutriscoreText}>{item.nutriscoreGrade}</Text>
         </View>
       </View>
@@ -657,7 +671,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
         style={styles.deleteButton}
         onPress={() => handleDeleteProduct(item.productId)}
       >
-        <Ionicons name="trash-outline" size={24} color="red" />
+        <Ionicons name="trash-outline" size={24} color="#fff" />
       </TouchableOpacity>
     </View>
   );
@@ -713,6 +727,16 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
               placeholder={t('productName')}
             />
             
+            <Text style={styles.inputLabel}>{t('productDescription')}</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={newProduct.description}
+              onChangeText={(text) => setNewProduct({...newProduct, description: text})}
+              placeholder="Детальний опис продукту..."
+              multiline
+              numberOfLines={3}
+            />
+            
             <Text style={styles.inputLabel}>{t('productImageUrl')}</Text>
             <TextInput
               style={styles.input}
@@ -721,7 +745,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
               placeholder="https://example.com/image.jpg"
             />
             
-            <Text style={styles.inputLabel}>{t('weight')} (g)</Text>
+            <Text style={styles.inputLabel}>{t('weight')} (г)</Text>
             <TextInput
               style={styles.input}
               value={newProduct.weight?.toString()}
@@ -753,7 +777,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
               keyboardType="numeric"
             />
             
-            <Text style={styles.inputLabel}>{t('proteins')} (g)</Text>
+            <Text style={styles.inputLabel}>{t('proteins')} (г)</Text>
             <TextInput
               style={styles.input}
               value={newProduct.nutriments?.proteins?.toString()}
@@ -771,7 +795,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
               keyboardType="numeric"
             />
             
-            <Text style={styles.inputLabel}>{t('carbohydrates')} (g)</Text>
+            <Text style={styles.inputLabel}>{t('carbohydrates')} (г)</Text>
             <TextInput
               style={styles.input}
               value={newProduct.nutriments?.carbohydrates?.total?.toString()}
@@ -792,7 +816,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
               keyboardType="numeric"
             />
             
-            <Text style={[styles.inputLabel, styles.indentedLabel]}>{t('sugar')} (g)</Text>
+            <Text style={[styles.inputLabel, styles.indentedLabel]}>{t('sugar')} (г)</Text>
             <TextInput
               style={[styles.input, styles.indentedInput]}
               value={newProduct.nutriments?.carbohydrates?.sugar?.toString()}
@@ -813,7 +837,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
               keyboardType="numeric"
             />
             
-            <Text style={styles.inputLabel}>{t('fats')} (g)</Text>
+            <Text style={styles.inputLabel}>{t('fats')} (г)</Text>
             <TextInput
               style={styles.input}
               value={newProduct.nutriments?.fats?.total?.toString()}
@@ -834,7 +858,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
               keyboardType="numeric"
             />
             
-            <Text style={[styles.inputLabel, styles.indentedLabel]}>{t('saturatedFats')} (g)</Text>
+            <Text style={[styles.inputLabel, styles.indentedLabel]}>{t('saturatedFats')} (г)</Text>
             <TextInput
               style={[styles.input, styles.indentedInput]}
               value={newProduct.nutriments?.fats?.saturated?.toString()}
@@ -855,7 +879,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
               keyboardType="numeric"
             />
             
-            <Text style={styles.inputLabel}>{t('salt')} (g)</Text>
+            <Text style={styles.inputLabel}>{t('salt')} (г)</Text>
             <TextInput
               style={styles.input}
               value={newProduct.nutriments?.salt?.toString()}
@@ -883,11 +907,19 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
                   key={grade}
                   style={[
                     styles.nutriScoreOption,
-                    newProduct.nutriscoreGrade === grade && styles.selectedNutriScore
+                    newProduct.nutriscoreGrade === grade && { 
+                      backgroundColor: getNutriScoreColor(grade),
+                      borderColor: getNutriScoreColor(grade)
+                    }
                   ]}
                   onPress={() => setNewProduct({...newProduct, nutriscoreGrade: grade as NutriScoreGrade})}
                 >
-                  <Text style={styles.nutriScoreOptionText}>{grade}</Text>
+                  <Text style={[
+                    styles.nutriScoreOptionText,
+                    newProduct.nutriscoreGrade === grade && styles.selectedNutriScoreText
+                  ]}>
+                    {grade}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -900,6 +932,28 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
               placeholder={t('ingredients')}
               multiline
               numberOfLines={4}
+            />
+            
+            <Text style={styles.inputLabel}>{t('allergens')}</Text>
+            <TextInput
+              style={styles.input}
+              value={newProduct.allergens?.join(', ')}
+              onChangeText={(text) => setNewProduct({
+                ...newProduct, 
+                allergens: text.split(',').map(allergen => allergen.trim()).filter(allergen => allergen)
+              })}
+              placeholder="Молоко, яйця, глютен..."
+            />
+            
+            <Text style={styles.inputLabel}>{t('additives')}</Text>
+            <TextInput
+              style={styles.input}
+              value={newProduct.additives?.join(', ')}
+              onChangeText={(text) => setNewProduct({
+                ...newProduct, 
+                additives: text.split(',').map(additive => additive.trim()).filter(additive => additive)
+              })}
+              placeholder="E100, E200..."
             />
             
             <Text style={styles.inputLabel}>{t('categories')}</Text>
@@ -948,16 +1002,31 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
             <View style={styles.checkboxRow}>
               <TouchableOpacity 
                 style={styles.checkbox}
+                onPress={() => setNewProduct({...newProduct, hasLactose: !newProduct.hasLactose})}
+              >
+                <View style={[
+                  styles.checkboxInner, 
+                  newProduct.hasLactose && styles.checkboxChecked
+                ]}>
+                  {newProduct.hasLactose && <Ionicons name="checkmark" size={16} color="#fff" />}
+                </View>
+              </TouchableOpacity>
+              <Text style={styles.checkboxLabel}>{t('containsLactose')}</Text>
+            </View>
+            
+            <View style={styles.checkboxRow}>
+              <TouchableOpacity 
+                style={styles.checkbox}
                 onPress={() => setNewProduct({...newProduct, hasGluten: !newProduct.hasGluten})}
               >
                 <View style={[
                   styles.checkboxInner, 
-                  !newProduct.hasGluten && styles.checkboxChecked
+                  newProduct.hasGluten && styles.checkboxChecked
                 ]}>
-                  {!newProduct.hasGluten && <Ionicons name="checkmark" size={16} color="#fff" />}
+                  {newProduct.hasGluten && <Ionicons name="checkmark" size={16} color="#fff" />}
                 </View>
               </TouchableOpacity>
-              <Text style={styles.checkboxLabel}>{t('glutenFree')}</Text>
+              <Text style={styles.checkboxLabel}>{t('containsGluten')}</Text>
             </View>
           </ScrollView>
           
@@ -982,21 +1051,18 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('adminScreen')}</Text>
-        {isDemo && (
-          <View style={styles.demoBadge}>
-            <Text style={styles.demoBadgeText}>{t('demoMode')}</Text>
-          </View>
-        )}
-      </View>
+      {isDemo && (
+        <View style={styles.demoBanner}>
+          <Text style={styles.demoBannerText}>{t('demoMode')}</Text>
+        </View>
+      )}
       
       {error && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity 
             style={styles.diagnosticButton} 
-            onPress={() => navigation.navigate('FirebaseDiagnostic')}
+            onPress={() => navigation.navigate('Diagnostics')}
           >
             <Text style={styles.diagnosticButtonText}>
               <Ionicons name="medical" size={16} color="#fff" /> {t('diagnostics')}
@@ -1032,7 +1098,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
       
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
+          <ActivityIndicator size="large" color="#34572a" />
         </View>
       ) : error ? (
         <View style={styles.centeredErrorContainer}>
@@ -1060,7 +1126,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
                 style={styles.floatingButton}
                 onPress={() => setShowAddProductModal(true)}
               >
-                <Ionicons name="add" size={30} color="white" />
+                <Ionicons name="add" size={32} color="white" />
               </TouchableOpacity>
             </>
           )}
@@ -1089,200 +1155,258 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f9fa',
   },
-  header: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    elevation: 4,
+  headerButton: {
+    backgroundColor: '#34572a',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
-    shadowRadius: 2,
+    shadowRadius: 3,
+    elevation: 4,
   },
-  headerTitle: {
+  demoBanner: {
+    backgroundColor: '#FF9800',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
+  },
+  demoBannerText: {
     color: 'white',
-    fontSize: 20,
     fontWeight: 'bold',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    margin: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#dc3545',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  errorText: {
+    color: '#dc3545',
+    marginBottom: 12,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  diagnosticButton: {
+    backgroundColor: '#34572a',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
+  },
+  diagnosticButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: 'white',
-    elevation: 2,
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginVertical: 16,
+    borderRadius: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   tab: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: 16,
     alignItems: 'center',
+    borderRadius: 12,
   },
   activeTab: {
-    borderBottomWidth: 3,
-    borderBottomColor: '#007AFF',
+    backgroundColor: '#34572a',
   },
   tabText: {
     fontSize: 16,
-    color: '#666',
+    color: '#6c757d',
+    fontWeight: '500',
   },
   activeTabText: {
-    color: '#007AFF',
+    color: '#fff',
     fontWeight: 'bold',
   },
   listContent: {
     padding: 16,
+    paddingBottom: 100,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  errorContainer: {
-    padding: 10,
-    backgroundColor: '#ffefef',
-    borderRadius: 8,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#ff6b6b',
-  },
-  errorText: {
-    color: '#e53e3e',
-    marginBottom: 10,
-  },
-  diagnosticButton: {
-    backgroundColor: '#3182ce',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
-  },
-  diagnosticButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    backgroundColor: '#f8f9fa',
   },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     padding: 40,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    margin: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   emptyText: {
     fontSize: 16,
-    color: '#888',
+    color: '#6c757d',
     textAlign: 'center',
+    fontWeight: '500',
   },
   itemCard: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 16,
     flexDirection: 'row',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: '#f1f3f4',
   },
   productImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 4,
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    backgroundColor: '#f8f9fa',
   },
   productInfo: {
     flex: 1,
     marginLeft: 16,
   },
   productName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
+    color: '#212529',
+    marginBottom: 4,
   },
   productBrand: {
     fontSize: 14,
-    color: '#666',
-    marginTop: 4,
+    color: '#6c757d',
+    marginBottom: 8,
   },
   nutriscoreBadge: {
-    backgroundColor: '#4CAF50',
     alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   nutriscoreText: {
     color: 'white',
     fontWeight: 'bold',
+    fontSize: 12,
   },
   deleteButton: {
     justifyContent: 'center',
     padding: 8,
+    backgroundColor: '#dc3545',
+    borderRadius: 8,
+    marginLeft: 8,
   },
   userAvatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 3,
+    borderColor: '#34572a',
   },
   userInfo: {
     flex: 1,
     marginLeft: 16,
   },
   userName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
+    color: '#212529',
+    marginBottom: 2,
   },
   userEmail: {
     fontSize: 14,
-    color: '#666',
-    marginTop: 2,
+    color: '#6c757d',
+    marginBottom: 4,
   },
   userRole: {
     fontSize: 12,
-    color: '#888',
-    marginTop: 2,
+    color: '#495057',
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
   },
   userActions: {
     justifyContent: 'center',
   },
   actionButton: {
+    paddingVertical: 8,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
+    borderRadius: 8,
     marginBottom: 8,
+    minWidth: 80,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
   },
   actionButtonText: {
     color: 'white',
-    fontSize: 12,
     fontWeight: 'bold',
+    fontSize: 12,
   },
   blockButton: {
-    backgroundColor: '#F44336',
+    backgroundColor: '#dc3545',
   },
   unblockButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#28a745',
   },
   enableButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: '#17a2b8',
   },
   disableButton: {
-    backgroundColor: '#FF9800',
+    backgroundColor: '#fd7e14',
   },
   floatingButton: {
     position: 'absolute',
     right: 20,
-    bottom: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#007AFF',
+    bottom: 100,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#34572a',
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.3,
-    shadowRadius: 3,
+    shadowRadius: 8,
+    elevation: 10,
   },
   modalContainer: {
     flex: 1,
@@ -1291,32 +1415,45 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 20,
-    maxHeight: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 24,
+    maxHeight: '90%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 20,
   },
   modalTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+    color: '#34572a',
   },
   formContainer: {
-    maxHeight: 400,
+    maxHeight: 500,
   },
   inputLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    marginTop: 12,
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    marginTop: 16,
+    color: '#495057',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 4,
-    padding: 10,
+    borderColor: '#e9ecef',
+    borderRadius: 12,
+    padding: 16,
     fontSize: 16,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
   },
   textArea: {
     height: 100,
@@ -1325,40 +1462,48 @@ const styles = StyleSheet.create({
   nutriScoreSelector: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 12,
   },
   nutriScoreOption: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#eee',
-  },
-  selectedNutriScore: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#f8f9fa',
+    borderWidth: 2,
+    borderColor: '#e9ecef',
   },
   nutriScoreOptionText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
+    color: '#495057',
+  },
+  selectedNutriScoreText: {
+    color: '#fff',
   },
   modalActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
+    marginTop: 24,
   },
   modalButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 4,
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: 'center',
-    marginHorizontal: 5,
+    marginHorizontal: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
   },
   cancelButton: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#6c757d',
   },
   saveButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#34572a',
   },
   modalButtonText: {
     color: 'white',
@@ -1370,88 +1515,93 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#f8f9fa',
   },
   centeredErrorText: {
     fontSize: 16,
-    color: 'red',
+    color: '#dc3545',
     textAlign: 'center',
     marginBottom: 20,
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 12,
   },
   retryButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 5,
+    backgroundColor: '#34572a',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 4,
   },
   retryButtonText: {
     color: 'white',
     fontWeight: 'bold',
+    fontSize: 16,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
-    marginTop: 20,
-    marginBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    paddingBottom: 5,
+    color: '#34572a',
+    marginTop: 24,
+    marginBottom: 16,
+    borderBottomWidth: 2,
+    borderBottomColor: '#34572a',
+    paddingBottom: 8,
   },
   indentedLabel: {
-    marginLeft: 15,
-    color: '#555',
+    marginLeft: 16,
+    color: '#6c757d',
+    fontSize: 14,
   },
   indentedInput: {
-    marginLeft: 15,
-    width: '92%',
+    marginLeft: 16,
+    width: '90%',
   },
   inputHelper: {
     fontSize: 12,
-    color: '#777',
-    marginBottom: 10,
+    color: '#6c757d',
+    marginBottom: 12,
     fontStyle: 'italic',
+    marginTop: 4,
   },
   checkboxRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 16,
+    backgroundColor: '#f8f9fa',
+    padding: 12,
+    borderRadius: 8,
   },
   checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    width: 28,
+    height: 28,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#e9ecef',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 12,
+    backgroundColor: '#fff',
   },
   checkboxInner: {
-    width: 16,
-    height: 16,
-    borderRadius: 2,
+    width: 20,
+    height: 20,
+    borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkboxChecked: {
-    backgroundColor: '#5d8402',
+    backgroundColor: '#34572a',
+    borderColor: '#34572a',
   },
   checkboxLabel: {
     fontSize: 16,
-    color: '#333',
-  },
-  demoBadge: {
-    position: 'absolute',
-    right: 20,
-    backgroundColor: '#FF9800',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  demoBadgeText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 12,
+    color: '#495057',
+    fontWeight: '500',
   },
 });
 

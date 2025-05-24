@@ -9,9 +9,7 @@ import {
   onAuthStateChanged,
   updateProfile,
   User as FirebaseUser,
-  signInWithCredential,
-  setPersistence,
-  browserLocalPersistence
+  signInWithCredential
 } from 'firebase/auth';
 import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, query, where, getDocs, deleteDoc, addDoc, Timestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -22,26 +20,18 @@ import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Initialize Firebase
+
 const app = initializeApp(FIREBASE_CONFIG);
-// Initialize Auth
+
 const auth = getAuth(app);
 const db = getFirestore(app);
+export { db };
 const storage = getStorage(app);
 const googleProvider = new GoogleAuthProvider();
-
 
 WebBrowser.maybeCompleteAuthSession();
 
 
-if (typeof window !== 'undefined') {
-  setPersistence(auth, browserLocalPersistence)
-    .catch(error => {
-      console.error('Error setting auth persistence:', error);
-    });
-}
-
-// Create a service for storing auth state in AsyncStorage
 const storeUserInStorage = async (user: FirebaseUser | null) => {
   try {
     if (user) {
@@ -58,21 +48,21 @@ const storeUserInStorage = async (user: FirebaseUser | null) => {
   }
 };
 
-// Monitor auth state changes to update AsyncStorage
+
 onAuthStateChanged(auth, (user) => {
   storeUserInStorage(user);
 });
 
-// Authentication Services
+
 export const registerWithEmail = async (email: string, password: string, displayName: string): Promise<User> => {
   try {
     console.log(`Starting registration for email: ${email}`);
     
-    // Create the user with email/password
+   
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     console.log(`User created in Firebase Auth with UID: ${userCredential.user.uid}`);
     
-    // Update profile with display name
+   
     try {
       await updateProfile(userCredential.user, { displayName });
       console.log(`Profile updated with displayName: ${displayName}`);
@@ -80,10 +70,10 @@ export const registerWithEmail = async (email: string, password: string, display
       console.error('Error updating profile:', profileError);
     }
     
-    // Save user data to AsyncStorage
+  
     await storeUserInStorage(userCredential.user);
     
-    // Create user document in Firestore
+   
     const user: User = {
       userId: userCredential.user.uid,
       email: email,
@@ -116,16 +106,16 @@ export const loginWithEmail = async (email: string, password: string): Promise<U
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     
-    // Save user data to AsyncStorage
+   
     await storeUserInStorage(userCredential.user);
     
-    // Update last login
+  
     const userDocRef = doc(db, 'users', userCredential.user.uid);
     await updateDoc(userDocRef, {
       lastLogin: new Date().toISOString()
     });
     
-    // Get user data
+   
     const userDoc = await getDoc(userDocRef);
     return userDoc.data() as User;
   } catch (error) {
@@ -144,7 +134,7 @@ export const loginWithGoogle = async (): Promise<User> => {
       const user = result.user;      
       console.log('Successfully logged in with Google on web:', user.uid);
             
-      // Save user data to AsyncStorage      
+         
       await storeUserInStorage(user);
             
       return await handleGoogleUser(user);    
@@ -162,16 +152,16 @@ export const loginWithGoogle = async (): Promise<User> => {
 const handleGoogleUser = async (user: FirebaseUser): Promise<User> => {
   console.log('Processing Google user:', user.uid);
   
-  // Ensure user is saved to AsyncStorage
+
   await storeUserInStorage(user);
   
-  // Check if user document exists
+ 
   const userDocRef = doc(db, 'users', user.uid);
   const userDoc = await getDoc(userDocRef);
   
   if (!userDoc.exists()) {
     console.log('Creating new Firestore document for Google user');
-    // Create new user
+ 
     const newUser: User = {
       userId: user.uid,
       email: user.email || '',
@@ -190,7 +180,7 @@ const handleGoogleUser = async (user: FirebaseUser): Promise<User> => {
     return newUser;
   } else {
     console.log('Updating existing user document for Google user');
-    // Update last login
+  
     await updateDoc(userDocRef, {
       lastLogin: new Date().toISOString()
     });
@@ -202,7 +192,7 @@ const handleGoogleUser = async (user: FirebaseUser): Promise<User> => {
 export const logoutUser = async (): Promise<void> => {
   try {
     await signOut(auth);
-    // Clear user data from AsyncStorage
+   
     await storeUserInStorage(null);
   } catch (error) {
     console.error('Error signing out:', error);
@@ -228,12 +218,12 @@ export const getCurrentUser = async (): Promise<User | null> => {
           reject(error);
         }
       } else {
-        // If not logged in with Firebase, try AsyncStorage
+     
         try {
           const storedUser = await AsyncStorage.getItem('auth_user');
           if (storedUser) {
             const userData = JSON.parse(storedUser);
-            // Get full user data from Firestore using stored UID
+          
             if (userData.uid) {
               const userDocRef = doc(db, 'users', userData.uid);
               const userDoc = await getDoc(userDocRef);
@@ -254,7 +244,7 @@ export const getCurrentUser = async (): Promise<User | null> => {
   });
 };
 
-// User Management Services
+
 export const getAllUsers = async (): Promise<User[]> => {
   try {
     const usersCollection = collection(db, 'users');
@@ -273,7 +263,7 @@ export const blockUser = async (userId: string, adminId: string): Promise<void> 
       isBlocked: true
     });
     
-    // Log admin action
+   
     await addAdminAction(adminId, 'block_user', userId, 'Blocked user');
   } catch (error) {
     console.error('Error blocking user:', error);
@@ -288,7 +278,7 @@ export const unblockUser = async (userId: string, adminId: string): Promise<void
       isBlocked: false
     });
     
-    // Log admin action
+    
     await addAdminAction(adminId, 'unblock_user', userId, 'Unblocked user');
   } catch (error) {
     console.error('Error unblocking user:', error);
@@ -303,7 +293,7 @@ export const toggleCommentPermission = async (userId: string, canComment: boolea
       canComment
     });
     
-    // Log admin action
+   
     await addAdminAction(
       adminId, 
       canComment ? 'unblock_user' : 'block_user', 
@@ -316,7 +306,7 @@ export const toggleCommentPermission = async (userId: string, canComment: boolea
   }
 };
 
-// Product Management Services
+
 export const addProduct = async (product: Omit<Product, 'productId' | 'createdAt' | 'updatedAt'>, adminId: string): Promise<Product> => {
   try {
     const productsCollection = collection(db, 'products');
@@ -333,7 +323,7 @@ export const addProduct = async (product: Omit<Product, 'productId' | 'createdAt
     
     const docRef = await addDoc(productsCollection, newProduct);
     
-    // Update with productId
+  
     const productWithId: Product = {
       ...newProduct,
       productId: docRef.id
@@ -341,7 +331,7 @@ export const addProduct = async (product: Omit<Product, 'productId' | 'createdAt
     
     await updateDoc(docRef, { productId: docRef.id });
     
-    // Log admin action
+
     await addAdminAction(adminId, 'create_product', docRef.id, `Created product: ${product.name}`);
     
     return productWithId;
@@ -360,7 +350,7 @@ export const updateProduct = async (productId: string, updates: Partial<Product>
       updatedAt: new Date().toISOString()
     });
     
-    // Log admin action
+  
     await addAdminAction(adminId, 'update_product', productId, `Updated product: ${updates.name || 'Unnamed product'}`);
   } catch (error) {
     console.error('Error updating product:', error);
@@ -373,14 +363,14 @@ export const deleteProduct = async (productId: string, adminId: string): Promise
     const productRef = doc(db, 'products', productId);
     await deleteDoc(productRef);
     
-    // Delete related comments
+ 
     const commentsQuery = query(collection(db, 'comments'), where('productId', '==', productId));
     const commentsSnapshot = await getDocs(commentsQuery);
     
     const deletePromises = commentsSnapshot.docs.map(doc => deleteDoc(doc.ref));
     await Promise.all(deletePromises);
     
-    // Log admin action
+   
     await addAdminAction(adminId, 'delete_product', productId, 'Deleted product and related comments');
   } catch (error) {
     console.error('Error deleting product:', error);
@@ -415,7 +405,7 @@ export const getAllProducts = async (): Promise<Product[]> => {
   }
 };
 
-// Comment and Rating Services
+
 export const addComment = async (
   productId: string, 
   userId: string, 
@@ -425,7 +415,7 @@ export const addComment = async (
   text: string
 ): Promise<Comment> => {
   try {
-    // First check if user can comment
+   
     const userRef = doc(db, 'users', userId);
     const userDoc = await getDoc(userRef);
     const userData = userDoc.data() as User;
@@ -440,7 +430,7 @@ export const addComment = async (
       productId,
       userId,
       userName,
-      userAvatar,
+      userAvatar: userAvatar || null,
       rating,
       text,
       createdAt: new Date().toISOString(),
@@ -450,7 +440,7 @@ export const addComment = async (
     
     const docRef = await addDoc(commentsCollection, newComment);
     
-    // Update with commentId
+ 
     const commentWithId: Comment = {
       ...newComment,
       commentId: docRef.id
@@ -458,7 +448,7 @@ export const addComment = async (
     
     await updateDoc(docRef, { commentId: docRef.id });
     
-    // Update product rating
+   
     await updateProductRating(productId);
     
     return commentWithId;
@@ -485,7 +475,49 @@ export const getProductComments = async (productId: string): Promise<Comment[]> 
 
 export const deleteComment = async (commentId: string, adminId: string): Promise<void> => {
   try {
-    const commentRef = doc(db, 'comments', commentId);
+    if (!commentId) {
+      console.error('Cannot delete comment: commentId is undefined');
+      return;
+    }
+    
+    if (!adminId) {
+      console.error('Cannot delete comment: adminId is undefined');
+      return;
+    }
+
+  
+    let commentRef;
+    let fallbackUsed = false;
+    
+    if (commentId.includes('_')) {
+      console.log('Using fallback ID method to find comment');
+      fallbackUsed = true;
+      
+     
+      const [userId, createdAt] = commentId.split('_');
+      
+   
+      const commentsQuery = query(
+        collection(db, 'comments'),
+        where('userId', '==', userId),
+        where('createdAt', '==', createdAt)
+      );
+      
+      const commentsSnapshot = await getDocs(commentsQuery);
+      
+      if (commentsSnapshot.empty) {
+        throw new Error('Comment not found using fallback method');
+      }
+      
+     
+      commentRef = commentsSnapshot.docs[0].ref;
+      
+      console.log('Found comment using fallback method:', commentsSnapshot.docs[0].id);
+    } else {
+    
+      commentRef = doc(db, 'comments', commentId);
+    }
+
     const commentDoc = await getDoc(commentRef);
     
     if (!commentDoc.exists()) {
@@ -493,30 +525,54 @@ export const deleteComment = async (commentId: string, adminId: string): Promise
     }
     
     const comment = commentDoc.data() as Comment;
+    if (!comment) {
+      throw new Error('Comment data is undefined');
+    }
     
-    // Mark as deleted instead of actually deleting
+  
+    if (!comment.commentId && !fallbackUsed) {
+      console.log('Updating missing commentId with document ID:', commentDoc.id);
+      await updateDoc(commentRef, { commentId: commentDoc.id });
+      comment.commentId = commentDoc.id;
+    }
+    
+  
     await updateDoc(commentRef, {
       isDeleted: true,
       isModerated: true
     });
     
-    // Log admin action
-    await addAdminAction(
-      adminId, 
-      'moderate_comment', 
-      commentId, 
-      `Removed comment by user: ${comment.userName} on product: ${comment.productId}`
-    );
+    try {
+   
+      await addAdminAction(
+        adminId, 
+        'moderate_comment', 
+        comment.commentId || commentDoc.id, 
+        `Removed comment by user: ${comment.userName || 'unknown'} on product: ${comment.productId || 'unknown'}`
+      );
+    } catch (logError) {
+      console.error('Error logging admin action:', logError);
+  
+    }
     
-    // Update product rating
-    await updateProductRating(comment.productId);
+    try {
+    
+      if (comment.productId) {
+        await updateProductRating(comment.productId);
+      }
+    } catch (ratingError) {
+      console.error('Error updating product rating:', ratingError);
+      
+    }
+    
+    return;
   } catch (error) {
     console.error('Error deleting comment:', error);
     throw error;
   }
 };
 
-// Helper function to update product rating
+
 const updateProductRating = async (productId: string): Promise<void> => {
   try {
     const commentsQuery = query(
@@ -550,7 +606,7 @@ const updateProductRating = async (productId: string): Promise<void> => {
   }
 };
 
-// Admin actions logging
+
 export const addAdminAction = async (
   adminId: string,
   actionType: AdminAction['actionType'],
@@ -558,13 +614,18 @@ export const addAdminAction = async (
   details: string
 ): Promise<void> => {
   try {
+    if (!adminId || !targetId) {
+      console.error('Missing required parameters in addAdminAction:', { adminId, actionType, targetId });
+      return;
+    }
+    
     const actionsCollection = collection(db, 'adminActions');
     
     const newAction: Omit<AdminAction, 'actionId'> = {
       adminId,
       actionType,
       targetId,
-      details,
+      details: details || '',
       timestamp: new Date().toISOString()
     };
     
@@ -572,7 +633,7 @@ export const addAdminAction = async (
     await updateDoc(docRef, { actionId: docRef.id });
   } catch (error) {
     console.error('Error logging admin action:', error);
-    throw error;
+ 
   }
 };
 
@@ -587,7 +648,7 @@ export const getAdminActions = async (): Promise<AdminAction[]> => {
   }
 };
 
-// Image Upload Service
+
 export const uploadProductImage = async (imageFile: File): Promise<string> => {
   try {
     const storageRef = ref(storage, `products/${Date.now()}_${imageFile.name}`);
@@ -606,7 +667,7 @@ export const uploadUserAvatar = async (userId: string, imageFile: File): Promise
     const uploadResult = await uploadBytes(storageRef, imageFile);
     const downloadURL = await getDownloadURL(uploadResult.ref);
     
-    // Update user profile
+   
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
       avatarUrl: downloadURL

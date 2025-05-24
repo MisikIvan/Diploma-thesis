@@ -31,7 +31,7 @@ const AdminPanel: React.FC = () => {
   const [productSearchQuery, setProductSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   
-
+  
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'admin') {
       console.log('Unauthorized access attempt to AdminPanel');
@@ -87,13 +87,13 @@ const AdminPanel: React.FC = () => {
     try {
       if (user.isBlocked) {
         await unblockUser(user.userId, currentUser.userId);
-        Alert.alert(t('success'), t('userUnblocked'));
+        Alert.alert(t('success'), t('unblockUser'));
       } else {
         await blockUser(user.userId, currentUser.userId);
-        Alert.alert(t('success'), t('userBlocked'));
+        Alert.alert(t('success'), t('blockUser'));
       }
       
-      // Refresh user list
+    
       loadData();
     } catch (error) {
       Alert.alert(t('error'), (error as Error).message);
@@ -105,9 +105,9 @@ const AdminPanel: React.FC = () => {
     
     try {
       await toggleCommentPermission(user.userId, !user.canComment, currentUser.userId);
-      Alert.alert(t('success'), user.canComment ? t('commentBlocked') : t('unblockComments'));
+      Alert.alert(t('success'), user.canComment ? t('disableComments') : t('enableComments'));
       
-      // Refresh user list
+    
       loadData();
     } catch (error) {
       Alert.alert(t('error'), (error as Error).message);
@@ -118,19 +118,19 @@ const AdminPanel: React.FC = () => {
     if (!currentUser) return;
     
     Alert.alert(
-      t('areYouSure'),
-      t('thisActionCannot'),
+      t('confirmDelete'),
+      t('deleteProductConfirmation'),
       [
         {
           text: t('cancel'),
           style: 'cancel'
         },
         {
-          text: t('deleteProduct'),
+          text: t('delete'),
           onPress: async () => {
             try {
               await deleteProduct(productId, currentUser.userId);
-              Alert.alert(t('success'), t('productDeleted'));
+              Alert.alert(t('success'), t('deleteProductConfirmation'));
               loadData();
             } catch (error) {
               Alert.alert(t('error'), (error as Error).message);
@@ -156,7 +156,7 @@ const AdminPanel: React.FC = () => {
       <View style={styles.userInfo}>
         <Text style={styles.userName}>{item.displayName}</Text>
         <Text style={styles.userEmail}>{item.email}</Text>
-        <Text style={styles.userDetail}>{t('lastLogin')}: {new Date(item.lastLogin).toLocaleString()}</Text>
+        <Text style={styles.userDetail}>{item.lastLogin ? new Date(item.lastLogin).toLocaleString() : ''}</Text>
         <View style={styles.statusContainer}>
           {item.isBlocked && (
             <View style={[styles.statusBadge, styles.blockedBadge]}>
@@ -165,7 +165,7 @@ const AdminPanel: React.FC = () => {
           )}
           {!item.canComment && (
             <View style={[styles.statusBadge, styles.commentsBadge]}>
-              <Text style={styles.statusText}>{t('blockComments')}</Text>
+              <Text style={styles.statusText}>{t('disableComments')}</Text>
             </View>
           )}
         </View>
@@ -186,7 +186,7 @@ const AdminPanel: React.FC = () => {
           onPress={() => handleToggleComments(item)}
         >
           <Text style={styles.actionButtonText}>
-            {item.canComment ? t('blockComments') : t('unblockComments')}
+            {item.canComment ? t('disableComments') : t('enableComments')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -200,7 +200,7 @@ const AdminPanel: React.FC = () => {
         {item.categories.join(', ')}
       </Text>
       <Text style={styles.productDetail}>
-        {t('rating')}: {item.averageRating ? item.averageRating.toFixed(1) : 'N/A'} ({item.ratingCount || 0})
+        {item.averageRating ? item.averageRating.toFixed(1) : 'N/A'} ({item.ratingCount || 0})
       </Text>
       
       <View style={styles.productActions}>
@@ -208,14 +208,14 @@ const AdminPanel: React.FC = () => {
           style={[styles.actionButton, styles.editButton]}
           onPress={() => Alert.alert(t('featureNotImplemented'))}
         >
-          <Text style={styles.actionButtonText}>{t('editProduct')}</Text>
+          <Text style={styles.actionButtonText}>{t('featureNotImplemented')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={[styles.actionButton, styles.deleteButton]}
           onPress={() => handleDeleteProduct(item.productId)}
         >
-          <Text style={styles.actionButtonText}>{t('deleteProduct')}</Text>
+          <Text style={styles.actionButtonText}>{t('delete')}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -231,28 +231,28 @@ const AdminPanel: React.FC = () => {
   
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{t('adminPanelTitle')}</Text>
+      <Text style={styles.title}>{t('adminScreen')}</Text>
       
       <View style={styles.tabContainer}>
         <TouchableOpacity 
           style={[styles.tab, activeTab === Tab.PRODUCTS && styles.activeTab]}
           onPress={() => setActiveTab(Tab.PRODUCTS)}
         >
-          <Text style={styles.tabText}>{t('manageProducts')}</Text>
+          <Text style={styles.tabText}>{t('products')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={[styles.tab, activeTab === Tab.USERS && styles.activeTab]}
           onPress={() => setActiveTab(Tab.USERS)}
         >
-          <Text style={styles.tabText}>{t('manageUsers')}</Text>
+          <Text style={styles.tabText}>{t('users')}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={[styles.tab, activeTab === Tab.ACTIVITY && styles.activeTab]}
           onPress={() => setActiveTab(Tab.ACTIVITY)}
         >
-          <Text style={styles.tabText}>{t('activityLog')}</Text>
+          <Text style={styles.tabText}>{t('diagnostics')}</Text>
         </TouchableOpacity>
       </View>
       
@@ -260,7 +260,7 @@ const AdminPanel: React.FC = () => {
         <View style={styles.tabContent}>
           <TextInput
             style={styles.searchInput}
-            placeholder={t('searchUser')}
+            placeholder={t('searchPlaceholder')}
             value={userSearchQuery}
             onChangeText={setUserSearchQuery}
           />
@@ -282,7 +282,7 @@ const AdminPanel: React.FC = () => {
           <View style={styles.productsHeader}>
             <TextInput
               style={styles.searchInput}
-              placeholder={t('search')}
+              placeholder={t('searchPlaceholder')}
               value={productSearchQuery}
               onChangeText={setProductSearchQuery}
             />
@@ -309,6 +309,13 @@ const AdminPanel: React.FC = () => {
       
       {activeTab === Tab.ACTIVITY && (
         <View style={styles.tabContent}>
+          <TouchableOpacity 
+            style={styles.diagnosticButton}
+            onPress={() => (navigation as any).navigate('Diagnostics')}
+          >
+            <Text style={styles.diagnosticButtonText}>{t('diagnostics')}</Text>
+          </TouchableOpacity>
+
           <FlatList
             data={adminActions}
             renderItem={renderActionItem}
@@ -508,6 +515,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 24,
     color: '#888',
+  },
+  diagnosticButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 4,
+    marginBottom: 16,
+  },
+  diagnosticButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
   },
 });
 
