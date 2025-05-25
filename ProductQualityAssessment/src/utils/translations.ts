@@ -10,6 +10,8 @@ export interface TranslationKeys {
   save: string;
   delete: string;
   confirm: string;
+  yes: string;
+  no: string;
   
   // Navigation
   home: string;
@@ -198,6 +200,11 @@ export interface TranslationKeys {
   // New translations for admin form
   containsLactose: string;
   containsGluten: string;
+  
+  // Avatar functionality
+  selectAvatar: string;
+  avatarUpdateSuccess: string;
+  avatarUpdateError: string;
 }
 
 // English translations
@@ -212,6 +219,8 @@ const en: TranslationKeys = {
   save: 'Save',
   delete: 'Delete',
   confirm: 'Confirm',
+  yes: 'Yes',
+  no: 'No',
   
   // Navigation
   home: 'Home',
@@ -400,6 +409,11 @@ const en: TranslationKeys = {
   // New translations for admin form
   containsLactose: 'Contains Lactose',
   containsGluten: 'Contains Gluten',
+  
+  // Avatar functionality
+  selectAvatar: 'Select Avatar',
+  avatarUpdateSuccess: 'Avatar updated successfully',
+  avatarUpdateError: 'Failed to update avatar',
 }
 
 // Ukrainian translations
@@ -414,6 +428,8 @@ const uk: TranslationKeys = {
   save: 'Зберегти',
   delete: 'Видалити',
   confirm: 'Підтвердити',
+  yes: 'Так',
+  no: 'Ні',
   
   // Navigation
   home: 'Головна',
@@ -602,6 +618,11 @@ const uk: TranslationKeys = {
   // New translations for admin form
   containsLactose: 'Містить лактозу',
   containsGluten: 'Містить глютен',
+  
+  // Avatar functionality
+  selectAvatar: 'Вибрати аватар',
+  avatarUpdateSuccess: 'Аватар успішно оновлено',
+  avatarUpdateError: 'Не вдалося оновити аватар',
 }
 
 export type Language = 'en' | 'uk';

@@ -13,10 +13,13 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import { getAllProducts, getAllUsers, blockUser, unblockUser, toggleCommentPermission, deleteProduct, addProduct } from '../api/firebase';
 import { User, Product, NutriScoreGrade } from '../types/index';
 import { t } from '../utils/translations';
+import AnimatedModal from '../components/ui/AnimatedModal';
+import AnimatedButton from '../components/ui/AnimatedButton';
 
 
 interface ExtendedUser extends User {
@@ -110,6 +113,16 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
+  
+  // Modal states
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showDemoModeModal, setShowDemoModeModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState('');
+  const [modalTitle, setModalTitle] = useState('');
+  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
   
   // Product form state
   const [showAddProductModal, setShowAddProductModal] = useState(false);
@@ -225,7 +238,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
 
   const checkFirebaseConnection = async () => {
     if (isDemo) {
-    
+      // Try to connect to Firebase
       setLoading(true);
       try {
         if (activeTab === 'products') {
@@ -234,7 +247,9 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
             setIsDemo(false);
             setProducts(productsData);
             setError(null);
-            Alert.alert(t('success'), t('firebaseConnected'));
+            setModalTitle(t('success'));
+            setModalMessage(t('firebaseConnected'));
+            setShowSuccessModal(true);
           }
         } else {
           const usersData = await getAllUsers();
@@ -242,34 +257,32 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
             setIsDemo(false);
             setUsers(usersData as ExtendedUser[]);
             setError(null);
-            Alert.alert(t('success'), t('firebaseConnected'));
+            setModalTitle(t('success'));
+            setModalMessage(t('firebaseConnected'));
+            setShowSuccessModal(true);
           }
         }
       } catch (err) {
         console.error('Firebase connection check failed:', err);
-        Alert.alert(t('error'), t('firebaseConnectionFailed'));
+        setModalTitle(t('error'));
+        setModalMessage(t('firebaseConnectionFailed'));
+        setShowErrorModal(true);
       } finally {
         setLoading(false);
       }
     } else {
       // Switch to demo mode
-      Alert.alert(
-        t('confirmDemoMode'),
-        t('demoModeWarning'),
-        [
-          { text: t('cancel'), style: 'cancel' },
-          { 
-            text: t('confirm'), 
-            style: 'destructive',
-            onPress: () => {
-              setIsDemo(true);
-              setProducts(MOCK_PRODUCTS);
-              setUsers(MOCK_USERS);
-              Alert.alert(t('success'), t('demoModeActivated'));
-            }
-          }
-        ]
-      );
+      setModalTitle(t('confirmDemoMode'));
+      setModalMessage(t('demoModeWarning'));
+      setPendingAction(() => () => {
+        setIsDemo(true);
+        setProducts(MOCK_PRODUCTS);
+        setUsers(MOCK_USERS);
+        setModalTitle(t('success'));
+        setModalMessage(t('demoModeActivated'));
+        setShowSuccessModal(true);
+      });
+      setShowDemoModeModal(true);
     }
   };
 
@@ -548,36 +561,37 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
   };
 
   const handleDeleteProduct = async (productId: string) => {
-    Alert.alert(
-      t('confirmDelete'),
-      t('deleteProductConfirmation'),
-      [
-        { text: t('cancel'), style: 'cancel' },
-        { 
-          text: t('delete'), 
-          style: 'destructive',
-          onPress: async () => {
-            setLoading(true);
-            try {
-              if (isDemo) {
-           
-                setProducts(products.filter(p => p.productId !== productId));
-                Alert.alert('Success', 'Product deleted in demo mode');
-              } else if (currentUser?.userId) {
-          
-                await deleteProduct(productId, currentUser.userId);
-                setProducts(products.filter(p => p.productId !== productId));
-              }
-            } catch (err) {
-              Alert.alert('Error', 'Failed to delete product');
-              console.error('Delete product error:', err);
-            } finally {
-              setLoading(false);
-            }
-          }
+    setProductToDelete(productId);
+    setModalTitle(t('confirmDelete'));
+    setModalMessage(t('deleteProductConfirmation'));
+    setPendingAction(() => async () => {
+      setLoading(true);
+      try {
+        if (isDemo) {
+          // Demo mode - just remove from local state
+          setProducts(products.filter(p => p.productId !== productId));
+          setModalTitle(t('success'));
+          setModalMessage('Product deleted in demo mode');
+          setShowSuccessModal(true);
+        } else if (currentUser?.userId) {
+          // Real Firebase mode
+          await deleteProduct(productId, currentUser.userId);
+          setProducts(products.filter(p => p.productId !== productId));
+          setModalTitle(t('success'));
+          setModalMessage('Product deleted successfully');
+          setShowSuccessModal(true);
         }
-      ]
-    );
+      } catch (err) {
+        setModalTitle(t('error'));
+        setModalMessage('Failed to delete product');
+        setShowErrorModal(true);
+        console.error('Delete product error:', err);
+      } finally {
+        setLoading(false);
+        setProductToDelete(null);
+      }
+    });
+    setShowDeleteModal(true);
   };
 
   const handleToggleUserBlock = async (user: ExtendedUser) => {
@@ -1134,6 +1148,66 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
       )}
       
       {renderAddProductModal()}
+      
+      {/* Animated Modals */}
+      <AnimatedModal
+        visible={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title={modalTitle}
+        message={modalMessage}
+        type="confirm"
+        confirmText={t('delete')}
+        cancelText={t('cancel')}
+        onConfirm={() => {
+          if (pendingAction) {
+            pendingAction();
+            setPendingAction(null);
+          }
+          setShowDeleteModal(false);
+        }}
+        onCancel={() => {
+          setShowDeleteModal(false);
+          setProductToDelete(null);
+          setPendingAction(null);
+        }}
+      />
+
+      <AnimatedModal
+        visible={showDemoModeModal}
+        onClose={() => setShowDemoModeModal(false)}
+        title={modalTitle}
+        message={modalMessage}
+        type="confirm"
+        confirmText={t('confirm')}
+        cancelText={t('cancel')}
+        onConfirm={() => {
+          if (pendingAction) {
+            pendingAction();
+            setPendingAction(null);
+          }
+          setShowDemoModeModal(false);
+        }}
+        onCancel={() => {
+          setShowDemoModeModal(false);
+          setPendingAction(null);
+        }}
+      />
+
+      <AnimatedModal
+        visible={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title={modalTitle}
+        message={modalMessage}
+        type="success"
+      />
+
+      <AnimatedModal
+        visible={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title={modalTitle}
+        message={modalMessage}
+        type="error"
+      />
     </View>
   );
 };

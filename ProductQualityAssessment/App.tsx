@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { StatusBar, View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { Provider } from 'react-redux';
+import 'react-native-reanimated';
 import store from './src/redux/store';
 import Navigation from './src/navigation';
 import { t } from './src/utils/translations';
@@ -33,7 +34,7 @@ export default function App() {
           <Text style={styles.error}>{error}</Text>
         ) : (
           <>
-            <ActivityIndicator size="large" color="#007AFF" />
+            <ActivityIndicator size="large" color="#34572a" />
             <Text style={styles.loading}>Loading...</Text>
           </>
         )}
@@ -43,7 +44,7 @@ export default function App() {
 
   return (
     <Provider store={store}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="light-content" backgroundColor="#34572a" />
       <Navigation />
     </Provider>
   );
@@ -54,20 +55,24 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f9fa',
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 20,
+    color: '#34572a',
   },
   loading: {
     marginTop: 10,
+    color: '#34572a',
+    fontSize: 16,
   },
   error: {
-    color: 'red',
+    color: '#e74c3c',
     marginTop: 10,
     textAlign: 'center',
     padding: 20,
+    fontSize: 16,
   },
 });

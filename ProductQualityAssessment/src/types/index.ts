@@ -15,6 +15,7 @@ export interface Product {
   productId: string;
   name: string;
   description?: string;
+  brand?: string;
   imageUrl?: string;
   nutriscoreGrade: 'A' | 'B' | 'C' | 'D' | 'E';
   nutriscoreScore?: number; // 0-100
