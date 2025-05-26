@@ -104,6 +104,7 @@ const transformProduct = (offProduct: OpenFoodFactsProduct): Product => {
     hasLactose,
     hasGluten,
     weight,
+    createdBy: 'api',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };

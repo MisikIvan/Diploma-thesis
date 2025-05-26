@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Product, NutriScoreGrade } from '../../types';
-import { getNutriScoreColor } from '../../types';
 import { getProductImage } from '../../utils/helpers';
 
 interface ProductCardProps {
@@ -13,7 +12,7 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, compact = false }) => {
   const { name, imageUrl, nutriscoreGrade, brand } = product;
   
- 
+  
   const getGradeColor = (grade: NutriScoreGrade): string => {
     switch (grade) {
       case 'A': return '#4CAF50'; 
@@ -28,8 +27,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, compact = f
  
   const getTags = () => {
     const tags = [];
+    
     if (product.isVegan) tags.push('Vegan');
-    if (!product.hasLactose) tags.push('Dairy Free');
+    if (product.isVegetarian && !product.isVegan) tags.push('Vegetarian');
+    if (!product.hasLactose) tags.push('Lactose Free');
     if (!product.hasGluten) tags.push('Gluten Free');
     return tags;
   };
@@ -62,7 +63,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, compact = f
               </Text>
             )}
             
-            {/* */}
+            {/*  */}
             {firstTag && (
               <View style={styles.tagsContainer}>
                 <View style={styles.tag}>
@@ -184,21 +185,26 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   gradeContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 6,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   gradeText: {
     color: 'white',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 2,
   },
 });
 

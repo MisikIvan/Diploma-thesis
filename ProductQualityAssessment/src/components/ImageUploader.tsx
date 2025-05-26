@@ -78,7 +78,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
     setIsUploading(true);
     try {
-   
+    
       const response = await fetch(imageUri);
       const blob = await response.blob();
       const file = new File([blob], 'product-image.jpg', { type: 'image/jpeg' });

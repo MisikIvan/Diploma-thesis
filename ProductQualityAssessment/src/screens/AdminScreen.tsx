@@ -18,8 +18,8 @@ import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import { getAllProducts, getAllUsers, blockUser, unblockUser, toggleCommentPermission, deleteProduct, addProduct } from '../api/firebase';
 import { User, Product, NutriScoreGrade } from '../types/index';
 import { t } from '../utils/translations';
-import AnimatedModal from '../components/ui/AnimatedModal';
 import AnimatedButton from '../components/ui/AnimatedButton';
+import ImageUploader from '../components/ImageUploader';
 
 
 interface ExtendedUser extends User {
@@ -114,15 +114,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
   const [error, setError] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
   
-  // Modal states
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showDemoModeModal, setShowDemoModeModal] = useState(false);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [showErrorModal, setShowErrorModal] = useState(false);
-  const [modalMessage, setModalMessage] = useState('');
-  const [modalTitle, setModalTitle] = useState('');
-  const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+ 
   
   // Product form state
   const [showAddProductModal, setShowAddProductModal] = useState(false);
@@ -206,6 +198,11 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
     });
     
     loadData();
+    
+    // Cleanup function
+    return () => {
+      setShowAddProductModal(false);
+    };
   }, [activeTab]);
 
   const initializeFirebase = async () => {
@@ -247,9 +244,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
             setIsDemo(false);
             setProducts(productsData);
             setError(null);
-            setModalTitle(t('success'));
-            setModalMessage(t('firebaseConnected'));
-            setShowSuccessModal(true);
+            Alert.alert(t('success') || 'Success', t('firebaseConnected') || 'Connected to Firebase');
           }
         } else {
           const usersData = await getAllUsers();
@@ -257,32 +252,36 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
             setIsDemo(false);
             setUsers(usersData as ExtendedUser[]);
             setError(null);
-            setModalTitle(t('success'));
-            setModalMessage(t('firebaseConnected'));
-            setShowSuccessModal(true);
+            Alert.alert(t('success') || 'Success', t('firebaseConnected') || 'Connected to Firebase');
           }
         }
       } catch (err) {
         console.error('Firebase connection check failed:', err);
-        setModalTitle(t('error'));
-        setModalMessage(t('firebaseConnectionFailed'));
-        setShowErrorModal(true);
+        Alert.alert(t('error') || 'Error', t('firebaseConnectionFailed') || 'Failed to connect to Firebase');
       } finally {
         setLoading(false);
       }
     } else {
       // Switch to demo mode
-      setModalTitle(t('confirmDemoMode'));
-      setModalMessage(t('demoModeWarning'));
-      setPendingAction(() => () => {
-        setIsDemo(true);
-        setProducts(MOCK_PRODUCTS);
-        setUsers(MOCK_USERS);
-        setModalTitle(t('success'));
-        setModalMessage(t('demoModeActivated'));
-        setShowSuccessModal(true);
-      });
-      setShowDemoModeModal(true);
+      Alert.alert(
+        t('confirmDemoMode') || 'Confirm Demo Mode',
+        t('demoModeWarning') || 'Switch to demo mode?',
+        [
+          {
+            text: t('cancel') || 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: t('confirm') || 'Confirm',
+            onPress: () => {
+              setIsDemo(true);
+              setProducts(MOCK_PRODUCTS);
+              setUsers(MOCK_USERS);
+              Alert.alert(t('success') || 'Success', t('demoModeActivated') || 'Demo mode activated');
+            },
+          },
+        ]
+      );
     }
   };
 
@@ -561,37 +560,40 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
   };
 
   const handleDeleteProduct = async (productId: string) => {
-    setProductToDelete(productId);
-    setModalTitle(t('confirmDelete'));
-    setModalMessage(t('deleteProductConfirmation'));
-    setPendingAction(() => async () => {
-      setLoading(true);
-      try {
-        if (isDemo) {
-          // Demo mode - just remove from local state
-          setProducts(products.filter(p => p.productId !== productId));
-          setModalTitle(t('success'));
-          setModalMessage('Product deleted in demo mode');
-          setShowSuccessModal(true);
-        } else if (currentUser?.userId) {
-          // Real Firebase mode
-          await deleteProduct(productId, currentUser.userId);
-          setProducts(products.filter(p => p.productId !== productId));
-          setModalTitle(t('success'));
-          setModalMessage('Product deleted successfully');
-          setShowSuccessModal(true);
-        }
-      } catch (err) {
-        setModalTitle(t('error'));
-        setModalMessage('Failed to delete product');
-        setShowErrorModal(true);
-        console.error('Delete product error:', err);
-      } finally {
-        setLoading(false);
-        setProductToDelete(null);
-      }
-    });
-    setShowDeleteModal(true);
+    Alert.alert(
+      t('confirmDelete') || 'Confirm Delete',
+      t('deleteProductConfirmation') || 'Are you sure you want to delete this product?',
+      [
+        {
+          text: t('cancel') || 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: t('delete') || 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setLoading(true);
+            try {
+              if (isDemo) {
+            
+                setProducts(products.filter(p => p.productId !== productId));
+                Alert.alert(t('success') || 'Success', 'Product deleted in demo mode');
+              } else if (currentUser?.userId) {
+              
+                await deleteProduct(productId, currentUser.userId);
+                setProducts(products.filter(p => p.productId !== productId));
+                Alert.alert(t('success') || 'Success', 'Product deleted successfully');
+              }
+            } catch (err) {
+              Alert.alert(t('error') || 'Error', 'Failed to delete product');
+              console.error('Delete product error:', err);
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleToggleUserBlock = async (user: ExtendedUser) => {
@@ -675,12 +677,30 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
           <Text style={styles.nutriscoreText}>{item.nutriscoreGrade}</Text>
         </View>
       </View>
-      <TouchableOpacity 
-        style={styles.deleteButton}
-        onPress={() => handleDeleteProduct(item.productId)}
-      >
-        <Ionicons name="trash-outline" size={24} color="#fff" />
-      </TouchableOpacity>
+      <View style={styles.productActions}>
+        <TouchableOpacity 
+          style={styles.editButton}
+          onPress={() => {
+            if (!loading) {
+              navigation.navigate('EditProduct', { productId: item.productId });
+            }
+          }}
+          disabled={loading}
+        >
+          <Ionicons name="create-outline" size={20} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.deleteButton}
+          onPress={() => {
+            if (!loading) {
+              handleDeleteProduct(item.productId);
+            }
+          }}
+          disabled={loading}
+        >
+          <Ionicons name="trash-outline" size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -745,7 +765,12 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
               numberOfLines={3}
             />
             
-            <Text style={styles.inputLabel}>{t('productImageUrl')}</Text>
+            <ImageUploader
+              onImageUploaded={(imageUrl) => setNewProduct({...newProduct, imageUrl})}
+              currentImageUrl={newProduct.imageUrl}
+            />
+            
+            <Text style={styles.inputLabel}>{t('productImageUrl')} (альтернативно)</Text>
             <TextInput
               style={styles.input}
               value={newProduct.imageUrl}
@@ -1075,9 +1100,12 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
         <TouchableOpacity 
           style={[styles.tab, activeTab === 'products' && styles.activeTab]} 
           onPress={() => {
-            setActiveTab('products');
-            loadData();
+            if (!loading) {
+              setActiveTab('products');
+              loadData();
+            }
           }}
+          disabled={loading}
         >
           <Text style={[styles.tabText, activeTab === 'products' && styles.activeTabText]}>
             {t('products')}
@@ -1086,9 +1114,12 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
         <TouchableOpacity 
           style={[styles.tab, activeTab === 'users' && styles.activeTab]} 
           onPress={() => {
-            setActiveTab('users');
-            loadData();
+            if (!loading) {
+              setActiveTab('users');
+              loadData();
+            }
           }}
+          disabled={loading}
         >
           <Text style={[styles.tabText, activeTab === 'users' && styles.activeTabText]}>
             {t('users')}
@@ -1124,7 +1155,12 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
               />
               <TouchableOpacity 
                 style={styles.floatingButton}
-                onPress={() => setShowAddProductModal(true)}
+                onPress={() => {
+                  if (!loading) {
+                    setShowAddProductModal(true);
+                  }
+                }}
+                disabled={loading}
               >
                 <Ionicons name="add" size={32} color="white" />
               </TouchableOpacity>
@@ -1149,65 +1185,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
       
       {renderAddProductModal()}
       
-      {/* Animated Modals */}
-      <AnimatedModal
-        visible={showDeleteModal}
-        onClose={() => setShowDeleteModal(false)}
-        title={modalTitle}
-        message={modalMessage}
-        type="confirm"
-        confirmText={t('delete')}
-        cancelText={t('cancel')}
-        onConfirm={() => {
-          if (pendingAction) {
-            pendingAction();
-            setPendingAction(null);
-          }
-          setShowDeleteModal(false);
-        }}
-        onCancel={() => {
-          setShowDeleteModal(false);
-          setProductToDelete(null);
-          setPendingAction(null);
-        }}
-      />
-
-      <AnimatedModal
-        visible={showDemoModeModal}
-        onClose={() => setShowDemoModeModal(false)}
-        title={modalTitle}
-        message={modalMessage}
-        type="confirm"
-        confirmText={t('confirm')}
-        cancelText={t('cancel')}
-        onConfirm={() => {
-          if (pendingAction) {
-            pendingAction();
-            setPendingAction(null);
-          }
-          setShowDemoModeModal(false);
-        }}
-        onCancel={() => {
-          setShowDemoModeModal(false);
-          setPendingAction(null);
-        }}
-      />
-
-      <AnimatedModal
-        visible={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
-        title={modalTitle}
-        message={modalMessage}
-        type="success"
-      />
-
-      <AnimatedModal
-        visible={showErrorModal}
-        onClose={() => setShowErrorModal(false)}
-        title={modalTitle}
-        message={modalMessage}
-        type="error"
-      />
+      {/*  */}
     </View>
   );
 };
@@ -1368,6 +1346,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 8,
     backgroundColor: '#dc3545',
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  productActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  editButton: {
+    justifyContent: 'center',
+    padding: 8,
+    backgroundColor: '#007bff',
     borderRadius: 8,
     marginLeft: 8,
   },

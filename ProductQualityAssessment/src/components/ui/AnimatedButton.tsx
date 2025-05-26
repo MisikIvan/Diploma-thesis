@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     color: '#ffffff',
   },
 
-
+  // Disabled state
   disabled: {
     backgroundColor: '#bdc3c7',
     elevation: 0,

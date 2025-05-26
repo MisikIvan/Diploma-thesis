@@ -100,12 +100,18 @@ const AnimatedModal: React.FC<AnimatedModalProps> = ({
 
   const handleConfirm = () => {
     onConfirm?.();
-    onClose();
+  
+    setTimeout(() => {
+      onClose();
+    }, 100);
   };
 
   const handleCancel = () => {
     onCancel?.();
-    onClose();
+   
+    setTimeout(() => {
+      onClose();
+    }, 100);
   };
 
   return (
@@ -114,6 +120,7 @@ const AnimatedModal: React.FC<AnimatedModalProps> = ({
       transparent
       animationType="none"
       statusBarTranslucent
+      onRequestClose={onClose}
     >
       <Animated.View 
         style={styles.overlay}

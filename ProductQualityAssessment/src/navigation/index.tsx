@@ -25,6 +25,7 @@ import FavoritesScreen from '../screens/FavoritesScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import AuthScreen from '../screens/AuthScreen';
 import AdminScreen from '../screens/AdminScreen';
+import EditProductScreen from '../screens/EditProductScreen';
 
 // Types
 import { RootStackParamList, BottomTabParamList } from '../types/navigation';
@@ -254,6 +255,14 @@ const Navigation = () => {
                   component={AdminScreen} 
                   options={{ 
                     title: t('adminScreen'),
+                    headerBackTitleVisible: false,
+                  }}
+                />
+                <Stack.Screen 
+                  name="EditProduct" 
+                  component={EditProductScreen as any} 
+                  options={{ 
+                    title: 'Редагувати продукт',
                     headerBackTitleVisible: false,
                   }}
                 />
