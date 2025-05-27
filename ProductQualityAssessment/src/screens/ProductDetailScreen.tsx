@@ -28,12 +28,16 @@ import {
   formatNutrient,
   calculateWholeProduct,
   truncateText,
+  getTagsFromProduct,
+  getTagDisplayName,
+  getTagColor,
 } from '../utils/helpers';
 import { Product, getNutriScoreColor, Favorite } from '../types/index';
 import ProductCard from '../components/ui/ProductCard';
 import CommentSection from '../components/CommentSection';
 import LoadingScreen from '../components/LoadingScreen';
 import ErrorScreen from '../components/ErrorScreen';
+import AdminInfo from '../components/AdminInfo';
 import { t } from '../utils/translations';
 import { DataService } from '../utils/dataService';
 
@@ -160,7 +164,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
         return (
           <ScrollView style={styles.tabContainer} showsVerticalScrollIndicator={false}>
             <Text style={styles.sectionTitle}>{t('nutritionalFacts')}</Text>
-            <Text style={styles.portionText}>На 100г продукту</Text>
+            <Text style={styles.portionText}>{t('per100g')}</Text>
             
             {/* Основні макронутрієнти */}
             <View style={styles.nutritionGrid}>
@@ -195,7 +199,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
 
             {/* Детальна інформація */}
             <View style={styles.detailsSection}>
-              <Text style={styles.detailsTitle}>Детальний склад</Text>
+              <Text style={styles.detailsTitle}>{t('detailedComposition')}</Text>
               
               <View style={styles.nutritionRowCompact}>
                 <Text style={styles.nutritionLabelSmall}>{t('sugar')}</Text>
@@ -318,87 +322,39 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
               )}
             </View>
 
-            {/* Дієтична інформація */}
+            {/* Product Tags */}
             {(() => {
-              const dietaryItems = [];
-              if (currentProduct.isVegan) dietaryItems.push('vegan');
-              if (currentProduct.isVegetarian) dietaryItems.push('vegetarian');
-              if (!currentProduct.hasLactose) dietaryItems.push('lactoseFree');
-              if (!currentProduct.hasGluten) dietaryItems.push('glutenFree');
+              const productTags = getTagsFromProduct(currentProduct);
               
-              if (dietaryItems.length === 0) return null;
+              if (productTags.length === 0) return null;
               
               return (
                 <View style={styles.compositionSection}>
                   <View style={styles.compositionHeader}>
-                    <Icon name="leaf" size={20} color="#4CAF50" />
-                    <Text style={styles.compositionTitle}>{t('dietaryInfo') || 'Dietary Information'}</Text>
+                    <Icon name="tag" size={20} color="#34572a" />
+                    <Text style={styles.compositionTitle}>{t('tags') || 'Tags'}</Text>
                   </View>
-                  <View style={styles.dietaryCard}>
-                    <View style={styles.dietaryGrid}>
-                      {currentProduct.isVegan && (
-                        <View style={styles.dietaryItem}>
-                          <Icon 
-                            name="check-circle" 
-                            size={24} 
-                            color="#4CAF50" 
-                          />
+                  <View style={styles.tagsDisplayCard}>
+                    <View style={styles.tagsWrap}>
+                      {productTags.map((tag, index) => (
+                        <View 
+                          key={index} 
+                          style={[
+                            styles.tagDisplayItem,
+                            { 
+                              backgroundColor: getTagColor(tag) + '20',
+                              borderColor: getTagColor(tag)
+                            }
+                          ]}
+                        >
                           <Text style={[
-                            styles.dietaryText,
-                            { color: '#4CAF50' }
+                            styles.tagDisplayText,
+                            { color: getTagColor(tag) }
                           ]}>
-                            {t('vegan') || 'Vegan'}
+                            {getTagDisplayName(tag)}
                           </Text>
                         </View>
-                      )}
-                      
-                      {currentProduct.isVegetarian && (
-                        <View style={styles.dietaryItem}>
-                          <Icon 
-                            name="check-circle" 
-                            size={24} 
-                            color="#4CAF50" 
-                          />
-                          <Text style={[
-                            styles.dietaryText,
-                            { color: '#4CAF50' }
-                          ]}>
-                            {t('vegetarian') || 'Vegetarian'}
-                          </Text>
-                        </View>
-                      )}
-                      
-                      {!currentProduct.hasLactose && (
-                        <View style={styles.dietaryItem}>
-                          <Icon 
-                            name="check-circle" 
-                            size={24} 
-                            color="#4CAF50" 
-                          />
-                          <Text style={[
-                            styles.dietaryText,
-                            { color: '#4CAF50' }
-                          ]}>
-                            {t('lactoseFree') || 'Lactose-Free'}
-                          </Text>
-                        </View>
-                      )}
-                      
-                      {!currentProduct.hasGluten && (
-                        <View style={styles.dietaryItem}>
-                          <Icon 
-                            name="check-circle" 
-                            size={24} 
-                            color="#4CAF50" 
-                          />
-                          <Text style={[
-                            styles.dietaryText,
-                            { color: '#4CAF50' }
-                          ]}>
-                            {t('glutenFree') || 'Gluten-Free'}
-                          </Text>
-                        </View>
-                      )}
+                      ))}
                     </View>
                   </View>
                 </View>
@@ -600,15 +556,10 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
           {renderSimilarProducts()}
         </View>
         
-        <View style={styles.metadataContainer}>
-          <Text style={styles.metadataText}>Product ID: {currentProduct.productId}</Text>
-          <Text style={styles.metadataText}>
-            Added: {formatDate(currentProduct.createdAt)}
-          </Text>
-          <Text style={styles.metadataText}>
-            Last updated: {formatDate(currentProduct.updatedAt)}
-          </Text>
-        </View>
+        <AdminInfo 
+          product={currentProduct} 
+          isVisible={currentUser?.role === 'admin'} 
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -1021,6 +972,29 @@ const styles = StyleSheet.create({
   },
   reviewsContainer: {
     padding: 16,
+  },
+  tagsDisplayCard: {
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#34572a',
+  },
+  tagsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  tagDisplayItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+  },
+  tagDisplayText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 });
 

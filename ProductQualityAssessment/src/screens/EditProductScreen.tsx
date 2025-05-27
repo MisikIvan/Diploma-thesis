@@ -16,6 +16,7 @@ import { updateProduct, getProduct } from '../api/firebase';
 import { Product, NutriScoreGrade } from '../types/index';
 import { RootStackParamList } from '../types/navigation';
 import { t } from '../utils/translations';
+import { PREDEFINED_TAGS, getTagDisplayName } from '../utils/helpers';
 import ImageUploader from '../components/ImageUploader';
 
 type EditProductScreenProps = StackScreenProps<RootStackParamList, 'EditProduct'>;
@@ -48,6 +49,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
       },
       salt: 0
     },
+    tags: [],
     isVegan: false,
     isVegetarian: false,
     hasLactose: false,
@@ -70,7 +72,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
     if (!currentUser || currentUser.role !== 'admin') {
       Alert.alert(
         t('accessDenied'),
-        'Тільки адміністратори можуть редагувати продукти',
+        t('adminOnlyEdit'),
         [{ text: 'OK', onPress: () => navigation.goBack() }]
       );
       return;
@@ -89,7 +91,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
       } else {
         Alert.alert(
           t('error'),
-          'Продукт не знайдено',
+          t('productNotFound'),
           [{ text: 'OK', onPress: () => navigation.goBack() }]
         );
       }
@@ -97,7 +99,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
       console.error('Error loading product:', error);
       Alert.alert(
         t('error'),
-        'Помилка завантаження продукту',
+        t('loadingProduct'),
         [{ text: 'OK', onPress: () => navigation.goBack() }]
       );
     } finally {
@@ -107,12 +109,12 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
 
   const handleSave = async () => {
     if (!product.name) {
-      Alert.alert(t('error'), 'Назва продукту обов\'язкова');
+      Alert.alert(t('error'), t('productNameRequired'));
       return;
     }
 
     if (!currentUser?.userId) {
-      Alert.alert(t('error'), 'Помилка автентифікації');
+      Alert.alert(t('error'), t('authenticationError'));
       return;
     }
 
@@ -135,6 +137,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
           carbohydrates: { total: 0, sugar: 0 },
           salt: 0
         },
+        tags: product.tags || [],
         isVegan: product.isVegan || false,
         isVegetarian: product.isVegetarian || false,
         hasLactose: product.hasLactose || false,
@@ -144,12 +147,12 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
 
       Alert.alert(
         t('success'),
-        'Продукт успішно оновлено',
+        t('productUpdatedSuccessfully'),
         [{ text: 'OK', onPress: () => navigation.goBack() }]
       );
     } catch (error) {
       console.error('Error updating product:', error);
-      Alert.alert(t('error'), 'Помилка оновлення продукту');
+      Alert.alert(t('error'), t('updateProductError'));
     } finally {
       setSaving(false);
     }
@@ -159,7 +162,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#34572a" />
-        <Text style={styles.loadingText}>Завантаження продукту...</Text>
+        <Text style={styles.loadingText}>{t('loadingProduct')}</Text>
       </View>
     );
   }
@@ -167,7 +170,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Редагувати продукт</Text>
+        <Text style={styles.title}>{t('editProduct')}</Text>
         
         <Text style={styles.inputLabel}>{t('productName')} *</Text>
         <TextInput
@@ -182,7 +185,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
           style={[styles.input, styles.textArea]}
           value={product.description}
           onChangeText={(text) => setProduct({...product, description: text})}
-          placeholder="Детальний опис продукту..."
+          placeholder={t('detailedProductDescription')}
           multiline
           numberOfLines={3}
         />
@@ -192,7 +195,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
           currentImageUrl={product.imageUrl}
         />
         
-        <Text style={styles.inputLabel}>{t('productImageUrl')} (альтернативно)</Text>
+        <Text style={styles.inputLabel}>{t('productImageUrl')} {t('alternativeImageUrl')}</Text>
         <TextInput
           style={styles.input}
           value={product.imageUrl}
@@ -394,7 +397,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
             ...product, 
             allergens: text.split(',').map(allergen => allergen.trim()).filter(allergen => allergen)
           })}
-          placeholder="Молоко, яйця, глютен..."
+          placeholder={t('allergensPlaceholder')}
         />
         
         <Text style={styles.inputLabel}>{t('additives')}</Text>
@@ -405,7 +408,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
             ...product, 
             additives: text.split(',').map(additive => additive.trim()).filter(additive => additive)
           })}
-          placeholder="E100, E200..."
+          placeholder={t('additivesPlaceholder')}
         />
         
         <Text style={styles.inputLabel}>{t('categories')}</Text>
@@ -419,7 +422,51 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
           placeholder={`${t('dairyCategory')}, ${t('beverageCategory')}`}
         />
         
-        <Text style={styles.sectionTitle}>{t('dietaryInfo')}</Text>
+        <Text style={styles.sectionTitle}>{t('tags')}</Text>
+        
+        <Text style={styles.inputLabel}>{t('addTags')}</Text>
+        <TextInput
+          style={styles.input}
+          value={product.tags?.join(', ')}
+          onChangeText={(text) => setProduct({
+            ...product, 
+            tags: text.split(',').map(tag => tag.trim()).filter(tag => tag)
+          })}
+          placeholder={t('tagsPlaceholder')}
+        />
+        
+        <Text style={styles.inputSubLabel}>{t('availableTags')}</Text>
+        <View style={styles.tagsContainer}>
+          {PREDEFINED_TAGS.map((tag) => {
+            const isSelected = product.tags?.includes(tag) || false;
+            return (
+              <TouchableOpacity
+                key={tag}
+                style={[
+                  styles.tagButton,
+                  isSelected && styles.tagButtonSelected
+                ]}
+                onPress={() => {
+                  const currentTags = product.tags || [];
+                  const updatedTags = isSelected
+                    ? currentTags.filter(t => t !== tag)
+                    : [...currentTags, tag];
+                  setProduct({...product, tags: updatedTags});
+                }}
+              >
+                <Text style={[
+                  styles.tagButtonText,
+                  isSelected && styles.tagButtonTextSelected
+                ]}>
+                  {getTagDisplayName(tag)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        
+        <Text style={styles.sectionTitle}>{t('dietaryInfo')} (Legacy)</Text>
+        <Text style={styles.inputHelper}>{t('legacyFieldsNote')}</Text>
         
         <View style={styles.checkboxRow}>
           <TouchableOpacity 
@@ -639,6 +686,46 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  inputSubLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+    marginBottom: 8,
+    marginTop: 12,
+  },
+  inputHelper: {
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
+    marginBottom: 8,
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+  },
+  tagButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  tagButtonSelected: {
+    backgroundColor: '#34572a',
+    borderColor: '#34572a',
+  },
+  tagButtonText: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
+  },
+  tagButtonTextSelected: {
+    color: '#fff',
   },
 });
 

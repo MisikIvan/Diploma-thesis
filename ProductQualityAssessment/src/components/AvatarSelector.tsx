@@ -27,6 +27,7 @@ const avatarOptions = [
   { id: 4, path: require('../assets/profile4.png'), name: 'Avatar 4' },
   { id: 5, path: require('../assets/profile5.png'), name: 'Avatar 5' },
   { id: 6, path: require('../assets/profile6.png'), name: 'Avatar 6' },
+  { id: 'currents', path: require('../assets/profile-currents.jpg'), name: 'Currents Avatar' },
 ];
 
 const AvatarSelector: React.FC<AvatarSelectorProps> = ({
@@ -57,25 +58,31 @@ const AvatarSelector: React.FC<AvatarSelectorProps> = ({
           </View>
           
           <ScrollView contentContainerStyle={styles.avatarGrid}>
-            {avatarOptions.map((avatar) => (
-              <TouchableOpacity
-                key={avatar.id}
-                style={[
-                  styles.avatarOption,
-                  currentAvatar === `profile${avatar.id}.png` && styles.selectedAvatar,
-                ]}
-                onPress={() => handleSelectAvatar(`profile${avatar.id}.png`)}
-              >
-                <Image source={avatar.path} style={styles.avatarImage} />
-                <View style={styles.avatarOverlay}>
-                  {currentAvatar === `profile${avatar.id}.png` && (
-                    <View style={styles.checkmark}>
-                      <Text style={styles.checkmarkText}>✓</Text>
-                    </View>
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
+            {avatarOptions.map((avatar) => {
+              const avatarFileName = avatar.id === 'currents' 
+                ? 'profile-currents.jpg' 
+                : `profile${avatar.id}.png`;
+              
+              return (
+                <TouchableOpacity
+                  key={avatar.id}
+                  style={[
+                    styles.avatarOption,
+                    currentAvatar === avatarFileName && styles.selectedAvatar,
+                  ]}
+                  onPress={() => handleSelectAvatar(avatarFileName)}
+                >
+                  <Image source={avatar.path} style={styles.avatarImage} />
+                  <View style={styles.avatarOverlay}>
+                    {currentAvatar === avatarFileName && (
+                      <View style={styles.checkmark}>
+                        <Text style={styles.checkmarkText}>✓</Text>
+                      </View>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
           </ScrollView>
         </View>
       </View>

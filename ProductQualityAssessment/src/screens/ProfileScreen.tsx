@@ -35,12 +35,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 
   const dispatch = useAppDispatch();
 
-  // Функція для отримання локального аватара
+
   const getAvatarSource = (avatarUrl?: string) => {
     if (!avatarUrl) return require('../assets/profile1.png');
     
-    // Якщо це локальний аватар
-    if (avatarUrl.includes('profile') && avatarUrl.includes('.png')) {
+ 
+    if (avatarUrl.includes('profile') && (avatarUrl.includes('.png') || avatarUrl.includes('.jpg'))) {
       switch (avatarUrl) {
         case 'profile1.png': return require('../assets/profile1.png');
         case 'profile2.png': return require('../assets/profile2.png');
@@ -48,11 +48,12 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         case 'profile4.png': return require('../assets/profile4.png');
         case 'profile5.png': return require('../assets/profile5.png');
         case 'profile6.png': return require('../assets/profile6.png');
+        case 'profile-currents.jpg': return require('../assets/profile-currents.jpg');
         default: return require('../assets/profile1.png');
       }
     }
     
-    // Якщо це URL, повертаємо як є
+   
     return { uri: avatarUrl };
   };
 

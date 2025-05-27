@@ -201,10 +201,69 @@ export interface TranslationKeys {
   containsLactose: string;
   containsGluten: string;
   
+  // Tags system
+  tags: string;
+  addTags: string;
+  tagsPlaceholder: string;
+  availableTags: string;
+  noTags: string;
+  
+  // Predefined tags
+  tagVegan: string;
+  tagVegetarian: string;
+  tagLactoseFree: string;
+  tagGlutenFree: string;
+  tagOrganic: string;
+  tagBio: string;
+  tagDiabeteFriendly: string;
+  tagLowFat: string;
+  tagLowSugar: string;
+  tagHighProtein: string;
+  tagNatural: string;
+  tagLocal: string;
+  
   // Avatar functionality
   selectAvatar: string;
   avatarUpdateSuccess: string;
   avatarUpdateError: string;
+  
+  // Admin info
+  adminInfo: string;
+  added: string;
+  lastUpdated: string;
+  createdBy: string;
+  
+  // Additional missing translations
+  per100g: string;
+  detailedComposition: string;
+  productNotFound: string;
+  loadingProduct: string;
+  productUpdatedSuccessfully: string;
+  updateProductError: string;
+  editProduct: string;
+  detailedProductDescription: string;
+  alternativeImageUrl: string;
+  productNameRequired: string;
+  authenticationError: string;
+  allergensPlaceholder: string;
+  additivesPlaceholder: string;
+  adminOnlyEdit: string;
+  legacyFieldsNote: string;
+  
+  // ImageUploader translations
+  productImage: string;
+  addImage: string;
+  changeImage: string;
+  clickToAddImage: string;
+  clickToChangeImage: string;
+  uploading: string;
+  permissionRequired: string;
+  permissionRequiredMessage: string;
+  imagePickError: string;
+  webUploadInfo: string;
+  webUploadNote: string;
+  imageUploadSuccess: string;
+  imageUploadError: string;
 }
 
 // English translations
@@ -410,10 +469,69 @@ const en: TranslationKeys = {
   containsLactose: 'Contains Lactose',
   containsGluten: 'Contains Gluten',
   
+  // Tags system
+  tags: 'Tags',
+  addTags: 'Add Tags',
+  tagsPlaceholder: 'vegan, organic, gluten-free...',
+  availableTags: 'Available Tags',
+  noTags: 'No tags',
+  
+  // Predefined tags
+  tagVegan: 'Vegan',
+  tagVegetarian: 'Vegetarian',
+  tagLactoseFree: 'Lactose-Free',
+  tagGlutenFree: 'Gluten-Free',
+  tagOrganic: 'Organic',
+  tagBio: 'Bio',
+  tagDiabeteFriendly: 'Diabete-Friendly',
+  tagLowFat: 'Low Fat',
+  tagLowSugar: 'Low Sugar',
+  tagHighProtein: 'High Protein',
+  tagNatural: 'Natural',
+  tagLocal: 'Local',
+  
   // Avatar functionality
   selectAvatar: 'Select Avatar',
   avatarUpdateSuccess: 'Avatar updated successfully',
   avatarUpdateError: 'Failed to update avatar',
+  
+  // Admin info
+  adminInfo: 'Admin Information',
+  added: 'Added',
+  lastUpdated: 'Last updated',
+  createdBy: 'Created by',
+  
+  // Additional missing translations
+  per100g: 'Per 100g of product',
+  detailedComposition: 'Detailed Composition',
+  productNotFound: 'Product not found',
+  loadingProduct: 'Loading product...',
+  productUpdatedSuccessfully: 'Product updated successfully',
+  updateProductError: 'Error updating product',
+  editProduct: 'Edit Product',
+  detailedProductDescription: 'Detailed product description...',
+  alternativeImageUrl: '(alternative)',
+  productNameRequired: 'Product name is required',
+  authenticationError: 'Authentication error',
+  allergensPlaceholder: 'Milk, eggs, gluten...',
+  additivesPlaceholder: 'E100, E200...',
+  adminOnlyEdit: 'Only administrators can edit products',
+  legacyFieldsNote: 'These fields are kept for backward compatibility',
+  
+  // ImageUploader translations
+  productImage: 'Product Image',
+  addImage: 'Add Image',
+  changeImage: 'Change',
+  clickToAddImage: 'Click to add image',
+  clickToChangeImage: 'Click to change image',
+  uploading: 'Uploading...',
+  permissionRequired: 'Permission Required',
+  permissionRequiredMessage: 'Permission required to access image gallery',
+  imagePickError: 'Error selecting image',
+  webUploadInfo: 'Information',
+  webUploadNote: 'On web platform, it is recommended to use image URL',
+  imageUploadSuccess: 'Image uploaded successfully!',
+  imageUploadError: 'Error uploading image',
 }
 
 // Ukrainian translations
@@ -619,10 +737,69 @@ const uk: TranslationKeys = {
   containsLactose: 'Містить лактозу',
   containsGluten: 'Містить глютен',
   
+  // Tags system
+  tags: 'Теги',
+  addTags: 'Додати теги',
+  tagsPlaceholder: 'веганський, органічний, без глютену...',
+  availableTags: 'Доступні теги',
+  noTags: 'Немає тегів',
+  
+  // Predefined tags
+  tagVegan: 'Веганський',
+  tagVegetarian: 'Вегетаріанський',
+  tagLactoseFree: 'Без лактози',
+  tagGlutenFree: 'Без глютену',
+  tagOrganic: 'Органічний',
+  tagBio: 'Біо',
+  tagDiabeteFriendly: 'Для діабетиків',
+  tagLowFat: 'Низький вміст жиру',
+  tagLowSugar: 'Низький вміст цукру',
+  tagHighProtein: 'Високий вміст білка',
+  tagNatural: 'Натуральний',
+  tagLocal: 'Місцевий',
+  
   // Avatar functionality
   selectAvatar: 'Вибрати аватар',
   avatarUpdateSuccess: 'Аватар успішно оновлено',
   avatarUpdateError: 'Не вдалося оновити аватар',
+  
+  // Admin info
+  adminInfo: 'Адміністративна інформація',
+  added: 'Додано',
+  lastUpdated: 'Останнє оновлення',
+  createdBy: 'Створено',
+  
+  // Additional missing translations
+  per100g: 'На 100г продукту',
+  detailedComposition: 'Детальний склад',
+  productNotFound: 'Продукт не знайдено',
+  loadingProduct: 'Завантаження продукту...',
+  productUpdatedSuccessfully: 'Продукт успішно оновлено',
+  updateProductError: 'Помилка оновлення продукту',
+  editProduct: 'Редагувати продукт',
+  detailedProductDescription: 'Детальний опис продукту...',
+  alternativeImageUrl: '(альтернативний)',
+  productNameRequired: 'Необхідно вказати назву продукту',
+  authenticationError: 'Помилка аутентифікації',
+  allergensPlaceholder: 'Молоко, яйця, глютен...',
+  additivesPlaceholder: 'Е100, Е200...',
+  adminOnlyEdit: 'Тільки адміністратори можуть редагувати продукти',
+  legacyFieldsNote: 'Ці поля зберігаються для зворотної сумісності',
+  
+  // ImageUploader translations
+  productImage: 'Зображення продукту',
+  addImage: 'Додати зображення',
+  changeImage: 'Змінити',
+  clickToAddImage: 'Натисніть, щоб додати зображення',
+  clickToChangeImage: 'Натисніть, щоб змінити зображення',
+  uploading: 'Завантаження...',
+  permissionRequired: 'Потрібен дозвіл',
+  permissionRequiredMessage: 'Потрібен дозвіл для доступу до галереї зображень',
+  imagePickError: 'Помилка при виборі зображення',
+  webUploadInfo: 'Інформація',
+  webUploadNote: 'Завантаження зображень на веб-платформі потребує додаткової настройки. Поки що використовуйте URL зображення.',
+  imageUploadSuccess: 'Зображення успішно завантажено!',
+  imageUploadError: 'Помилка при завантаженні зображення',
 }
 
 export type Language = 'en' | 'uk';

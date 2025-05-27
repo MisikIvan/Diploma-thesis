@@ -32,8 +32,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert(
-          t('error'),
-          'Потрібен дозвіл для доступу до галереї зображень'
+          t('permissionRequired'),
+          t('permissionRequiredMessage')
         );
         return false;
       }
@@ -63,15 +63,15 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert(t('error'), 'Помилка при виборі зображення');
+      Alert.alert(t('error'), t('imagePickError'));
     }
   };
 
   const uploadImage = async (imageUri: string) => {
     if (Platform.OS === 'web') {
       Alert.alert(
-        'Інформація',
-        'Завантаження зображень на веб-платформі потребує додаткової настройки. Поки що використовуйте URL зображення.'
+        t('webUploadInfo'),
+        t('webUploadNote')
       );
       return;
     }
@@ -86,10 +86,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       const downloadUrl = await uploadProductImage(file);
       onImageUploaded(downloadUrl);
       
-      Alert.alert(t('success'), 'Зображення успішно завантажено!');
+      Alert.alert(t('success'), t('imageUploadSuccess'));
     } catch (error) {
       console.error('Error uploading image:', error);
-      Alert.alert(t('error'), 'Помилка при завантаженні зображення');
+      Alert.alert(t('error'), t('imageUploadError'));
       setLocalImageUri(null);
     } finally {
       setIsUploading(false);
@@ -110,7 +110,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Зображення продукту</Text>
+      <Text style={styles.label}>{t('productImage')}</Text>
       
       <TouchableOpacity
         style={[styles.imageContainer, disabled && styles.disabled]}
@@ -122,31 +122,31 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         ) : (
           <View style={styles.placeholderContainer}>
             <Text style={styles.placeholderIcon}>📷</Text>
-            <Text style={styles.placeholderText}>Додати зображення</Text>
+            <Text style={styles.placeholderText}>{t('addImage')}</Text>
           </View>
         )}
         
         {isUploading && (
           <View style={styles.uploadingOverlay}>
             <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={styles.uploadingText}>Завантаження...</Text>
+            <Text style={styles.uploadingText}>{t('uploading')}</Text>
           </View>
         )}
         
         {!isUploading && imageSource && (
           <View style={styles.overlay}>
-            <Text style={styles.overlayText}>📷 Змінити</Text>
+            <Text style={styles.overlayText}>📷 {t('changeImage')}</Text>
           </View>
         )}
       </TouchableOpacity>
       
       <Text style={styles.hint}>
-        Натисніть, щоб {currentImageUrl || localImageUri ? 'змінити' : 'додати'} зображення
+        {currentImageUrl || localImageUri ? t('clickToChangeImage') : t('clickToAddImage')}
       </Text>
       
       {Platform.OS === 'web' && (
         <Text style={styles.webNote}>
-          💡 На веб-платформі рекомендується використовувати URL зображення
+          💡 {t('webUploadNote')}
         </Text>
       )}
     </View>

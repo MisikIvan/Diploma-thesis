@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, FlatList, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
-import { searchProducts, setCurrentProduct, setSelectedCategory } from '../redux/slices/productsSlice';
+import { searchProducts, setCurrentProduct, setSelectedCategory, loadRecentProducts, addToViewHistory } from '../redux/slices/productsSlice';
 import { useFocusEffect } from '@react-navigation/native';
 import SearchBar from '../components/SearchBar';
 import CategoryList from '../components/CategoryList';
@@ -25,6 +25,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     error = null,
     filteredProducts = [],
   } = useAppSelector(state => state.products);
+  
+  const { currentUser } = useAppSelector(state => state.user);
 
   console.log('🏠 HomeScreen render - products:', products.length, 'error:', error, 'loading:', isLoading);
 
@@ -35,9 +37,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     console.log('🏠 HomeScreen useEffect - hasInitialLoad:', hasInitialLoad);
     if (!hasInitialLoad) {
       loadProducts();
+  
+      if (currentUser?.userId) {
+        dispatch(loadRecentProducts(currentUser.userId));
+      }
       setHasInitialLoad(true);
     }
-  }, [hasInitialLoad]);
+  }, [hasInitialLoad, currentUser?.userId]);
 
  
   useFocusEffect(
@@ -64,6 +70,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const handleProductPress = (product: Product) => {
     dispatch(setCurrentProduct(product));
+   
+    if (currentUser?.userId) {
+      dispatch(addToViewHistory({ userId: currentUser.userId, product }));
+    }
     navigation.navigate('ProductDetail', { productId: product.productId });
   };
 

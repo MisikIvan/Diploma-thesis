@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
 import { Product, NutriScoreGrade } from '../../types/index';
 import { getAllProducts as fetchProductsFromFirebase, getProduct as fetchProductFromFirebase } from '../../api/firebase';
+import { StorageService } from '../../utils/storage';
 
 interface SearchParams {
   query: string;
@@ -276,6 +277,50 @@ export const getSimilarProducts = createAsyncThunk(
   }
 );
 
+export const loadRecentProducts = createAsyncThunk(
+  'products/loadRecentProducts',
+  async (userId: string, { rejectWithValue }) => {
+    try {
+      const viewHistory = await StorageService.viewHistory.getViewHistory();
+      const userHistory = viewHistory.filter(h => h.userId === userId);
+      
+   
+      const recentProductIds = userHistory.slice(0, 5).map(h => h.productId);
+      
+     
+      const recentProducts: Product[] = [];
+      for (const productId of recentProductIds) {
+        try {
+          const product = await fetchProductFromFirebase(productId);
+          if (product) {
+            recentProducts.push(product);
+          }
+        } catch (error) {
+          console.warn('Failed to load recent product:', productId, error);
+        }
+      }
+      
+      return recentProducts;
+    } catch (error) {
+      console.error('Failed to load recent products from storage:', error);
+      return rejectWithValue('Failed to load recent products');
+    }
+  }
+);
+
+export const addToViewHistory = createAsyncThunk(
+  'products/addToViewHistory',
+  async ({ userId, product }: { userId: string; product: Product }, { rejectWithValue }) => {
+    try {
+      await StorageService.viewHistory.addToViewHistory(userId, product);
+      return product;
+    } catch (error) {
+      console.error('Failed to add product to view history:', error);
+      return rejectWithValue('Failed to save to view history');
+    }
+  }
+);
+
 const productsSlice = createSlice({
   name: 'products',
   initialState,
@@ -303,6 +348,13 @@ const productsSlice = createSlice({
 
         console.log(`Updated favorite status for ${action.payload.productId}: ${action.payload.isFavorite}`);
       }
+    },
+    setRecentProducts: (state, action: PayloadAction<Product[]>) => {
+      state.recentProducts = action.payload;
+    },
+    addNewProduct: (state, action: PayloadAction<Product>) => {
+     
+      state.products = [action.payload, ...state.products];
     },
   },
   extraReducers: (builder) => {
@@ -388,9 +440,28 @@ const productsSlice = createSlice({
         state.products = MOCK_PRODUCTS; 
         state.error = null; 
         console.log('📱 Final products count after reject:', state.products.length);
+      })
+      
+    
+      .addCase(loadRecentProducts.fulfilled, (state, action) => {
+        console.log('📱 loadRecentProducts.fulfilled - loaded:', action.payload.length, 'recent products');
+        state.recentProducts = action.payload;
+      })
+      .addCase(loadRecentProducts.rejected, (state, action) => {
+        console.log('📱 loadRecentProducts.rejected - error:', action.error.message);
+        state.recentProducts = [];
+      })
+      
+   
+      .addCase(addToViewHistory.fulfilled, (state, action) => {
+        console.log('📱 addToViewHistory.fulfilled - added:', action.payload.name);
+      
+        if (!state.recentProducts.some((p: Product) => p.productId === action.payload.productId)) {
+          state.recentProducts = [action.payload, ...state.recentProducts].slice(0, 5);
+        }
       });
   },
 });
 
-export const { setCurrentProduct, setSelectedCategory, updateProductFavoriteStatus } = productsSlice.actions;
+export const { setCurrentProduct, setSelectedCategory, updateProductFavoriteStatus, setRecentProducts, addNewProduct } = productsSlice.actions;
 export default productsSlice.reducer; 

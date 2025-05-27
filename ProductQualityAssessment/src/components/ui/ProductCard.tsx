@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Product, NutriScoreGrade } from '../../types';
-import { getProductImage } from '../../utils/helpers';
+import { getProductImage, getTagsFromProduct, getTagDisplayName, getTagColor } from '../../utils/helpers';
 
 interface ProductCardProps {
   product: Product;
@@ -10,8 +10,17 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, compact = false }) => {
+
+  if (!product) {
+    return null;
+  }
+  
   const { name, imageUrl, nutriscoreGrade, brand } = product;
   
+ 
+  if (!name) {
+    return null;
+  }
   
   const getGradeColor = (grade: NutriScoreGrade): string => {
     switch (grade) {
@@ -24,20 +33,21 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, compact = f
     }
   };
 
- 
-  const getTags = () => {
-    const tags = [];
-    
-    if (product.isVegan) tags.push('Vegan');
-    if (product.isVegetarian && !product.isVegan) tags.push('Vegetarian');
-    if (!product.hasLactose) tags.push('Lactose Free');
-    if (!product.hasGluten) tags.push('Gluten Free');
-    return tags;
-  };
 
-  const tags = getTags();
-  const firstTag = tags[0];
-  const additionalTagsCount = tags.length - 1;
+  let productTags: string[] = [];
+  let firstTag: string | undefined;
+  let additionalTagsCount = 0;
+  
+  try {
+    productTags = getTagsFromProduct(product);
+    firstTag = productTags[0];
+    additionalTagsCount = productTags.length - 1;
+  } catch (error) {
+    console.warn('Error getting tags for product:', product.productId, error);
+    productTags = [];
+    firstTag = undefined;
+    additionalTagsCount = 0;
+  }
   
   return (
     <TouchableOpacity 
@@ -46,28 +56,39 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, compact = f
       activeOpacity={0.7}
     >
       <View style={styles.cardContent}>
-        <Image 
+      <Image 
           source={{ uri: getProductImage(imageUrl || '') }} 
-          style={[styles.image, compact && styles.compactImage]}
-          resizeMode="cover" 
-        />
+        style={[styles.image, compact && styles.compactImage]}
+        resizeMode="cover" 
+      />
         
         <View style={styles.contentContainer}>
           <View style={styles.textContent}>
-            <Text style={styles.name} numberOfLines={2}>
-              {name}
-            </Text>
+        <Text style={styles.name} numberOfLines={2}>
+          {name}
+        </Text>
             {brand && (
               <Text style={styles.brand} numberOfLines={1}>
                 {brand}
               </Text>
             )}
             
-            {/*  */}
+            {/* Product tags display */}
             {firstTag && (
               <View style={styles.tagsContainer}>
-                <View style={styles.tag}>
-                  <Text style={styles.tagText}>{firstTag}</Text>
+                <View style={[
+                  styles.tag, 
+                  { 
+                    backgroundColor: (getTagColor(firstTag) || '#757575') + '20', 
+                    borderColor: getTagColor(firstTag) || '#757575' 
+                  }
+                ]}>
+                  <Text style={[
+                    styles.tagText, 
+                    { color: getTagColor(firstTag) || '#757575' }
+                  ]}>
+                    {getTagDisplayName(firstTag) || firstTag}
+          </Text>
                 </View>
                 {additionalTagsCount > 0 && (
                   <View style={styles.additionalTagsCounter}>
@@ -156,16 +177,15 @@ const styles = StyleSheet.create({
     height: 28,
   },
   tag: {
-    backgroundColor: '#e8f4fd',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
     height: 24,
     justifyContent: 'center',
+    borderWidth: 1,
   },
   tagText: {
     fontSize: 11,
-    color: '#1976d2',
     fontWeight: '500',
   },
   additionalTagsCounter: {

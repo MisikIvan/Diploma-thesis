@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet, Text } from 'react-native';
-import { useAppDispatch } from '../hooks/reduxHooks';
+import { useAppDispatch } from '../redux/hooks';
 import { setSearchQuery } from '../redux/slices/productSlice';
 import { APP_CONSTANTS } from '../utils/config';
 import { t } from '../utils/translations';
