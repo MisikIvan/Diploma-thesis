@@ -23,7 +23,6 @@ export interface TranslationKeys {
   homeScreen: string;
   favoritesScreen: string;
   profileScreen: string;
-  adminScreen: string;
   productDetails: string;
   
   // Product
@@ -264,6 +263,27 @@ export interface TranslationKeys {
   webUploadNote: string;
   imageUploadSuccess: string;
   imageUploadError: string;
+  
+  // New Admin Panel translations
+  adminPanel: string;
+  userGrowth: string;
+  productGrowth: string;
+  userManagement: string;
+  productManagement: string;
+  searchUsers: string;
+  searchProducts: string;
+  searchAndManageUsers: string;
+  searchAndManageProducts: string;
+  totalUsers: string;
+  totalProducts: string;
+  registeredUsers: string;
+  productsInDatabase: string;
+  admins: string;
+  blocked: string;
+  gradeA: string;
+  beverages: string;
+  demo: string;
+  live: string;
 }
 
 // English translations
@@ -291,7 +311,6 @@ const en: TranslationKeys = {
   homeScreen: 'Home',
   favoritesScreen: 'Favorites',
   profileScreen: 'Profile',
-  adminScreen: 'Admin Panel',
   productDetails: 'Product Details',
   
   // Product
@@ -532,6 +551,27 @@ const en: TranslationKeys = {
   webUploadNote: 'On web platform, it is recommended to use image URL',
   imageUploadSuccess: 'Image uploaded successfully!',
   imageUploadError: 'Error uploading image',
+  
+  // New Admin Panel translations
+  adminPanel: 'Admin Panel',
+  userGrowth: 'User Growth',
+  productGrowth: 'Product Growth',
+  userManagement: 'User Management',
+  productManagement: 'Product Management',
+  searchUsers: 'Search Users',
+  searchProducts: 'Search Products',
+  searchAndManageUsers: 'Search and manage user accounts',
+  searchAndManageProducts: 'Search and manage products',
+  totalUsers: 'Total Users',
+  totalProducts: 'Total Products',
+  registeredUsers: 'Registered users',
+  productsInDatabase: 'Products in database',
+  admins: 'Admins',
+  blocked: 'Blocked',
+  gradeA: 'Grade A',
+  beverages: 'Beverages',
+  demo: 'Demo',
+  live: 'Live',
 }
 
 // Ukrainian translations
@@ -559,7 +599,6 @@ const uk: TranslationKeys = {
   homeScreen: 'Головна',
   favoritesScreen: 'Улюблені',
   profileScreen: 'Профіль',
-  adminScreen: 'Панель адміністратора',
   productDetails: 'Деталі продукту',
   
   // Product
@@ -800,6 +839,27 @@ const uk: TranslationKeys = {
   webUploadNote: 'Завантаження зображень на веб-платформі потребує додаткової настройки. Поки що використовуйте URL зображення.',
   imageUploadSuccess: 'Зображення успішно завантажено!',
   imageUploadError: 'Помилка при завантаженні зображення',
+  
+  // New Admin Panel translations
+  adminPanel: 'Панель адміністратора',
+  userGrowth: 'Зростання користувачів',
+  productGrowth: 'Зростання продуктів',
+  userManagement: 'Управління користувачами',
+  productManagement: 'Управління продуктами',
+  searchUsers: 'Пошук користувачів',
+  searchProducts: 'Пошук продуктів',
+  searchAndManageUsers: 'Пошук та управління обліковими записами користувачів',
+  searchAndManageProducts: 'Пошук та управління продуктами',
+  totalUsers: 'Всього користувачів',
+  totalProducts: 'Всього продуктів',
+  registeredUsers: 'Зареєстровані користувачі',
+  productsInDatabase: 'Продукти в базі даних',
+  admins: 'Адміністратори',
+  blocked: 'Заблоковані',
+  gradeA: 'Клас A',
+  beverages: 'Напої',
+  demo: 'Демо',
+  live: 'Онлайн',
 }
 
 export type Language = 'en' | 'uk';
