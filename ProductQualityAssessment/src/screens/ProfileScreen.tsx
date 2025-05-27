@@ -16,6 +16,7 @@ import { DataService } from '../utils/dataService';
 import { Language, t, getCurrentLanguage } from '../utils/translations';
 import { saveLanguage } from '../utils/languageStorage';
 import LanguageSelector from '../components/LanguageSelector';
+import AvatarSelector from '../components/AvatarSelector';
 import { useAppDispatch } from '../redux/hooks';
 import { logout } from '../redux/slices/userSlice';
 
@@ -29,9 +30,32 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState('');
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const [showAvatarSelector, setShowAvatarSelector] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState<Language>(getCurrentLanguage());
 
   const dispatch = useAppDispatch();
+
+
+  const getAvatarSource = (avatarUrl?: string) => {
+    if (!avatarUrl) return require('../assets/profile1.png');
+    
+ 
+    if (avatarUrl.includes('profile') && (avatarUrl.includes('.png') || avatarUrl.includes('.jpg'))) {
+      switch (avatarUrl) {
+        case 'profile1.png': return require('../assets/profile1.png');
+        case 'profile2.png': return require('../assets/profile2.png');
+        case 'profile3.png': return require('../assets/profile3.png');
+        case 'profile4.png': return require('../assets/profile4.png');
+        case 'profile5.png': return require('../assets/profile5.png');
+        case 'profile6.png': return require('../assets/profile6.png');
+        case 'profile-currents.jpg': return require('../assets/profile-currents.jpg');
+        default: return require('../assets/profile1.png');
+      }
+    }
+    
+   
+    return { uri: avatarUrl };
+  };
 
   useEffect(() => {
     loadUserData();
@@ -52,7 +76,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           userId: 'user123',
           email: 'demo@example.com',
           displayName: 'Demo User',
-          avatarUrl: 'https://cdn.7tv.app/emote/01FSVRP2N00000QSWVVZJA08HV/4x.avif',
+          avatarUrl: 'profile1.png',
           canComment: true,
           authMethod: 'email',
           role: 'admin',
@@ -68,6 +92,24 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
       Alert.alert(t('error'), t('error'));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAvatarSelect = async (avatarPath: string) => {
+    if (!user) return;
+
+    try {
+      const updatedUser: User = {
+        ...user,
+        avatarUrl: avatarPath,
+      };
+
+      await StorageService.user.saveUser(updatedUser);
+      setUser(updatedUser);
+      Alert.alert(t('success'), t('avatarUpdateSuccess'));
+    } catch (error) {
+      console.error('Failed to update avatar:', error);
+      Alert.alert(t('error'), t('avatarUpdateError'));
     }
   };
 
@@ -171,10 +213,18 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
-        <Image
-          source={{ uri: user.avatarUrl || 'https://cdn.7tv.app/emote/01FSVRP2N00000QSWVVZJA08HV/4x.avif' }}
-          style={styles.avatar}
-        />
+        <View style={styles.avatarContainer}>
+          <Image
+            source={getAvatarSource(user.avatarUrl)}
+            style={styles.avatar}
+          />
+          <TouchableOpacity 
+            style={styles.changeAvatarButton}
+            onPress={() => setShowAvatarSelector(true)}
+          >
+            <Text style={styles.changeAvatarText}>📷</Text>
+          </TouchableOpacity>
+        </View>
         
         {isEditing ? (
           <View style={styles.editContainer}>
@@ -269,6 +319,13 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         onClose={() => setShowLanguageSelector(false)}
         onLanguageChange={handleLanguageChange}
       />
+      
+      <AvatarSelector
+        visible={showAvatarSelector}
+        onClose={() => setShowAvatarSelector(false)}
+        onSelectAvatar={handleAvatarSelect}
+        currentAvatar={user.avatarUrl}
+      />
     </ScrollView>
   );
 };
@@ -314,6 +371,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  avatarContainer: {
+    position: 'relative',
+  },
   avatar: {
     width: 100,
     height: 100,
@@ -321,6 +381,18 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     borderWidth: 3,
     borderColor: '#34572a',
+  },
+  changeAvatarButton: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    padding: 5,
+    borderRadius: 15,
+    backgroundColor: '#34572a',
+  },
+  changeAvatarText: {
+    color: '#fff',
+    fontSize: 18,
   },
   userInfo: {
     alignItems: 'center',

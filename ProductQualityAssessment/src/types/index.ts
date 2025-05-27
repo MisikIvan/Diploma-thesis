@@ -15,9 +15,10 @@ export interface Product {
   productId: string;
   name: string;
   description?: string;
+  brand?: string;
   imageUrl?: string;
   nutriscoreGrade: 'A' | 'B' | 'C' | 'D' | 'E';
-  nutriscoreScore?: number; // 0-100
+  nutriscoreScore?: number; 
   categories: string[];
   ingredients: string;
   allergens: string[];
@@ -36,6 +37,9 @@ export interface Product {
     };
     salt?: number;
   };
+  // Replaced with tags system
+  tags: string[]; // ['vegan', 'vegetarian', 'lactose-free', 'gluten-free', 'organic', 'bio', etc.]
+  // Keep original fields for backward compatibility during migration
   isVegan: boolean;
   isVegetarian: boolean;
   hasLactose: boolean;

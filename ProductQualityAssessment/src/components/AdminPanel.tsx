@@ -3,21 +3,19 @@ import { View, Text, TouchableOpacity, StyleSheet, FlatList, TextInput, Alert, S
 import { useAppSelector } from '../redux/hooks';
 import { useNavigation } from '@react-navigation/native';
 import { t } from '../utils/translations';
-import { User, Product, AdminAction } from '../types/index';
+import { User, Product } from '../types/index';
 import { 
   getAllUsers, 
   blockUser, 
   unblockUser, 
   toggleCommentPermission,
   getAllProducts,
-  deleteProduct,
-  getAdminActions
+  deleteProduct
 } from '../api/firebase';
 
 enum Tab {
   PRODUCTS = 'products',
-  USERS = 'users',
-  ACTIVITY = 'activity'
+  USERS = 'users'
 }
 
 const AdminPanel: React.FC = () => {
@@ -26,7 +24,6 @@ const AdminPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.PRODUCTS);
   const [users, setUsers] = useState<User[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [adminActions, setAdminActions] = useState<AdminAction[]>([]);
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [productSearchQuery, setProductSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -68,11 +65,6 @@ const AdminPanel: React.FC = () => {
       } else if (activeTab === Tab.PRODUCTS) {
         const allProducts = await getAllProducts();
         setProducts(allProducts);
-      } else if (activeTab === Tab.ACTIVITY) {
-        const actions = await getAdminActions();
-        setAdminActions(actions.sort((a, b) => 
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        ));
       }
     } catch (error) {
       Alert.alert(t('error'), (error as Error).message);
@@ -221,14 +213,6 @@ const AdminPanel: React.FC = () => {
     </View>
   );
   
-  const renderActionItem = ({ item }: { item: AdminAction }) => (
-    <View style={styles.actionCard}>
-      <Text style={styles.actionType}>{item.actionType.replace('_', ' ').toUpperCase()}</Text>
-      <Text style={styles.actionDetail}>{item.details}</Text>
-      <Text style={styles.actionDate}>{new Date(item.timestamp).toLocaleString()}</Text>
-    </View>
-  );
-  
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{t('adminScreen')}</Text>
@@ -246,13 +230,6 @@ const AdminPanel: React.FC = () => {
           onPress={() => setActiveTab(Tab.USERS)}
         >
           <Text style={styles.tabText}>{t('users')}</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.tab, activeTab === Tab.ACTIVITY && styles.activeTab]}
-          onPress={() => setActiveTab(Tab.ACTIVITY)}
-        >
-          <Text style={styles.tabText}>{t('diagnostics')}</Text>
         </TouchableOpacity>
       </View>
       
@@ -299,27 +276,6 @@ const AdminPanel: React.FC = () => {
             data={filteredProducts}
             renderItem={renderProductItem}
             keyExtractor={(item) => item.productId}
-            style={styles.list}
-            ListEmptyComponent={
-              <Text style={styles.emptyText}>{t('noResults')}</Text>
-            }
-          />
-        </View>
-      )}
-      
-      {activeTab === Tab.ACTIVITY && (
-        <View style={styles.tabContent}>
-          <TouchableOpacity 
-            style={styles.diagnosticButton}
-            onPress={() => (navigation as any).navigate('Diagnostics')}
-          >
-            <Text style={styles.diagnosticButtonText}>{t('diagnostics')}</Text>
-          </TouchableOpacity>
-
-          <FlatList
-            data={adminActions}
-            renderItem={renderActionItem}
-            keyExtractor={(item) => item.actionId}
             style={styles.list}
             ListEmptyComponent={
               <Text style={styles.emptyText}>{t('noResults')}</Text>
@@ -489,42 +445,10 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
-  actionCard: {
-    padding: 12,
-    backgroundColor: '#f5f5f5',
-    borderRadius: 4,
-    marginBottom: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#2196F3',
-  },
-  actionType: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#2196F3',
-    marginBottom: 4,
-  },
-  actionDetail: {
-    fontSize: 14,
-  },
-  actionDate: {
-    fontSize: 12,
-    color: '#888',
-    marginTop: 4,
-  },
   emptyText: {
     textAlign: 'center',
     marginTop: 24,
     color: '#888',
-  },
-  diagnosticButton: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 4,
-    marginBottom: 16,
-  },
-  diagnosticButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
   },
 });
 

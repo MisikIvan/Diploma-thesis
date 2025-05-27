@@ -1,16 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { 
-  getAuth, 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
-  signOut, 
-  GoogleAuthProvider, 
-  signInWithPopup,
-  onAuthStateChanged,
-  updateProfile,
-  User as FirebaseUser,
-  signInWithCredential
-} from 'firebase/auth';
+import {   getAuth,  initializeAuth,  Auth,  createUserWithEmailAndPassword,   signInWithEmailAndPassword,   signOut,   GoogleAuthProvider,   signInWithPopup,  onAuthStateChanged,  updateProfile,  User as FirebaseUser,  signInWithCredential} from 'firebase/auth';
 import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, query, where, getDocs, deleteDoc, addDoc, Timestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { FIREBASE_CONFIG } from '../utils/config';
@@ -20,12 +9,24 @@ import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
 const app = initializeApp(FIREBASE_CONFIG);
 
-const auth = getAuth(app);
+
+let auth: Auth;
+try {
+ 
+  auth = initializeAuth(app, {
+    
+  });
+  console.log('Firebase Auth initialized with persistence');
+} catch (error) {
+ 
+  console.log('Auth already initialized, using getAuth:', error);
+  auth = getAuth(app);
+}
+
 const db = getFirestore(app);
-export { db };
+export { db, auth };
 const storage = getStorage(app);
 const googleProvider = new GoogleAuthProvider();
 
@@ -396,11 +397,28 @@ export const getProduct = async (productId: string): Promise<Product | null> => 
 
 export const getAllProducts = async (): Promise<Product[]> => {
   try {
+    console.log('🔥 getAllProducts: Starting Firebase fetch...');
     const productsCollection = collection(db, 'products');
+    console.log('🔥 getAllProducts: Collection reference created');
+    
     const productsSnapshot = await getDocs(productsCollection);
-    return productsSnapshot.docs.map(doc => doc.data() as Product);
+    console.log('🔥 getAllProducts: Snapshot received, size:', productsSnapshot.size);
+    
+    const products = productsSnapshot.docs.map(doc => {
+      const data = doc.data() as Product;
+      console.log('🔥 getAllProducts: Processing product:', data.name || 'Unnamed');
+      return data;
+    });
+    
+    console.log('🔥 getAllProducts: Successfully loaded', products.length, 'products');
+    return products;
   } catch (error) {
-    console.error('Error getting all products:', error);
+    console.error('🔥 getAllProducts: Error occurred:', error);
+    console.error('🔥 getAllProducts: Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      code: (error as any)?.code,
+      stack: error instanceof Error ? error.stack : undefined
+    });
     throw error;
   }
 };

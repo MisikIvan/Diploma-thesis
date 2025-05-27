@@ -28,12 +28,16 @@ import {
   formatNutrient,
   calculateWholeProduct,
   truncateText,
+  getTagsFromProduct,
+  getTagDisplayName,
+  getTagColor,
 } from '../utils/helpers';
 import { Product, getNutriScoreColor, Favorite } from '../types/index';
-import ProductCard from '../components/ProductCard';
+import ProductCard from '../components/ui/ProductCard';
 import CommentSection from '../components/CommentSection';
 import LoadingScreen from '../components/LoadingScreen';
 import ErrorScreen from '../components/ErrorScreen';
+import AdminInfo from '../components/AdminInfo';
 import { t } from '../utils/translations';
 import { DataService } from '../utils/dataService';
 
@@ -55,7 +59,6 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
   const { currentProduct, similarProducts, loading, error } = useAppSelector((state) => state.products);
   const { currentUser } = useAppSelector(state => state.user);
 
-
   const loadProductData = useCallback(() => {
     setProductFetchRetried(true);
     dispatch(getProductDetails(productId))
@@ -65,15 +68,12 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
       })
       .catch(err => {
         console.error('Error fetching product:', err);
-   
         ToastAndroid.show('Could not load product details. Trying offline mode...', ToastAndroid.SHORT);
       });
   }, [dispatch, productId]);
 
   useEffect(() => {
     loadProductData();
-    
-
     checkFavoriteStatus();
   }, [loadProductData, currentUser]);
 
@@ -87,15 +87,13 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
       console.log(`Checking favorite status for product: ${productId} and user: ${currentUser.userId}`);
       
     
-      const userFavorites = await DataService.favorites.getUserFavorites(currentUser.userId);
+      const isProductFavorite = await DataService.favorites.isFavorite(currentUser.userId, productId);
       
-   
-      const isProductFavorite = userFavorites.some(fav => fav.productId === productId);
-      
-      console.log(`Checked favorite status for ${productId}: ${isProductFavorite} (found in ${userFavorites.length} favorites)`);
+      console.log(`Checked favorite status for ${productId}: ${isProductFavorite}`);
       setIsFavorite(isProductFavorite);
     } catch (error) {
-      console.error('Error checking favorite status:', error);
+      console.warn('Error checking favorite status, defaulting to false:', error);
+      setIsFavorite(false);
     }
   };
 
@@ -105,14 +103,19 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
       return;
     }
 
+    const originalFavoriteStatus = isFavorite;
+    
     try {
       setLocalLoading(true);
       console.log(`Toggling favorite for product: ${productId} from ${isFavorite} to ${!isFavorite}`);
       
       const newFavoriteStatus = !isFavorite;
       
-      if (newFavoriteStatus) {
+    
+      setIsFavorite(newFavoriteStatus);
       
+      if (newFavoriteStatus) {
+     
         const favorite: Favorite = {
           favoriteId: '', 
           userId: currentUser.userId,
@@ -122,54 +125,32 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
         await DataService.favorites.addFavorite(favorite);
         console.log(`Added product ${productId} to favorites`);
       } else {
-    
+   
         await DataService.favorites.removeFavorite(currentUser.userId, productId);
         console.log(`Removed product ${productId} from favorites`);
-        
-      
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-   
-        const stillFavorite = await DataService.favorites.isFavorite(currentUser.userId, productId);
-        if (stillFavorite) {
-          console.error(`Failed to remove favorite - still exists in system!`);
-          
-      
-          console.log('Attempting removal again with longer timeout...');
-          await DataService.favorites.removeFavorite(currentUser.userId, productId);
-          await new Promise(resolve => setTimeout(resolve, 1500));
-          
-    
-          const finalCheck = await DataService.favorites.isFavorite(currentUser.userId, productId);
-          if (finalCheck) {
-            Alert.alert('Error', 'Failed to remove from favorites. Please try again later.');
-            setIsFavorite(true); 
-            setLocalLoading(false);
-            return;
-          }
-        }
       }
       
-  
-      await checkFavoriteStatus();
-      
-  
+ 
       dispatch(updateProductFavoriteStatus({
         productId,
         isFavorite: newFavoriteStatus
       }));
       
-   
+ 
       ToastAndroid.show(
         newFavoriteStatus ? 'Added to favorites' : 'Removed from favorites',
         ToastAndroid.SHORT
       );
     } catch (error) {
-      console.error('Error toggling favorite:', error);
-      Alert.alert('Error', 'Failed to update favorites');
+      console.warn('Error toggling favorite:', error);
       
-   
-      await checkFavoriteStatus();
+      
+      setIsFavorite(originalFavoriteStatus);
+      
+      ToastAndroid.show(
+        'Failed to update favorites. Changes saved locally.',
+        ToastAndroid.SHORT
+      );
     } finally {
       setLocalLoading(false);
     }
@@ -183,34 +164,34 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
         return (
           <ScrollView style={styles.tabContainer} showsVerticalScrollIndicator={false}>
             <Text style={styles.sectionTitle}>{t('nutritionalFacts')}</Text>
-            <Text style={styles.portionText}>На 100г продукту</Text>
+            <Text style={styles.portionText}>{t('per100g')}</Text>
             
             {/* Основні макронутрієнти */}
             <View style={styles.nutritionGrid}>
               <View style={styles.nutritionCard}>
                 <Text style={styles.nutritionNumber}>
-                  {formatNutrient(currentProduct.nutriments.calories, 'kcal')}
+                  {formatNutrient(currentProduct.nutriments?.calories, 'kcal')}
                 </Text>
                 <Text style={styles.nutritionLabelCompact}>{t('calories')}</Text>
               </View>
               
               <View style={styles.nutritionCard}>
                 <Text style={styles.nutritionNumber}>
-                  {formatNutrient(currentProduct.nutriments.proteins)}
+                  {formatNutrient(currentProduct.nutriments?.proteins)}
                 </Text>
                 <Text style={styles.nutritionLabelCompact}>{t('proteins')}</Text>
               </View>
               
               <View style={styles.nutritionCard}>
                 <Text style={styles.nutritionNumber}>
-                  {formatNutrient(currentProduct.nutriments.carbohydrates.total)}
+                  {formatNutrient(currentProduct.nutriments?.carbohydrates?.total)}
                 </Text>
                 <Text style={styles.nutritionLabelCompact}>{t('carbs')}</Text>
               </View>
               
               <View style={styles.nutritionCard}>
                 <Text style={styles.nutritionNumber}>
-                  {formatNutrient(currentProduct.nutriments.fats.total)}
+                  {formatNutrient(currentProduct.nutriments?.fats?.total)}
                 </Text>
                 <Text style={styles.nutritionLabelCompact}>{t('fats')}</Text>
               </View>
@@ -218,26 +199,26 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
 
             {/* Детальна інформація */}
             <View style={styles.detailsSection}>
-              <Text style={styles.detailsTitle}>Детальний склад</Text>
+              <Text style={styles.detailsTitle}>{t('detailedComposition')}</Text>
               
               <View style={styles.nutritionRowCompact}>
                 <Text style={styles.nutritionLabelSmall}>{t('sugar')}</Text>
                 <Text style={styles.nutritionValueSmall}>
-                  {formatNutrient(currentProduct.nutriments.carbohydrates.sugar)}
+                  {formatNutrient(currentProduct.nutriments?.carbohydrates?.sugar)}
                 </Text>
               </View>
 
               <View style={styles.nutritionRowCompact}>
                 <Text style={styles.nutritionLabelSmall}>{t('saturatedFats')}</Text>
                 <Text style={styles.nutritionValueSmall}>
-                  {formatNutrient(currentProduct.nutriments.fats.saturated)}
+                  {formatNutrient(currentProduct.nutriments?.fats?.saturated)}
                 </Text>
               </View>
 
               <View style={styles.nutritionRowCompact}>
                 <Text style={styles.nutritionLabelSmall}>{t('salt')}</Text>
                 <Text style={styles.nutritionValueSmall}>
-                  {formatNutrient(currentProduct.nutriments.salt)}
+                  {formatNutrient(currentProduct.nutriments?.salt)}
                 </Text>
               </View>
             </View>
@@ -253,7 +234,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
                     <Text style={styles.wholeProductLabel}>{t('calories')}</Text>
                     <Text style={styles.wholeProductValue}>
                       {formatNutrient(
-                        calculateWholeProduct(currentProduct.nutriments.calories, currentProduct.weight) ?? undefined,
+                        calculateWholeProduct(currentProduct.nutriments?.calories, currentProduct.weight) ?? undefined,
                         'kcal'
                       )}
                     </Text>
@@ -263,7 +244,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
                     <Text style={styles.wholeProductLabel}>{t('proteins')}</Text>
                     <Text style={styles.wholeProductValue}>
                       {formatNutrient(
-                        calculateWholeProduct(currentProduct.nutriments.proteins, currentProduct.weight) ?? undefined
+                        calculateWholeProduct(currentProduct.nutriments?.proteins, currentProduct.weight) ?? undefined
                       )}
                     </Text>
                   </View>
@@ -272,7 +253,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
                     <Text style={styles.wholeProductLabel}>{t('carbs')}</Text>
                     <Text style={styles.wholeProductValue}>
                       {formatNutrient(
-                        calculateWholeProduct(currentProduct.nutriments.carbohydrates.total, currentProduct.weight) ?? undefined
+                        calculateWholeProduct(currentProduct.nutriments?.carbohydrates?.total, currentProduct.weight) ?? undefined
                       )}
                     </Text>
                   </View>
@@ -289,20 +270,40 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
             <View style={styles.compositionSection}>
               <View style={styles.compositionHeader}>
                 <Icon name="format-list-bulleted" size={20} color="#34572a" />
-                <Text style={styles.compositionTitle}>{t('composition')}</Text>
+                <Text style={styles.compositionTitle}>{t('composition') || 'Composition'}</Text>
               </View>
               <View style={styles.ingredientsCard}>
-                <Text style={styles.ingredientsText}>{currentProduct.ingredients}</Text>
+                <Text style={styles.ingredientsText}>{currentProduct.ingredients || 'No ingredients listed'}</Text>
               </View>
             </View>
+
+            {/* E-добавки */}
+            {currentProduct.additives && Array.isArray(currentProduct.additives) && currentProduct.additives.length > 0 && (
+              <View style={styles.compositionSection}>
+                <View style={styles.compositionHeader}>
+                  <Icon name="flask-outline" size={20} color="#FF5722" />
+                  <Text style={styles.compositionTitle}>{t('additives') || 'Additives'}</Text>
+                </View>
+                <View style={styles.additivesCard}>
+                  <View style={styles.additivesList}>
+                    {currentProduct.additives.map((additive, index) => (
+                      <View key={index} style={styles.additiveTag}>
+                        <Icon name="flask" size={14} color="#FF5722" />
+                        <Text style={styles.additiveText}>{additive}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              </View>
+            )}
             
             {/* Алергени */}
             <View style={styles.compositionSection}>
               <View style={styles.compositionHeader}>
                 <Icon name="alert-circle-outline" size={20} color="#FF9800" />
-                <Text style={styles.compositionTitle}>{t('allergens')}</Text>
+                <Text style={styles.compositionTitle}>{t('allergens') || 'Allergens'}</Text>
               </View>
-              {currentProduct.allergens && currentProduct.allergens.length > 0 ? (
+              {currentProduct.allergens && Array.isArray(currentProduct.allergens) && currentProduct.allergens.length > 0 ? (
                 <View style={styles.allergensCard}>
                   <View style={styles.allergensList}>
                     {currentProduct.allergens.map((allergen, index) => (
@@ -316,77 +317,49 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
               ) : (
                 <View style={styles.noAllergensCard}>
                   <Icon name="check-circle" size={20} color="#4CAF50" />
-                  <Text style={styles.noAllergensText}>{t('noAllergensListed')}</Text>
+                  <Text style={styles.noAllergensText}>{t('noAllergensListed') || 'No allergens listed'}</Text>
                 </View>
               )}
             </View>
 
-            {/* Дієтична інформація */}
-            <View style={styles.compositionSection}>
-              <View style={styles.compositionHeader}>
-                <Icon name="leaf" size={20} color="#4CAF50" />
-                <Text style={styles.compositionTitle}>{t('dietaryInfo')}</Text>
-              </View>
-              <View style={styles.dietaryCard}>
-                <View style={styles.dietaryGrid}>
-                  <View style={styles.dietaryItem}>
-                    <Icon 
-                      name={currentProduct.isVegan ? 'check-circle' : 'close-circle'} 
-                      size={24} 
-                      color={currentProduct.isVegan ? '#4CAF50' : '#F44336'} 
-                    />
-                    <Text style={[
-                      styles.dietaryText,
-                      { color: currentProduct.isVegan ? '#4CAF50' : '#F44336' }
-                    ]}>
-                      {t('vegan')}
-                    </Text>
+            {/* Product Tags */}
+            {(() => {
+              const productTags = getTagsFromProduct(currentProduct);
+              
+              if (productTags.length === 0) return null;
+              
+              return (
+                <View style={styles.compositionSection}>
+                  <View style={styles.compositionHeader}>
+                    <Icon name="tag" size={20} color="#34572a" />
+                    <Text style={styles.compositionTitle}>{t('tags') || 'Tags'}</Text>
                   </View>
-                  
-                  <View style={styles.dietaryItem}>
-                    <Icon 
-                      name={currentProduct.isVegetarian ? 'check-circle' : 'close-circle'} 
-                      size={24} 
-                      color={currentProduct.isVegetarian ? '#4CAF50' : '#F44336'} 
-                    />
-                    <Text style={[
-                      styles.dietaryText,
-                      { color: currentProduct.isVegetarian ? '#4CAF50' : '#F44336' }
-                    ]}>
-                      {t('vegetarian')}
-                    </Text>
-                  </View>
-                  
-                  <View style={styles.dietaryItem}>
-                    <Icon 
-                      name={!currentProduct.hasLactose ? 'check-circle' : 'close-circle'} 
-                      size={24} 
-                      color={!currentProduct.hasLactose ? '#4CAF50' : '#F44336'} 
-                    />
-                    <Text style={[
-                      styles.dietaryText,
-                      { color: !currentProduct.hasLactose ? '#4CAF50' : '#F44336' }
-                    ]}>
-                      {t('lactoseFree')}
-                    </Text>
-                  </View>
-                  
-                  <View style={styles.dietaryItem}>
-                    <Icon 
-                      name={!currentProduct.hasGluten ? 'check-circle' : 'close-circle'} 
-                      size={24} 
-                      color={!currentProduct.hasGluten ? '#4CAF50' : '#F44336'} 
-                    />
-                    <Text style={[
-                      styles.dietaryText,
-                      { color: !currentProduct.hasGluten ? '#4CAF50' : '#F44336' }
-                    ]}>
-                      {t('glutenFree')}
-                    </Text>
+                  <View style={styles.tagsDisplayCard}>
+                    <View style={styles.tagsWrap}>
+                      {productTags.map((tag, index) => (
+                        <View 
+                          key={index} 
+                          style={[
+                            styles.tagDisplayItem,
+                            { 
+                              backgroundColor: getTagColor(tag) + '20',
+                              borderColor: getTagColor(tag)
+                            }
+                          ]}
+                        >
+                          <Text style={[
+                            styles.tagDisplayText,
+                            { color: getTagColor(tag) }
+                          ]}>
+                            {getTagDisplayName(tag)}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
                   </View>
                 </View>
-              </View>
-            </View>
+              );
+            })()}
           </ScrollView>
         );
         
@@ -406,7 +379,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
     if (!similarProducts || similarProducts.length === 0) {
       return (
         <View style={styles.noSimilarProductsContainer}>
-          <Text style={styles.noSimilarProductsText}>{t('noSimilarProducts')}</Text>
+          <Text style={styles.noSimilarProductsText}>{t('noSimilarProducts') || 'No similar products found'}</Text>
         </View>
       );
     }
@@ -419,7 +392,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
         keyExtractor={item => item.productId}
         renderItem={({ item }) => (
           <View style={styles.similarProductCard}>
-            <ProductCard product={item} onPress={() => navigation.navigate('ProductDetail', { productId: item.productId })} />
+            <ProductCard product={item} onPress={(product) => navigation.navigate('ProductDetail', { productId: product.productId })} />
           </View>
         )}
         contentContainerStyle={styles.similarProductsList}
@@ -427,11 +400,8 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
     );
   };
 
-
   if (error && currentProduct && productFetchRetried) {
-  
     console.log('Showing product despite error, using cached data');
-
   } else if (error && !currentProduct) {
     console.error('Product detail error:', error);
     return (
@@ -495,7 +465,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
             </View>
 
             <View style={styles.categoriesContainer}>
-              {currentProduct.categories.map((cat, index) => (
+              {currentProduct.categories && Array.isArray(currentProduct.categories) && currentProduct.categories.map((cat, index) => (
                 <View key={index} style={styles.categoryTag}>
                   <Text style={styles.categoryText}>{cat}</Text>
                 </View>
@@ -527,7 +497,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
                 exiting={FadeOut.duration(200)}
                 style={styles.activeTabText}
               >
-                {t('nutritionShort')}
+                {t('nutritionShort') || 'KCPF'}
               </Animated.Text>
             )}
           </AnimatedTouchableOpacity>
@@ -550,7 +520,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
                 exiting={FadeOut.duration(200)}
                 style={styles.activeTabText}
               >
-                {t('compositionShort')}
+                {t('compositionShort') || 'Composition'}
               </Animated.Text>
             )}
           </AnimatedTouchableOpacity>
@@ -573,7 +543,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
                 exiting={FadeOut.duration(200)}
                 style={styles.activeTabText}
               >
-                {t('reviewsShort')}
+                {t('reviewsShort') || 'Reviews'}
               </Animated.Text>
             )}
           </AnimatedTouchableOpacity>
@@ -582,19 +552,14 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
         {renderTabContent()}
         
         <View style={styles.similarProductsSection}>
-          <Text style={styles.similarProductsTitle}>{t('similarProducts')}</Text>
+          <Text style={styles.similarProductsTitle}>{t('similarProducts') || 'Similar Products'}</Text>
           {renderSimilarProducts()}
         </View>
         
-        <View style={styles.metadataContainer}>
-          <Text style={styles.metadataText}>Product ID: {currentProduct.productId}</Text>
-          <Text style={styles.metadataText}>
-            Added: {formatDate(currentProduct.createdAt)}
-          </Text>
-          <Text style={styles.metadataText}>
-            Last updated: {formatDate(currentProduct.updatedAt)}
-          </Text>
-        </View>
+        <AdminInfo 
+          product={currentProduct} 
+          isVisible={currentUser?.role === 'admin'} 
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -742,16 +707,22 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   additiveTag: {
-    backgroundColor: '#FFEBEE',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 87, 34, 0.1)',
     borderRadius: 16,
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 6,
     marginRight: 8,
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#FF5722',
   },
   additiveText: {
-    color: '#C62828',
-    fontSize: 14,
+    color: '#FF5722',
+    fontSize: 12,
+    fontWeight: '500',
+    marginLeft: 4,
   },
   allergensList: {
     flexDirection: 'row',
@@ -806,7 +777,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   similarProductCard: {
-    width: 160,
+    width: 280,
     marginRight: 12,
   },
   noSimilarProductsContainer: {
@@ -949,6 +920,13 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#34572a',
   },
+  additivesCard: {
+    backgroundColor: '#ffebee',
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF5722',
+  },
   allergensCard: {
     backgroundColor: '#fff3cd',
     padding: 16,
@@ -994,6 +972,29 @@ const styles = StyleSheet.create({
   },
   reviewsContainer: {
     padding: 16,
+  },
+  tagsDisplayCard: {
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#34572a',
+  },
+  tagsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  tagDisplayItem: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    marginRight: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+  },
+  tagDisplayText: {
+    fontSize: 12,
+    fontWeight: '500',
   },
 });
 

@@ -13,10 +13,15 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
+import { addNewProduct } from '../redux/slices/productsSlice';
 import { getAllProducts, getAllUsers, blockUser, unblockUser, toggleCommentPermission, deleteProduct, addProduct } from '../api/firebase';
 import { User, Product, NutriScoreGrade } from '../types/index';
 import { t } from '../utils/translations';
+import { PREDEFINED_TAGS, getTagDisplayName } from '../utils/helpers';
+import AnimatedButton from '../components/ui/AnimatedButton';
+import ImageUploader from '../components/ImageUploader';
 
 
 interface ExtendedUser extends User {
@@ -45,6 +50,7 @@ const MOCK_PRODUCTS: Product[] = [
       carbohydrates: { total: 20, sugar: 10 },
       salt: 0.1
     },
+    tags: ['vegan', 'vegetarian', 'lactose-free', 'gluten-free'],
     isVegan: true,
     isVegetarian: true,
     hasLactose: false,
@@ -69,6 +75,7 @@ const MOCK_PRODUCTS: Product[] = [
       carbohydrates: { total: 15, sugar: 12 },
       salt: 0.2
     },
+    tags: ['vegetarian'],
     isVegan: false,
     isVegetarian: true,
     hasLactose: true,
@@ -111,6 +118,8 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
   const [error, setError] = useState<string | null>(null);
   const [isDemo, setIsDemo] = useState(false);
   
+ 
+  
   // Product form state
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [newProduct, setNewProduct] = useState<Partial<Product>>({
@@ -135,6 +144,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
       },
       salt: 0
     },
+    tags: [],
     isVegan: false,
     isVegetarian: false,
     hasLactose: false,
@@ -142,19 +152,20 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
     weight: 0
   });
 
-  // Функція для отримання кольору NutriScore
+ 
   const getNutriScoreColor = (grade: string) => {
     switch (grade) {
-      case 'A': return '#00C851'; // Зелений
-      case 'B': return '#8BC34A'; // Світло-зелений
-      case 'C': return '#FFC107'; // Жовтий
-      case 'D': return '#FF9800'; // Помаранчевий
-      case 'E': return '#F44336'; // Червоний
-      default: return '#34572a'; // За замовчуванням
+      case 'A': return '#00C851'; 
+      case 'B': return '#8BC34A'; 
+      case 'C': return '#FFC107'; 
+      case 'D': return '#FF9800'; 
+      case 'E': return '#F44336'; 
+      default: return '#34572a'; 
     }
   };
 
   const currentUser = useAppSelector(state => state.user.currentUser);
+  const dispatch = useAppDispatch();
   
  
   useEffect(() => {
@@ -183,22 +194,21 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
       headerRight: () => (
         <View style={{ flexDirection: 'row' }}>
           <TouchableOpacity
-            style={[styles.headerButton, { marginRight: 10 }]}
+            style={styles.headerButton}
             onPress={() => checkFirebaseConnection()}
           >
             <Ionicons name={isDemo ? 'cloud-offline' : 'cloud-done'} size={16} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => navigation.navigate('Diagnostics')}
-          >
-            <Ionicons name="medical" size={16} color="#fff" />
           </TouchableOpacity>
         </View>
       ),
     });
     
     loadData();
+    
+   
+    return () => {
+      setShowAddProductModal(false);
+    };
   }, [activeTab]);
 
   const initializeFirebase = async () => {
@@ -231,7 +241,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
 
   const checkFirebaseConnection = async () => {
     if (isDemo) {
-    
+      // Try to connect to Firebase
       setLoading(true);
       try {
         if (activeTab === 'products') {
@@ -240,7 +250,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
             setIsDemo(false);
             setProducts(productsData);
             setError(null);
-            Alert.alert(t('success'), t('firebaseConnected'));
+            Alert.alert(t('success') || 'Success', t('firebaseConnected') || 'Connected to Firebase');
           }
         } else {
           const usersData = await getAllUsers();
@@ -248,32 +258,34 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
             setIsDemo(false);
             setUsers(usersData as ExtendedUser[]);
             setError(null);
-            Alert.alert(t('success'), t('firebaseConnected'));
+            Alert.alert(t('success') || 'Success', t('firebaseConnected') || 'Connected to Firebase');
           }
         }
       } catch (err) {
         console.error('Firebase connection check failed:', err);
-        Alert.alert(t('error'), t('firebaseConnectionFailed'));
+        Alert.alert(t('error') || 'Error', t('firebaseConnectionFailed') || 'Failed to connect to Firebase');
       } finally {
         setLoading(false);
       }
     } else {
       // Switch to demo mode
       Alert.alert(
-        t('confirmDemoMode'),
-        t('demoModeWarning'),
+        t('confirmDemoMode') || 'Confirm Demo Mode',
+        t('demoModeWarning') || 'Switch to demo mode?',
         [
-          { text: t('cancel'), style: 'cancel' },
-          { 
-            text: t('confirm'), 
-            style: 'destructive',
+          {
+            text: t('cancel') || 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: t('confirm') || 'Confirm',
             onPress: () => {
               setIsDemo(true);
               setProducts(MOCK_PRODUCTS);
               setUsers(MOCK_USERS);
-              Alert.alert(t('success'), t('demoModeActivated'));
-            }
-          }
+              Alert.alert(t('success') || 'Success', t('demoModeActivated') || 'Demo mode activated');
+            },
+          },
         ]
       );
     }
@@ -380,6 +392,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
                         carbohydrates: { total: 0, sugar: 0 },
                         salt: 0
                       },
+                      tags: newProduct.tags || [],
                       isVegan: newProduct.isVegan || false,
                       isVegetarian: newProduct.isVegetarian || false,
                       hasLactose: newProduct.hasLactose || false,
@@ -388,6 +401,9 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
                     }, currentUser.userId);
                     
                   
+                   
+                    dispatch(addNewProduct(newFirebaseProduct));
+                    
                     Alert.alert(
                       t('success'),
                       t('firebaseProductAdded'),
@@ -427,6 +443,8 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
                 
                   const mockProduct: Product = createMockProduct();
                   setProducts([mockProduct, ...products]);
+             
+                  dispatch(addNewProduct(mockProduct));
                   Alert.alert(t('success'), t('productAddedLocally'));
                 
                   setShowAddProductModal(false);
@@ -437,7 +455,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
           );
         } else {
         
-          await addProduct({
+          const addedProduct = await addProduct({
             name: newProduct.name || '',
             description: newProduct.description || '',
             imageUrl: newProduct.imageUrl || 'https://via.placeholder.com/300x300?text=No+Image',
@@ -454,12 +472,16 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
               carbohydrates: { total: 0, sugar: 0 },
               salt: 0
             },
+            tags: newProduct.tags || [],
             isVegan: newProduct.isVegan || false,
             isVegetarian: newProduct.isVegetarian || false,
             hasLactose: newProduct.hasLactose || false,
             hasGluten: newProduct.hasGluten || false,
             weight: newProduct.weight || 0
           }, currentUser.userId);
+          
+   
+          dispatch(addNewProduct(addedProduct));
           
           Alert.alert(
             t('success'), 
@@ -513,6 +535,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
         carbohydrates: { total: 0, sugar: 0 },
         salt: 0
       },
+      tags: newProduct.tags || [],
       isVegan: newProduct.isVegan || false,
       isVegetarian: newProduct.isVegetarian || false,
       hasLactose: newProduct.hasLactose || false,
@@ -545,6 +568,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
         },
         salt: 0
       },
+      tags: [],
       isVegan: false,
       isVegetarian: false,
       hasLactose: false,
@@ -555,33 +579,37 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
 
   const handleDeleteProduct = async (productId: string) => {
     Alert.alert(
-      t('confirmDelete'),
-      t('deleteProductConfirmation'),
+      t('confirmDelete') || 'Confirm Delete',
+      t('deleteProductConfirmation') || 'Are you sure you want to delete this product?',
       [
-        { text: t('cancel'), style: 'cancel' },
-        { 
-          text: t('delete'), 
+        {
+          text: t('cancel') || 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: t('delete') || 'Delete',
           style: 'destructive',
           onPress: async () => {
             setLoading(true);
             try {
               if (isDemo) {
-           
+            
                 setProducts(products.filter(p => p.productId !== productId));
-                Alert.alert('Success', 'Product deleted in demo mode');
+                Alert.alert(t('success') || 'Success', 'Product deleted in demo mode');
               } else if (currentUser?.userId) {
-          
+              
                 await deleteProduct(productId, currentUser.userId);
                 setProducts(products.filter(p => p.productId !== productId));
+                Alert.alert(t('success') || 'Success', 'Product deleted successfully');
               }
             } catch (err) {
-              Alert.alert('Error', 'Failed to delete product');
+              Alert.alert(t('error') || 'Error', 'Failed to delete product');
               console.error('Delete product error:', err);
             } finally {
               setLoading(false);
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -667,12 +695,30 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
           <Text style={styles.nutriscoreText}>{item.nutriscoreGrade}</Text>
         </View>
       </View>
-      <TouchableOpacity 
-        style={styles.deleteButton}
-        onPress={() => handleDeleteProduct(item.productId)}
-      >
-        <Ionicons name="trash-outline" size={24} color="#fff" />
-      </TouchableOpacity>
+      <View style={styles.productActions}>
+        <TouchableOpacity 
+          style={styles.editButton}
+          onPress={() => {
+            if (!loading) {
+              navigation.navigate('EditProduct', { productId: item.productId });
+            }
+          }}
+          disabled={loading}
+        >
+          <Ionicons name="create-outline" size={20} color="#fff" />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.deleteButton}
+          onPress={() => {
+            if (!loading) {
+              handleDeleteProduct(item.productId);
+            }
+          }}
+          disabled={loading}
+        >
+          <Ionicons name="trash-outline" size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -732,12 +778,17 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
               style={[styles.input, styles.textArea]}
               value={newProduct.description}
               onChangeText={(text) => setNewProduct({...newProduct, description: text})}
-              placeholder="Детальний опис продукту..."
+              placeholder={t('detailedProductDescription')}
               multiline
               numberOfLines={3}
             />
             
-            <Text style={styles.inputLabel}>{t('productImageUrl')}</Text>
+            <ImageUploader
+              onImageUploaded={(imageUrl) => setNewProduct({...newProduct, imageUrl})}
+              currentImageUrl={newProduct.imageUrl}
+            />
+            
+            <Text style={styles.inputLabel}>{t('productImageUrl')} {t('alternativeImageUrl')}</Text>
             <TextInput
               style={styles.input}
               value={newProduct.imageUrl}
@@ -942,7 +993,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
                 ...newProduct, 
                 allergens: text.split(',').map(allergen => allergen.trim()).filter(allergen => allergen)
               })}
-              placeholder="Молоко, яйця, глютен..."
+              placeholder={t('allergensPlaceholder')}
             />
             
             <Text style={styles.inputLabel}>{t('additives')}</Text>
@@ -953,7 +1004,7 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
                 ...newProduct, 
                 additives: text.split(',').map(additive => additive.trim()).filter(additive => additive)
               })}
-              placeholder="E100, E200..."
+              placeholder={t('additivesPlaceholder')}
             />
             
             <Text style={styles.inputLabel}>{t('categories')}</Text>
@@ -967,7 +1018,51 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
               placeholder={`${t('dairyCategory')}, ${t('beverageCategory')}`}
             />
             
-            <Text style={styles.sectionTitle}>{t('dietaryInfo')}</Text>
+            <Text style={styles.sectionTitle}>{t('tags')}</Text>
+            
+            <Text style={styles.inputLabel}>{t('addTags')}</Text>
+            <TextInput
+              style={styles.input}
+              value={newProduct.tags?.join(', ')}
+              onChangeText={(text) => setNewProduct({
+                ...newProduct, 
+                tags: text.split(',').map(tag => tag.trim()).filter(tag => tag)
+              })}
+              placeholder={t('tagsPlaceholder')}
+            />
+            
+            <Text style={styles.inputSubLabel}>{t('availableTags')}</Text>
+            <View style={styles.tagsContainer}>
+              {PREDEFINED_TAGS.map((tag) => {
+                const isSelected = newProduct.tags?.includes(tag) || false;
+                return (
+                  <TouchableOpacity
+                    key={tag}
+                    style={[
+                      styles.tagButton,
+                      isSelected && styles.tagButtonSelected
+                    ]}
+                    onPress={() => {
+                      const currentTags = newProduct.tags || [];
+                      const updatedTags = isSelected
+                        ? currentTags.filter(t => t !== tag)
+                        : [...currentTags, tag];
+                      setNewProduct({...newProduct, tags: updatedTags});
+                    }}
+                  >
+                    <Text style={[
+                      styles.tagButtonText,
+                      isSelected && styles.tagButtonTextSelected
+                    ]}>
+                      {getTagDisplayName(tag)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+            
+            <Text style={styles.sectionTitle}>{t('dietaryInfo')} (Legacy)</Text>
+            <Text style={styles.inputHelper}>{t('legacyFieldsNote')}</Text>
             
             <View style={styles.checkboxRow}>
               <TouchableOpacity 
@@ -1060,14 +1155,6 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
       {error && (
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity 
-            style={styles.diagnosticButton} 
-            onPress={() => navigation.navigate('Diagnostics')}
-          >
-            <Text style={styles.diagnosticButtonText}>
-              <Ionicons name="medical" size={16} color="#fff" /> {t('diagnostics')}
-            </Text>
-          </TouchableOpacity>
         </View>
       )}
       
@@ -1075,9 +1162,12 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
         <TouchableOpacity 
           style={[styles.tab, activeTab === 'products' && styles.activeTab]} 
           onPress={() => {
-            setActiveTab('products');
-            loadData();
+            if (!loading) {
+              setActiveTab('products');
+              loadData();
+            }
           }}
+          disabled={loading}
         >
           <Text style={[styles.tabText, activeTab === 'products' && styles.activeTabText]}>
             {t('products')}
@@ -1086,9 +1176,12 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
         <TouchableOpacity 
           style={[styles.tab, activeTab === 'users' && styles.activeTab]} 
           onPress={() => {
-            setActiveTab('users');
-            loadData();
+            if (!loading) {
+              setActiveTab('users');
+              loadData();
+            }
           }}
+          disabled={loading}
         >
           <Text style={[styles.tabText, activeTab === 'users' && styles.activeTabText]}>
             {t('users')}
@@ -1124,7 +1217,12 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
               />
               <TouchableOpacity 
                 style={styles.floatingButton}
-                onPress={() => setShowAddProductModal(true)}
+                onPress={() => {
+                  if (!loading) {
+                    setShowAddProductModal(true);
+                  }
+                }}
+                disabled={loading}
               >
                 <Ionicons name="add" size={32} color="white" />
               </TouchableOpacity>
@@ -1148,6 +1246,8 @@ const AdminScreen: React.FC<AdminScreenProps> = ({ navigation }) => {
       )}
       
       {renderAddProductModal()}
+      
+      {/*  */}
     </View>
   );
 };
@@ -1198,23 +1298,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 16,
     fontWeight: '500',
-  },
-  diagnosticButton: {
-    backgroundColor: '#34572a',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 4,
-  },
-  diagnosticButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -1325,6 +1408,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 8,
     backgroundColor: '#dc3545',
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  productActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  editButton: {
+    justifyContent: 'center',
+    padding: 8,
+    backgroundColor: '#007bff',
     borderRadius: 8,
     marginLeft: 8,
   },
@@ -1602,6 +1696,39 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#495057',
     fontWeight: '500',
+  },
+  inputSubLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 12,
+    color: '#6c757d',
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+  },
+  tagButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    backgroundColor: '#f8f9fa',
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  tagButtonSelected: {
+    backgroundColor: '#34572a',
+    borderColor: '#34572a',
+  },
+  tagButtonText: {
+    fontSize: 14,
+    color: '#495057',
+    fontWeight: '500',
+  },
+  tagButtonTextSelected: {
+    color: '#fff',
   },
 });
 
