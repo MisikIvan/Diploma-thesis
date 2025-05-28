@@ -1,4 +1,5 @@
 import { Product, NutriScoreGrade } from '../types';
+import { t } from './translations';
 
 export const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -107,11 +108,9 @@ export const PREDEFINED_TAGS = [
 export type PredefinedTag = typeof PREDEFINED_TAGS[number];
 
 export const getTagsFromProduct = (product: Product): string[] => {
-
   if (!product) {
     return [];
   }
-  
   
   const tags: string[] = [...(product.tags || [])];
   
@@ -131,41 +130,38 @@ export const getTagsFromProduct = (product: Product): string[] => {
   return tags.filter(tag => tag && tag.trim());
 };
 
+// 🔄 ВИПРАВЛЕНА ФУНКЦІЯ - завжди повертає валідний рядок
 export const getTagDisplayName = (tag: string): string => {
-
-  if (!tag) {
+  // Return safe fallback for empty or invalid tags
+  if (!tag || typeof tag !== 'string' || tag.trim() === '') {
     return '';
   }
   
-
-  const { t } = require('./translations');
-  
- 
+  // Map tags to translation keys with safe fallbacks
   const tagMap: Record<string, string> = {
-    'vegan': 'tagVegan',
-    'vegetarian': 'tagVegetarian', 
-    'lactose-free': 'tagLactoseFree',
-    'gluten-free': 'tagGlutenFree',
-    'organic': 'tagOrganic',
-    'bio': 'tagBio',
-    'diabete-friendly': 'tagDiabeteFriendly',
-    'low-fat': 'tagLowFat',
-    'low-sugar': 'tagLowSugar',
-    'high-protein': 'tagHighProtein',
-    'natural': 'tagNatural',
-    'local': 'tagLocal'
+    'vegan': 'Веганський',
+    'vegetarian': 'Вегетаріанський', 
+    'lactose-free': 'Без лактози',
+    'gluten-free': 'Без глютену',
+    'organic': 'Органічний',
+    'bio': 'Біо',
+    'diabete-friendly': 'Для діабетиків',
+    'low-fat': 'Низький жир',
+    'low-sugar': 'Низький цукор',
+    'high-protein': 'Високий білок',
+    'natural': 'Натуральний',
+    'local': 'Місцевий'
   };
   
-  const translationKey = tagMap[tag];
-  return translationKey ? t(translationKey) : tag;
+  // Return mapped value or original tag, ensuring it's always a string
+  const result = tagMap[tag.toLowerCase()] || tag;
+  return typeof result === 'string' ? result : String(result);
 };
 
 export const getTagColor = (tag: string): string => {
-  
   if (!tag) {
     return '#757575';
   }
-  
   
   const colorMap: Record<string, string> = {
     'vegan': '#4CAF50',
@@ -179,8 +175,8 @@ export const getTagColor = (tag: string): string => {
     'low-sugar': '#FF5722',
     'high-protein': '#795548',
     'natural': '#4CAF50',
-    'local': '#607D8B'
+    'local': '#8BC34A'
   };
   
-  return colorMap[tag] || '#757575';
+  return colorMap[tag.toLowerCase()] || '#757575';
 }; 

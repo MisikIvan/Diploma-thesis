@@ -33,12 +33,12 @@ const AdminInfo: React.FC<AdminInfoProps> = ({ product, isVisible }) => {
         <Text style={styles.value}>{formatDate(product.updatedAt)}</Text>
       </View>
       
-      {product.createdBy && (
+      {product.createdBy ? (
         <View style={styles.infoRow}>
           <Text style={styles.label}>{t('createdBy')}:</Text>
           <Text style={styles.value}>{product.createdBy}</Text>
         </View>
-      )}
+      ) : null}
     </View>
   );
 };

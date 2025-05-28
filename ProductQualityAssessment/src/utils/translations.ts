@@ -23,7 +23,6 @@ export interface TranslationKeys {
   homeScreen: string;
   favoritesScreen: string;
   profileScreen: string;
-  adminScreen: string;
   productDetails: string;
   
   // Product
@@ -264,6 +263,65 @@ export interface TranslationKeys {
   webUploadNote: string;
   imageUploadSuccess: string;
   imageUploadError: string;
+  
+  // New Admin Panel translations
+  adminPanel: string;
+  userGrowth: string;
+  productGrowth: string;
+  userManagement: string;
+  productManagement: string;
+  searchUsers: string;
+  searchProducts: string;
+  searchAndManageUsers: string;
+  searchAndManageProducts: string;
+  totalUsers: string;
+  totalProducts: string;
+  registeredUsers: string;
+  productsInDatabase: string;
+  admins: string;
+  blocked: string;
+  gradeA: string;
+  beverages: string;
+  demo: string;
+  live: string;
+  
+  // Product submissions
+  suggestProduct: string;
+  suggestProductBanner: string;
+  productSubmissions: string;
+  submitProduct: string;
+  submissionForm: string;
+  additionalImages: string;
+  addMoreImages: string;
+  removeImage: string;
+  verificationInfo: string;
+  barcode: string;
+  sourceInfo: string;
+  manufacturer: string;
+  countryOfOrigin: string;
+  whereFoundProduct: string;
+  submissionSuccess: string;
+  submissionError: string;
+  productSubmitted: string;
+  submissionUnderReview: string;
+  
+  // Admin submissions review
+  reviewSubmissions: string;
+  pendingSubmissions: string;
+  submissionStatus: string;
+  submittedBy: string;
+  submittedOn: string;
+  reviewSubmission: string;
+  approveSubmission: string;
+  rejectSubmission: string;
+  rejectionReason: string;
+  approveConfirm: string;
+  rejectConfirm: string;
+  submissionApproved: string;
+  submissionRejected: string;
+  noSubmissions: string;
+  viewDetails: string;
+  editBeforeApproval: string;
 }
 
 // English translations
@@ -291,7 +349,6 @@ const en: TranslationKeys = {
   homeScreen: 'Home',
   favoritesScreen: 'Favorites',
   profileScreen: 'Profile',
-  adminScreen: 'Admin Panel',
   productDetails: 'Product Details',
   
   // Product
@@ -299,7 +356,7 @@ const en: TranslationKeys = {
   networkError: 'Could not connect to the server',
   searchPlaceholder: 'Search products...',
   categories: 'Categories',
-  recentProducts: 'Recent Products',
+  recentProducts: 'Recently Viewed Products',
   ingredients: 'Ingredients',
   nutrition: 'Nutrition Facts',
   calories: 'Calories',
@@ -532,6 +589,65 @@ const en: TranslationKeys = {
   webUploadNote: 'On web platform, it is recommended to use image URL',
   imageUploadSuccess: 'Image uploaded successfully!',
   imageUploadError: 'Error uploading image',
+  
+  // New Admin Panel translations
+  adminPanel: 'Admin Panel',
+  userGrowth: 'User Growth',
+  productGrowth: 'Product Growth',
+  userManagement: 'User Management',
+  productManagement: 'Product Management',
+  searchUsers: 'Search Users',
+  searchProducts: 'Search Products',
+  searchAndManageUsers: 'Search and manage user accounts',
+  searchAndManageProducts: 'Search and manage products',
+  totalUsers: 'Total Users',
+  totalProducts: 'Total Products',
+  registeredUsers: 'Registered users',
+  productsInDatabase: 'Products in database',
+  admins: 'Admins',
+  blocked: 'Blocked',
+  gradeA: 'Grade A',
+  beverages: 'Beverages',
+  demo: 'Demo',
+  live: 'Live',
+  
+  // Product submissions
+  suggestProduct: 'Suggest Product',
+  suggestProductBanner: 'Suggest Product Banner',
+  productSubmissions: 'Product Submissions',
+  submitProduct: 'Submit Product',
+  submissionForm: 'Submission Form',
+  additionalImages: 'Additional Images',
+  addMoreImages: 'Add More Images',
+  removeImage: 'Remove Image',
+  verificationInfo: 'Verification Info',
+  barcode: 'Barcode',
+  sourceInfo: 'Source Info',
+  manufacturer: 'Manufacturer',
+  countryOfOrigin: 'Country of Origin',
+  whereFoundProduct: 'Where Found Product',
+  submissionSuccess: 'Submission Success',
+  submissionError: 'Submission Error',
+  productSubmitted: 'Product Submitted',
+  submissionUnderReview: 'Submission Under Review',
+  
+  // Admin submissions review
+  reviewSubmissions: 'Review Submissions',
+  pendingSubmissions: 'Pending Submissions',
+  submissionStatus: 'Submission Status',
+  submittedBy: 'Submitted By',
+  submittedOn: 'Submitted On',
+  reviewSubmission: 'Review Submission',
+  approveSubmission: 'Approve Submission',
+  rejectSubmission: 'Reject Submission',
+  rejectionReason: 'Rejection Reason',
+  approveConfirm: 'Approve Confirm',
+  rejectConfirm: 'Reject Confirm',
+  submissionApproved: 'Submission Approved',
+  submissionRejected: 'Submission Rejected',
+  noSubmissions: 'No Submissions',
+  viewDetails: 'View Details',
+  editBeforeApproval: 'Edit Before Approval',
 }
 
 // Ukrainian translations
@@ -559,7 +675,6 @@ const uk: TranslationKeys = {
   homeScreen: 'Головна',
   favoritesScreen: 'Улюблені',
   profileScreen: 'Профіль',
-  adminScreen: 'Панель адміністратора',
   productDetails: 'Деталі продукту',
   
   // Product
@@ -567,7 +682,7 @@ const uk: TranslationKeys = {
   networkError: 'Не вдалося підключитися до сервера',
   searchPlaceholder: 'Пошук продуктів...',
   categories: 'Категорії',
-  recentProducts: 'Нещодавні продукти',
+  recentProducts: 'Нещодавні переглянуті продукти',
   ingredients: 'Інгредієнти',
   nutrition: 'Поживна цінність',
   calories: 'Калорії',
@@ -800,6 +915,65 @@ const uk: TranslationKeys = {
   webUploadNote: 'Завантаження зображень на веб-платформі потребує додаткової настройки. Поки що використовуйте URL зображення.',
   imageUploadSuccess: 'Зображення успішно завантажено!',
   imageUploadError: 'Помилка при завантаженні зображення',
+  
+  // New Admin Panel translations
+  adminPanel: 'Панель адміністратора',
+  userGrowth: 'Зростання користувачів',
+  productGrowth: 'Зростання продуктів',
+  userManagement: 'Управління користувачами',
+  productManagement: 'Управління продуктами',
+  searchUsers: 'Пошук користувачів',
+  searchProducts: 'Пошук продуктів',
+  searchAndManageUsers: 'Пошук та управління обліковими записами користувачів',
+  searchAndManageProducts: 'Пошук та управління продуктами',
+  totalUsers: 'Всього користувачів',
+  totalProducts: 'Всього продуктів',
+  registeredUsers: 'Зареєстровані користувачі',
+  productsInDatabase: 'Продукти в базі даних',
+  admins: 'Адміністратори',
+  blocked: 'Заблоковані',
+  gradeA: 'Клас A',
+  beverages: 'Напої',
+  demo: 'Демо',
+  live: 'Онлайн',
+  
+  // Product submissions
+  suggestProduct: 'Пропонувати продукт',
+  suggestProductBanner: 'Пропонувати банер продукту',
+  productSubmissions: 'Продуктові подачі',
+  submitProduct: 'Подати продукт',
+  submissionForm: 'Форма подачі',
+  additionalImages: 'Додаткові зображення',
+  addMoreImages: 'Додати більше зображень',
+  removeImage: 'Видалити зображення',
+  verificationInfo: 'Інформація для верифікації',
+  barcode: 'Штрих-код',
+  sourceInfo: 'Інформація про джерело',
+  manufacturer: 'Виробник',
+  countryOfOrigin: 'Країна походження',
+  whereFoundProduct: 'Де знайдено продукт',
+  submissionSuccess: 'Подача успішна',
+  submissionError: 'Помилка подачі',
+  productSubmitted: 'Продукт подано',
+  submissionUnderReview: 'Продукт у процесі перевірки',
+  
+  // Admin submissions review
+  reviewSubmissions: 'Перевірка подач',
+  pendingSubmissions: 'Очікуючі подачі',
+  submissionStatus: 'Статус подачі',
+  submittedBy: 'Поданий',
+  submittedOn: 'Подано',
+  reviewSubmission: 'Перевірка подачі',
+  approveSubmission: 'Підтвердити подачу',
+  rejectSubmission: 'Відхилити подачу',
+  rejectionReason: 'Причина відхилення',
+  approveConfirm: 'Підтвердити',
+  rejectConfirm: 'Відхилити',
+  submissionApproved: 'Подача підтверджена',
+  submissionRejected: 'Подача відхилена',
+  noSubmissions: 'Немає подач',
+  viewDetails: 'Переглянути деталі',
+  editBeforeApproval: 'Редагувати перед підтвердженням',
 }
 
 export type Language = 'en' | 'uk';

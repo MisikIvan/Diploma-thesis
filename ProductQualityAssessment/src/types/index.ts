@@ -100,3 +100,54 @@ export const getNutriScoreColor = (grade: NutriScoreGrade): NutriScoreColor => {
     case 'E': return '⛔️';
   }
 }; 
+
+// Product submission types
+export interface ProductSubmission {
+  submissionId: string;
+  userId: string;
+  userDisplayName: string;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  rejectionReason?: string;
+  // Product data
+  productData: {
+    name: string;
+    description?: string;
+    brand?: string;
+    imageUrl?: string;
+    additionalImages?: string[]; // Multiple images support
+    nutriscoreGrade: 'A' | 'B' | 'C' | 'D' | 'E';
+    nutriscoreScore?: number; 
+    categories: string[];
+    ingredients: string;
+    allergens: string[];
+    additives: string[];
+    nutriments: {
+      calories: number;
+      proteins: number;
+      fats: {
+        total: number;
+        saturated?: number;
+        unsaturated?: number;
+      };
+      carbohydrates: {
+        total: number;
+        sugar?: number;
+      };
+      salt?: number;
+    };
+    tags: string[];
+    isVegan: boolean;
+    isVegetarian: boolean;
+    hasLactose: boolean;
+    hasGluten: boolean;
+    weight?: number;
+    // Verification fields
+    barcode?: string;
+    source?: string; // Where user found this product
+    manufacturer?: string;
+    countryOfOrigin?: string;
+  };
+} 

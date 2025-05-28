@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, Text } from 'react-native';
-import { useAppDispatch } from '../redux/hooks';
-import { setSearchQuery } from '../redux/slices/productSlice';
-import { APP_CONSTANTS } from '../utils/config';
+import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { t } from '../utils/translations';
 
 interface SearchBarProps {
   initialQuery?: string;
   onSearch: (query: string) => void;
-  onFilterPress: () => void;
+  onFilterPress?: () => void;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ 
@@ -19,9 +17,6 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const [query, setQuery] = useState(initialQuery);
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
 
-  const dispatch = useAppDispatch();
-
-
   useEffect(() => {
     setQuery(initialQuery);
   }, [initialQuery]);
@@ -29,37 +24,59 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const handleChangeText = (text: string) => {
     setQuery(text);
     
-
+    // Clear previous timeout
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
     
- 
+    // Set new timeout for debounced search
     const newTimeoutId = setTimeout(() => {
-      dispatch(setSearchQuery(text));
       onSearch(text);
-    }, APP_CONSTANTS.DEBOUNCE_SEARCH);
+    }, 300); // 300ms debounce
     
     setTimeoutId(newTimeoutId);
+  };
+
+  const handleSubmit = () => {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    onSearch(query);
+  };
+
+  const handleClear = () => {
+    setQuery('');
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+    onSearch('');
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
-        <Text style={styles.searchIcon}>🔍</Text>
+        <Icon name="magnify" size={20} color="#6c757d" style={styles.searchIcon} />
         <TextInput
           style={styles.input}
-          placeholder={t('searchPlaceholder')}
+          placeholder={t('searchPlaceholder') || 'Пошук продуктів...'}
           value={query}
           onChangeText={handleChangeText}
           returnKeyType="search"
-          onSubmitEditing={() => onSearch(query)}
+          onSubmitEditing={handleSubmit}
           clearButtonMode="while-editing"
+          placeholderTextColor="#6c757d"
         />
+        {query.length > 0 && (
+          <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
+            <Icon name="close-circle" size={20} color="#6c757d" />
+          </TouchableOpacity>
+        )}
       </View>
-      <TouchableOpacity style={styles.filterButton} onPress={onFilterPress}>
-        <Text style={styles.filterIcon}>🔍</Text>
-      </TouchableOpacity>
+      {onFilterPress && (
+        <TouchableOpacity style={styles.filterButton} onPress={onFilterPress}>
+          <Icon name="filter-variant" size={20} color="#fff" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -69,7 +86,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 12,
     backgroundColor: '#f8f9fa',
   },
   searchContainer: {
@@ -77,7 +94,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 20,
+    borderRadius: 25,
     paddingHorizontal: 16,
     height: 50,
     borderWidth: 1,
@@ -89,15 +106,17 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   searchIcon: {
-    fontSize: 16,
     marginRight: 12,
-    color: '#6c757d',
   },
   input: {
     flex: 1,
     height: 40,
     fontSize: 16,
     color: '#333',
+  },
+  clearButton: {
+    padding: 4,
+    marginLeft: 8,
   },
   filterButton: {
     backgroundColor: '#34572a',
@@ -112,10 +131,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 4,
-  },
-  filterIcon: {
-    fontSize: 18,
-    color: 'white',
   },
 });
 

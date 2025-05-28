@@ -24,8 +24,11 @@ import ProductDetailScreen from '../screens/ProductDetailScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import AuthScreen from '../screens/AuthScreen';
-import AdminScreen from '../screens/AdminScreen';
+import NewAdminScreen from '../screens/NewAdminScreen';
 import EditProductScreen from '../screens/EditProductScreen';
+import ProductSearchScreen from '../screens/ProductSearchScreen';
+import UserSearchScreen from '../screens/UserSearchScreen';
+
 
 // Types
 import { RootStackParamList, BottomTabParamList } from '../types/navigation';
@@ -134,7 +137,7 @@ const MainTabs = () => {
       {isAdmin && (
         <Tab.Screen 
           name="Admin" 
-          component={AdminScreen} 
+          component={NewAdminScreen} 
           options={{ title: t('admin') }} 
         />
       )}
@@ -251,19 +254,29 @@ const Navigation = () => {
             {currentUser.role === 'admin' && (
               <>
                 <Stack.Screen 
-                  name="Admin" 
-                  component={AdminScreen} 
-                  options={{ 
-                    title: t('adminScreen'),
-                    headerBackTitleVisible: false,
-                  }}
-                />
-                <Stack.Screen 
                   name="EditProduct" 
                   component={EditProductScreen as any} 
                   options={{ 
                     title: 'Редагувати продукт',
                     headerBackTitleVisible: false,
+                  }}
+                />
+                <Stack.Screen 
+                  name="ProductSearch" 
+                  component={ProductSearchScreen as any} 
+                  options={{ 
+                    title: 'Пошук продуктів',
+                    headerBackTitleVisible: false,
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen 
+                  name="UserSearch" 
+                  component={UserSearchScreen as any} 
+                  options={{ 
+                    title: 'Пошук користувачів',
+                    headerBackTitleVisible: false,
+                    headerShown: false,
                   }}
                 />
               </>

@@ -3,8 +3,9 @@ export type RootStackParamList = {
   Main: undefined;
   ProductDetail: { productId: string; productName?: string };
   EditProduct: { productId: string };
-  AddProduct: undefined;
   Admin: undefined;
+  ProductSearch: undefined;
+  UserSearch: undefined;
 };
 
 export type BottomTabParamList = {
