@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { User } from '../types/index';
 import { StorageService } from '../utils/storage';
-import { DataService } from '../utils/dataService';
 import { Language, t, getCurrentLanguage } from '../utils/translations';
 import { saveLanguage } from '../utils/languageStorage';
 import LanguageSelector from '../components/LanguageSelector';
@@ -62,30 +61,15 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   }, []);
 
   const loadUserData = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-    
       const userData = await StorageService.user.getUser();
-      
       if (userData) {
         setUser(userData);
         setEditedName(userData.displayName);
       } else {
-      
-        const mockUser: User = {
-          userId: 'user123',
-          email: 'demo@example.com',
-          displayName: 'Demo User',
-          avatarUrl: 'profile1.png',
-          canComment: true,
-          authMethod: 'email',
-          role: 'admin',
-          isBlocked: false,
-        };
-        setUser(mockUser);
-        setEditedName(mockUser.displayName);
-     
-        await StorageService.user.saveUser(mockUser);
+        // Redirect to auth if no user data found
+        navigation.navigate('Auth');
       }
     } catch (error) {
       console.error('Failed to load user data:', error);
@@ -125,7 +109,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             try {
               setIsLoading(true);
               await dispatch(logout()).unwrap();
-              console.log('Logout successful');
             } catch (error) {
               console.error('Logout failed:', error);
               Alert.alert(t('error'), t('error'));

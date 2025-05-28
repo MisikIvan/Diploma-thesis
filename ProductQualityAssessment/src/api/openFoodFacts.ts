@@ -99,6 +99,7 @@ const transformProduct = (offProduct: OpenFoodFactsProduct): Product => {
       },
       salt: offProduct.nutriments?.salt || 0,
     },
+    tags: [],
     isVegan,
     isVegetarian,
     hasLactose,

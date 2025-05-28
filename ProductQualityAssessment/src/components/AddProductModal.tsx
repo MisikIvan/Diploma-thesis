@@ -145,34 +145,12 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
         updatedAt: new Date().toISOString()
       };
 
-     
-      try {
-        const addedProduct = await addProduct(productToAdd, currentUser.userId);
-        console.log('Product added to Firebase:', addedProduct);
-        
-    
-        dispatch(addNewProduct(addedProduct));
-        
-        Alert.alert(t('success'), t('firebaseProductAdded'));
-      } catch (firebaseError) {
-        console.warn('Firebase add failed, adding locally:', firebaseError);
-        
-     
-        const mockProduct: Product = {
-          ...productToAdd,
-          productId: `local-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-        };
-        
+      await addProduct(productToAdd, currentUser.userId);
       
-        dispatch(addNewProduct(mockProduct));
-        
-        Alert.alert(t('success'), t('productAddedLocally'));
-      }
-
-      resetProductForm();
+      Alert.alert(t('success'), 'Product added successfully');
       onProductAdded?.();
+      resetProductForm();
       onClose();
-      
     } catch (error) {
       console.error('Error adding product:', error);
       Alert.alert(t('error'), t('failedToAddProduct'));

@@ -3,7 +3,7 @@ import {   getAuth,  initializeAuth,  Auth,  createUserWithEmailAndPassword,   s
 import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, query, where, getDocs, deleteDoc, addDoc, Timestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { FIREBASE_CONFIG } from '../utils/config';
-import { User, Product, Comment, AdminAction } from '../types/index';
+import { User, Product, Comment, AdminAction, ProductSubmission } from '../types/index';
 import { Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
@@ -694,6 +694,196 @@ export const uploadUserAvatar = async (userId: string, imageFile: File): Promise
     return downloadURL;
   } catch (error) {
     console.error('Error uploading avatar:', error);
+    throw error;
+  }
+};
+
+// Product Submissions Functions
+export const createSubmission = async (submission: Omit<ProductSubmission, 'submissionId' | 'submittedAt'>): Promise<ProductSubmission> => {
+  try {
+    const submissionData: ProductSubmission = {
+      ...submission,
+      submissionId: '', // Will be set by Firestore
+      submittedAt: new Date().toISOString(),
+    };
+
+    const docRef = await addDoc(collection(db, 'productSubmissions'), submissionData);
+    
+    const createdSubmission: ProductSubmission = {
+      ...submissionData,
+      submissionId: docRef.id,
+    };
+
+    // Update the document with the ID
+    await updateDoc(doc(db, 'productSubmissions', docRef.id), {
+      submissionId: docRef.id
+    });
+
+    console.log('Product submission created with ID:', docRef.id);
+    return createdSubmission;
+  } catch (error) {
+    console.error('Error creating product submission:', error);
+    throw error;
+  }
+};
+
+export const getSubmissions = async (): Promise<ProductSubmission[]> => {
+  try {
+    console.log('🔥 getSubmissions: Starting to fetch from Firebase...');
+    const submissionsCollection = collection(db, 'productSubmissions');
+    const submissionsSnapshot = await getDocs(submissionsCollection);
+    
+    console.log('🔥 getSubmissions: Got snapshot with', submissionsSnapshot.size, 'documents');
+    
+    const submissions: ProductSubmission[] = [];
+    submissionsSnapshot.forEach((doc) => {
+      const data = doc.data() as ProductSubmission;
+      
+      // 🔍 ВИПРАВЛЕННЯ: Гарантуємо що submissionId існує
+      if (!data.submissionId || data.submissionId.trim() === '') {
+        console.log('🔥 Found submission without submissionId, using document ID:', doc.id);
+        data.submissionId = doc.id;
+        
+        // Async update the document with the correct submissionId
+        updateDoc(doc.ref, { submissionId: doc.id }).catch(updateError => {
+          console.warn('🔥 Could not update submissionId in document:', updateError);
+        });
+      }
+      
+      console.log('🔥 Processing submission:', {
+        documentId: doc.id,
+        submissionId: data.submissionId,
+        productName: data.productData?.name || 'Unknown',
+        status: data.status
+      });
+      
+      submissions.push(data);
+    });
+    
+    // Sort by submission date (newest first)
+    submissions.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+    
+    console.log('🔥 getSubmissions: Returning', submissions.length, 'submissions');
+    return submissions;
+  } catch (error) {
+    console.error('🔥 getSubmissions: Error occurred:', error);
+    throw error;
+  }
+};
+
+export const getSubmissionsByStatus = async (status: 'pending' | 'approved' | 'rejected'): Promise<ProductSubmission[]> => {
+  try {
+    const submissionsQuery = query(
+      collection(db, 'productSubmissions'),
+      where('status', '==', status)
+    );
+    
+    const querySnapshot = await getDocs(submissionsQuery);
+    const submissions: ProductSubmission[] = [];
+    
+    querySnapshot.forEach((doc) => {
+      submissions.push(doc.data() as ProductSubmission);
+    });
+    
+    // Sort by submission date (newest first)
+    submissions.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+    
+    return submissions;
+  } catch (error) {
+    console.error('Error fetching submissions by status:', error);
+    throw error;
+  }
+};
+
+export const updateSubmissionStatus = async (
+  submissionId: string, 
+  status: 'approved' | 'rejected',
+  reviewedBy: string,
+  rejectionReason?: string
+): Promise<void> => {
+  try {
+    // Validate submissionId
+    if (!submissionId || submissionId.trim() === '') {
+      throw new Error('Invalid submissionId: cannot be empty');
+    }
+
+    console.log('🔥 updateSubmissionStatus called with:', { submissionId, status, reviewedBy });
+
+    const updateData: Partial<ProductSubmission> = {
+      status,
+      reviewedAt: new Date().toISOString(),
+      reviewedBy,
+    };
+
+    if (rejectionReason) {
+      updateData.rejectionReason = rejectionReason;
+    }
+
+    // First, check if the document exists
+    const submissionRef = doc(db, 'productSubmissions', submissionId);
+    const submissionDoc = await getDoc(submissionRef);
+    
+    if (!submissionDoc.exists()) {
+      throw new Error(`Submission with ID ${submissionId} does not exist`);
+    }
+
+    console.log('🔥 Document exists, updating submission status...');
+    await updateDoc(submissionRef, updateData);
+    
+    // Log admin action
+    await addAdminAction(
+      reviewedBy,
+      status === 'approved' ? 'create_product' : 'delete_product',
+      submissionId,
+      `${status === 'approved' ? 'Approved' : 'Rejected'} product submission${rejectionReason ? `: ${rejectionReason}` : ''}`
+    );
+    
+    console.log(`🔥 Submission ${submissionId} ${status} successfully`);
+  } catch (error) {
+    console.error('🔥 Error updating submission status:', error);
+    throw error;
+  }
+};
+
+export const deleteSubmission = async (submissionId: string, adminId: string): Promise<void> => {
+  try {
+    await deleteDoc(doc(db, 'productSubmissions', submissionId));
+    
+    // Log admin action
+    await addAdminAction(
+      adminId,
+      'delete_product',
+      submissionId,
+      'Deleted product submission'
+    );
+    
+    console.log('Submission deleted:', submissionId);
+  } catch (error) {
+    console.error('Error deleting submission:', error);
+    throw error;
+  }
+};
+
+export const getUserSubmissions = async (userId: string): Promise<ProductSubmission[]> => {
+  try {
+    const submissionsQuery = query(
+      collection(db, 'productSubmissions'),
+      where('userId', '==', userId)
+    );
+    
+    const querySnapshot = await getDocs(submissionsQuery);
+    const submissions: ProductSubmission[] = [];
+    
+    querySnapshot.forEach((doc) => {
+      submissions.push(doc.data() as ProductSubmission);
+    });
+    
+    // Sort by submission date (newest first)
+    submissions.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+    
+    return submissions;
+  } catch (error) {
+    console.error('Error fetching user submissions:', error);
     throw error;
   }
 };

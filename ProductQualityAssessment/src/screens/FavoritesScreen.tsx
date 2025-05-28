@@ -1,13 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, RefreshControl } from 'react-native';
-import { useAppSelector } from '../hooks/reduxHooks';
+import { useAppSelector } from '../redux/hooks';
 import { Product, Favorite } from '../types';
 import ProductCard from '../components/ui/ProductCard';
 import { t } from '../utils/translations';
 import { useFocusEffect } from '@react-navigation/native';
-import { DataService } from '../utils/dataService';
 import { FirebaseService } from '../utils/firebase';
-import { StorageService } from '../utils/storage';
+import { getProduct } from '../api/firebase';
 
 interface FavoritesScreenProps {
   navigation: any; 
@@ -23,67 +22,44 @@ const FavoritesScreen: React.FC<FavoritesScreenProps> = ({ navigation }) => {
   const { currentProduct } = useAppSelector(state => state.products);
   
 
-  const loadFavorites = useCallback(async (showLoading = true) => {
-    if (showLoading) {
-      setIsLoading(true);
-    }
-    
+  const loadFavorites = async () => {
+    if (!currentUser?.userId) return;
+
     try {
-      if (!currentUser) {
-        setFavoriteProducts([]);
-        return;
-      }
+      setIsLoading(true);
+      const firebaseFavorites = await FirebaseService.favorites.getUserFavorites(currentUser.userId);
       
-      console.log('Loading favorites for user:', currentUser.userId);
+      const favoriteProductList = await Promise.all(
+        firebaseFavorites.map(async (favorite: Favorite) => {
+          const product = await getProduct(favorite.productId);
+          return product;
+        })
+      );
       
-     
-      let favorites;
-      try {
-        const firebaseFavorites = await FirebaseService.favorites.getUserFavorites(currentUser.userId);
-        console.log(`Loaded ${firebaseFavorites.length} favorites directly from Firebase`);
-        favorites = firebaseFavorites;
-      } catch (firebaseError) {
-        console.error('Error loading from Firebase, falling back to DataService:', firebaseError);
-        favorites = await DataService.favorites.getUserFavorites(currentUser.userId);
-      }
-      
-      console.log('Loaded favorites count:', favorites.length);
-      
-      const favoriteProductList = favorites.map((favorite: Favorite) => {
-        return products.find((p: Product) => p.productId === favorite.productId);
-      }).filter((product: Product | undefined) => product !== undefined) as Product[];
-      
-      console.log('Favorite products count:', favoriteProductList.length);
-      setFavoriteProducts(favoriteProductList);
+      setFavoriteProducts(favoriteProductList.filter(Boolean) as Product[]);
     } catch (error) {
-      console.error('Failed to load favorites:', error);
+      console.error('Error loading favorites:', error);
     } finally {
       setIsLoading(false);
-      setRefreshing(false);
     }
-  }, [currentUser, products]);
-
+  };
 
   useFocusEffect(
     useCallback(() => {
-      console.log('FavoritesScreen focused - loading favorites');
       loadFavorites();
-      return () => {}; 
-    }, [loadFavorites])
+    }, [currentUser?.userId])
   );
-  
 
   useEffect(() => {
     if (currentProduct && !isLoading) {
-      console.log('Product state changed in Redux, refreshing favorites list');
-      loadFavorites(false);
+      loadFavorites();
     }
   }, [currentProduct?.productId]);
   
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    loadFavorites(false);
-  }, [loadFavorites]);
+    loadFavorites().finally(() => setRefreshing(false));
+  }, []);
   
   const handleProductPress = (product: Product) => {
     navigation.navigate('ProductDetail', { productId: product.productId });

@@ -12,7 +12,7 @@ import {
   Alert,
   ToastAndroid,
 } from 'react-native';
-import { RouteProp, useNavigation } from '@react-navigation/native';
+import { RouteProp, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Animated, {
@@ -39,7 +39,7 @@ import LoadingScreen from '../components/LoadingScreen';
 import ErrorScreen from '../components/ErrorScreen';
 import AdminInfo from '../components/AdminInfo';
 import { t } from '../utils/translations';
-import { DataService } from '../utils/dataService';
+import { StorageService } from '../utils/storage';
 
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -54,13 +54,11 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
   const [activeTab, setActiveTab] = useState<string>('nutrition');
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [localLoading, setLocalLoading] = useState<boolean>(false);
-  const [productFetchRetried, setProductFetchRetried] = useState<boolean>(false);
   
   const { currentProduct, similarProducts, loading, error } = useAppSelector((state) => state.products);
   const { currentUser } = useAppSelector(state => state.user);
 
   const loadProductData = useCallback(() => {
-    setProductFetchRetried(true);
     dispatch(getProductDetails(productId))
       .unwrap()
       .then(() => {
@@ -77,87 +75,88 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
     checkFavoriteStatus();
   }, [loadProductData, currentUser]);
 
+  useFocusEffect(
+    useCallback(() => {
+      // Optimized focus effect
+      loadProductData();
+      checkFavoriteStatus();
+    }, [productId, currentUser?.userId])
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        // Optimized cleanup
+      };
+    }, [])
+  );
+
   const checkFavoriteStatus = async () => {
-    if (!currentUser) {
+    if (!currentUser?.userId || !productId) {
       setIsFavorite(false);
       return;
     }
-    
+
     try {
-      console.log(`Checking favorite status for product: ${productId} and user: ${currentUser.userId}`);
-      
-    
-      const isProductFavorite = await DataService.favorites.isFavorite(currentUser.userId, productId);
-      
-      console.log(`Checked favorite status for ${productId}: ${isProductFavorite}`);
+      const favorites = await StorageService.favorites.getFavorites();
+      const isProductFavorite = favorites.some(f => f.userId === currentUser.userId && f.productId === productId);
       setIsFavorite(isProductFavorite);
     } catch (error) {
-      console.warn('Error checking favorite status, defaulting to false:', error);
+      console.error('Error checking favorite status:', error);
       setIsFavorite(false);
     }
   };
 
   const toggleFavorite = async () => {
-    if (!currentUser) {
-      navigation.navigate('Auth');
+    if (!currentUser?.userId || !productId) {
+      Alert.alert(t('error'), 'Please log in to add favorites');
       return;
     }
 
     const originalFavoriteStatus = isFavorite;
     
     try {
-      setLocalLoading(true);
-      console.log(`Toggling favorite for product: ${productId} from ${isFavorite} to ${!isFavorite}`);
-      
       const newFavoriteStatus = !isFavorite;
-      
-    
       setIsFavorite(newFavoriteStatus);
-      
+
       if (newFavoriteStatus) {
-     
-        const favorite: Favorite = {
-          favoriteId: '', 
+        await StorageService.favorites.addFavorite({
+          favoriteId: `${currentUser.userId}_${productId}`,
           userId: currentUser.userId,
           productId: productId,
           addedAt: new Date().toISOString()
-        };
-        await DataService.favorites.addFavorite(favorite);
-        console.log(`Added product ${productId} to favorites`);
+        });
       } else {
-   
-        await DataService.favorites.removeFavorite(currentUser.userId, productId);
-        console.log(`Removed product ${productId} from favorites`);
+        await StorageService.favorites.removeFavorite(currentUser.userId, productId);
       }
-      
- 
+
       dispatch(updateProductFavoriteStatus({
-        productId,
+        productId: productId,
         isFavorite: newFavoriteStatus
       }));
-      
- 
+
       ToastAndroid.show(
         newFavoriteStatus ? 'Added to favorites' : 'Removed from favorites',
         ToastAndroid.SHORT
       );
     } catch (error) {
-      console.warn('Error toggling favorite:', error);
-      
-      
+      console.error('Error toggling favorite:', error);
       setIsFavorite(originalFavoriteStatus);
-      
-      ToastAndroid.show(
-        'Failed to update favorites. Changes saved locally.',
-        ToastAndroid.SHORT
-      );
-    } finally {
-      setLocalLoading(false);
+      Alert.alert(t('error'), 'Failed to update favorites');
     }
   };
 
   const renderTabContent = () => {
     if (!currentProduct) return null;
+    
+    // 🔄 ОПТИМІЗОВАНІ ТЕГИ - з безпечною обробкою
+    let productTags: string[] = [];
+    try {
+      productTags = getTagsFromProduct(currentProduct);
+    } catch (error) {
+      console.warn('Error getting tags:', error);
+      productTags = [];
+    }
     
     switch (activeTab) {
       case 'nutrition':
@@ -223,7 +222,8 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
               </View>
             </View>
 
-            {currentProduct.weight && (
+            {/* Whole product nutrition if weight is available */}
+            {currentProduct.weight && currentProduct.weight > 0 && (
               <View style={styles.wholeProductSection}>
                 <Text style={styles.wholeProductTitle}>
                   {t('wholeProduct')} ({currentProduct.weight}г)
@@ -323,43 +323,47 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
             </View>
 
             {/* Product Tags */}
-            {(() => {
-              const productTags = getTagsFromProduct(currentProduct);
-              
-              if (productTags.length === 0) return null;
-              
-              return (
-                <View style={styles.compositionSection}>
-                  <View style={styles.compositionHeader}>
-                    <Icon name="tag" size={20} color="#34572a" />
-                    <Text style={styles.compositionTitle}>{t('tags') || 'Tags'}</Text>
-                  </View>
-                  <View style={styles.tagsDisplayCard}>
-                    <View style={styles.tagsWrap}>
-                      {productTags.map((tag, index) => (
+            {productTags.length > 0 && (
+              <View style={styles.compositionSection}>
+                <View style={styles.compositionHeader}>
+                  <Icon name="tag" size={20} color="#34572a" />
+                  <Text style={styles.compositionTitle}>{t('tags') || 'Tags'}</Text>
+                </View>
+                <View style={styles.tagsDisplayCard}>
+                  <View style={styles.tagsWrap}>
+                    {productTags.map((tag, index) => {
+                      const tagDisplayName = getTagDisplayName(tag);
+                      const tagColor = getTagColor(tag);
+                      
+                      // 🔄 БЕЗПЕЧНА ПЕРЕВІРКА - пропускаємо порожні теги
+                      if (!tagDisplayName || typeof tagDisplayName !== 'string' || tagDisplayName.trim() === '') {
+                        return null;
+                      }
+                      
+                      return (
                         <View 
-                          key={index} 
+                          key={`tag-${index}-${tag}`} 
                           style={[
                             styles.tagDisplayItem,
                             { 
-                              backgroundColor: getTagColor(tag) + '20',
-                              borderColor: getTagColor(tag)
+                              backgroundColor: (tagColor || '#757575') + '20',
+                              borderColor: tagColor || '#757575'
                             }
                           ]}
                         >
                           <Text style={[
                             styles.tagDisplayText,
-                            { color: getTagColor(tag) }
+                            { color: tagColor || '#757575' }
                           ]}>
-                            {getTagDisplayName(tag)}
+                            {String(tagDisplayName)}
                           </Text>
                         </View>
-                      ))}
-                    </View>
+                      );
+                    }).filter(Boolean)}
                   </View>
                 </View>
-              );
-            })()}
+              </View>
+            )}
           </ScrollView>
         );
         
@@ -400,9 +404,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
     );
   };
 
-  if (error && currentProduct && productFetchRetried) {
-    console.log('Showing product despite error, using cached data');
-  } else if (error && !currentProduct) {
+  if (error && !currentProduct) {
     console.error('Product detail error:', error);
     return (
       <ErrorScreen 
@@ -465,11 +467,13 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
             </View>
 
             <View style={styles.categoriesContainer}>
-              {currentProduct.categories && Array.isArray(currentProduct.categories) && currentProduct.categories.map((cat, index) => (
-                <View key={index} style={styles.categoryTag}>
-                  <Text style={styles.categoryText}>{cat}</Text>
-                </View>
-              ))}
+              {currentProduct.categories && Array.isArray(currentProduct.categories) && (
+                currentProduct.categories.map((cat, index) => (
+                  <View key={index} style={styles.categoryTag}>
+                    <Text style={styles.categoryText}>{cat}</Text>
+                  </View>
+                ))
+              )}
             </View>
 
             {currentProduct.description && (

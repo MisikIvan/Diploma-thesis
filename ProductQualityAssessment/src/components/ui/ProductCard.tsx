@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Product, NutriScoreGrade } from '../../types';
 import { getProductImage, getTagsFromProduct, getTagDisplayName, getTagColor } from '../../utils/helpers';
@@ -9,18 +9,12 @@ interface ProductCardProps {
   compact?: boolean;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, compact = false }) => {
-
-  if (!product) {
+const ProductCard: React.FC<ProductCardProps> = memo(({ product, onPress, compact = false }) => {
+  if (!product || !product.name) {
     return null;
   }
   
   const { name, imageUrl, nutriscoreGrade, brand } = product;
-  
- 
-  if (!name) {
-    return null;
-  }
   
   const getGradeColor = (grade: NutriScoreGrade): string => {
     switch (grade) {
@@ -33,15 +27,25 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, compact = f
     }
   };
 
+  const handlePress = () => {
+    onPress(product);
+  };
 
+  // 🔄 ОПТИМІЗОВАНІ ТЕГИ - з безпечною обробкою помилок
   let productTags: string[] = [];
   let firstTag: string | undefined;
   let additionalTagsCount = 0;
   
   try {
     productTags = getTagsFromProduct(product);
-    firstTag = productTags[0];
-    additionalTagsCount = productTags.length - 1;
+    if (productTags.length > 0) {
+      // 🔄 БЕЗПЕЧНА ПЕРЕВІРКА першого тегу
+      const firstTagDisplayName = getTagDisplayName(productTags[0]);
+      if (firstTagDisplayName && typeof firstTagDisplayName === 'string' && firstTagDisplayName.trim() !== '') {
+        firstTag = firstTagDisplayName;
+        additionalTagsCount = Math.max(0, productTags.length - 1);
+      }
+    }
   } catch (error) {
     console.warn('Error getting tags for product:', product.productId, error);
     productTags = [];
@@ -52,43 +56,43 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, compact = f
   return (
     <TouchableOpacity 
       style={[styles.card, compact && styles.compactCard]} 
-      onPress={() => onPress(product)}
+      onPress={handlePress}
       activeOpacity={0.7}
     >
       <View style={styles.cardContent}>
-      <Image 
+        <Image 
           source={{ uri: getProductImage(imageUrl || '') }} 
-        style={[styles.image, compact && styles.compactImage]}
-        resizeMode="cover" 
-      />
+          style={[styles.image, compact && styles.compactImage]}
+          resizeMode="cover" 
+        />
         
         <View style={styles.contentContainer}>
           <View style={styles.textContent}>
-        <Text style={styles.name} numberOfLines={2}>
-          {name}
-        </Text>
-            {brand && (
+            <Text style={styles.name} numberOfLines={2}>
+              {name}
+            </Text>
+            {brand ? (
               <Text style={styles.brand} numberOfLines={1}>
                 {brand}
               </Text>
-            )}
+            ) : null}
             
-            {/* Product tags display */}
+            {/* 🔄 ОПТИМІЗОВАНІ ТЕГИ - тільки якщо є */}
             {firstTag && (
               <View style={styles.tagsContainer}>
                 <View style={[
                   styles.tag, 
                   { 
-                    backgroundColor: (getTagColor(firstTag) || '#757575') + '20', 
-                    borderColor: getTagColor(firstTag) || '#757575' 
+                    backgroundColor: (getTagColor(productTags[0]) || '#757575') + '20', 
+                    borderColor: getTagColor(productTags[0]) || '#757575' 
                   }
                 ]}>
                   <Text style={[
                     styles.tagText, 
-                    { color: getTagColor(firstTag) || '#757575' }
+                    { color: getTagColor(productTags[0]) || '#757575' }
                   ]}>
-                    {getTagDisplayName(firstTag) || firstTag}
-          </Text>
+                    {String(firstTag)}
+                  </Text>
                 </View>
                 {additionalTagsCount > 0 && (
                   <View style={styles.additionalTagsCounter}>
@@ -106,7 +110,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, compact = f
       </View>
     </TouchableOpacity>
   );
-};
+});
+
+ProductCard.displayName = 'ProductCard';
 
 const styles = StyleSheet.create({
   card: {

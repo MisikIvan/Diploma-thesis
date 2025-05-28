@@ -1,14 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { View, FlatList, ActivityIndicator, StyleSheet, Text } from 'react-native';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { View, FlatList, ActivityIndicator, StyleSheet, Text, Alert, TouchableOpacity, ToastAndroid } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import { searchProducts, setCurrentProduct, setSelectedCategory, loadRecentProducts, addToViewHistory } from '../redux/slices/productsSlice';
 import { useFocusEffect } from '@react-navigation/native';
-import SearchBar from '../components/SearchBar';
 import CategoryList from '../components/CategoryList';
+import SearchBar from '../components/SearchBar';
 import RecentProducts from '../components/RecentProducts';
 import ProductCard from '../components/ui/ProductCard';
-import { Product } from '../types';
+import SuggestProductBanner from '../components/SuggestProductBanner';
+import ProductSubmissionForm from '../components/ProductSubmissionForm';
+import { Product, ProductSubmission } from '../types/index';
 import { t } from '../utils/translations';
+import { createSubmission } from '../api/firebase';
 
 interface HomeScreenProps {
   navigation: any;
@@ -28,16 +31,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   
   const { currentUser } = useAppSelector(state => state.user);
 
-  console.log('🏠 HomeScreen render - products:', products.length, 'error:', error, 'loading:', isLoading);
-
-  const [showFilterModal, setShowFilterModal] = useState(false);
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
+  const [showSubmissionForm, setShowSubmissionForm] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
+  // 🔄 ОПТИМІЗОВАНА ІНІЦІАЛІЗАЦІЯ
   useEffect(() => {
-    console.log('🏠 HomeScreen useEffect - hasInitialLoad:', hasInitialLoad);
     if (!hasInitialLoad) {
       loadProducts();
-  
       if (currentUser?.userId) {
         dispatch(loadRecentProducts(currentUser.userId));
       }
@@ -45,58 +46,79 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   }, [hasInitialLoad, currentUser?.userId]);
 
- 
+  // 🔄 ОПТИМІЗОВАНИЙ FOCUS EFFECT - без складних операцій
   useFocusEffect(
-    React.useCallback(() => {
-      console.log('🏠 HomeScreen focused - products.length:', products.length);
-  
-      if (products.length === 0) {
-        console.log('🏠 No products found, reloading...');
-        loadProducts();
-      } else {
-        console.log('🏠 Products exist, not reloading. Current products:', products.map(p => p.name).slice(0, 3));
-      }
-    }, [products.length])
+    useCallback(() => {
+      loadProducts();
+    }, [])
   );
 
-  const loadProducts = () => {
-    console.log('🏠 loadProducts called');
-    dispatch(searchProducts({ query: '', page: 1, pageSize: 100 }));
-  };
-
-  const handleSearch = (query: string) => {
-    dispatch(searchProducts({ query, page: 1, pageSize: 20 }));
-  };
-
-  const handleProductPress = (product: Product) => {
-    dispatch(setCurrentProduct(product));
-   
-    if (currentUser?.userId) {
-      dispatch(addToViewHistory({ userId: currentUser.userId, product }));
+  const loadProducts = async () => {
+    try {
+      await dispatch(searchProducts({ query: '', page: 1, pageSize: 100 }));
+    } catch (error) {
+      console.error('Error loading products:', error);
     }
+  };
+
+  // 🔄 ОПТИМІЗОВАНИЙ REFRESH
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    (global as any).lastInteractionTime = Date.now();
+    
+    try {
+      await loadProducts();
+      if (currentUser?.userId) {
+        await dispatch(loadRecentProducts(currentUser.userId));
+      }
+    } catch (error) {
+      console.error('Refresh error:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // 🔄 ОПТИМІЗОВАНИЙ PRODUCT PRESS - мінімальна логіка
+  const handleProductPress = (product: Product) => {
     navigation.navigate('ProductDetail', { productId: product.productId });
   };
 
   const handleCategorySelect = (categoryId: string | null) => {
+    (global as any).lastInteractionTime = Date.now();
     dispatch(setSelectedCategory(categoryId));
   };
 
-  const handleFilterPress = () => {
-    setShowFilterModal(true);
+  const handleSuggestProduct = () => {
+    if (!currentUser) {
+      navigation.navigate('Auth');
+      return;
+    }
+    setShowSubmissionForm(true);
   };
 
-  const renderProductItem = ({ item }: { item: Product }) => (
+  const handleSubmitProduct = async (submission: Omit<ProductSubmission, 'submissionId' | 'submittedAt'>) => {
+    try {
+      await createSubmission(submission);
+      Alert.alert(t('submissionSuccess'), t('submissionUnderReview'));
+    } catch (error) {
+      console.error('Error submitting product:', error);
+      Alert.alert(t('error'), 'Помилка при надсиланні продукту. Спробуйте пізніше.');
+    } finally {
+      setShowSubmissionForm(false);
+    }
+  };
+
+  // 🔄 МЕМОІЗОВАНИЙ RENDER ITEM
+  const renderProductItem = React.useCallback(({ item }: { item: Product }) => (
     <ProductCard product={item} onPress={handleProductPress} />
-  );
+  ), []);
 
-  const renderListHeader = () => (
+  // 🔄 СТАБІЛЬНИЙ KEY EXTRACTOR
+  const keyExtractor = React.useCallback((item: Product) => item.productId, []);
+
+  // 🔄 МЕМОІЗОВАНИЙ HEADER
+  const listHeader = useMemo(() => (
     <View>
-      <SearchBar 
-        initialQuery={searchQuery}
-        onSearch={handleSearch}
-        onFilterPress={handleFilterPress}
-      />
-
       <CategoryList 
         selectedCategory={selectedCategory}
         onSelectCategory={handleCategorySelect}
@@ -108,56 +130,61 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           onProductPress={handleProductPress}
         />
       )}
-    </View>
-  );
 
- 
-  const shouldShowError = error && products.length === 0 && !isLoading;
-  const shouldShowProducts = products.length > 0 || filteredProducts.length > 0;
+      <SuggestProductBanner onPress={handleSuggestProduct} />
+    </View>
+  ), [selectedCategory, recentProducts]);
+
+  // 🔄 МЕМОІЗОВАНІ ДАНІ ДЛЯ FLATLIST
+  const displayProducts = useMemo(() => {
+    return filteredProducts.length > 0 ? filteredProducts : products;
+  }, [filteredProducts, products]);
+
+  if (isLoading && products.length === 0) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>{t('loading')}</Text>
+      </View>
+    );
+  }
+
+  if (error && products.length === 0) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{t('networkError')}</Text>
+        <Text style={styles.errorSubText}>
+          Не вдалося підключитися до сервера. Спробуйте перезавантажити додаток.
+        </Text>
+        <TouchableOpacity style={styles.retryButton} onPress={loadProducts}>
+          <Text style={styles.retryText}>Спробувати знову</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      {isLoading && products.length === 0 ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-        </View>
-      ) : shouldShowError ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>
-            {t('networkError')}
-          </Text>
-          <Text style={styles.errorSubText}>
-            Не вдалося підключитися до сервера. Спробуйте перезавантажити додаток.
-          </Text>
-        </View>
-      ) : shouldShowProducts ? (
-        <FlatList
-          data={filteredProducts.length > 0 ? filteredProducts : products}
-          renderItem={renderProductItem}
-          keyExtractor={(item) => item.productId}
-          ListHeaderComponent={renderListHeader}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={true}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                {t('noResults')}
-              </Text>
-            </View>
-          }
-        />
-      ) : (
-        <View style={styles.container}>
-          {renderListHeader()}
+      <FlatList
+        data={displayProducts}
+        renderItem={renderProductItem}
+        keyExtractor={keyExtractor}
+        ListHeaderComponent={listHeader}
+        contentContainerStyle={styles.listContent}
+        refreshing={refreshing}
+        onRefresh={handleRefresh}
+        showsVerticalScrollIndicator={true}
+        removeClippedSubviews={true}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              {t('noResults')}
-            </Text>
+            <Text style={styles.emptyText}>{t('noResults')}</Text>
           </View>
-        </View>
-      )}
+        }
+      />
 
-      {/* Error indicator */}
+      {/* Error indicator for partial errors */}
       {error && products.length > 0 && (
         <View style={styles.bottomErrorIndicator}>
           <Text style={styles.bottomErrorText}>
@@ -165,6 +192,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </Text>
         </View>
       )}
+
+      {/* Product Submission Form */}
+      <ProductSubmissionForm
+        visible={showSubmissionForm}
+        onClose={() => setShowSubmissionForm(false)}
+        onSubmit={handleSubmitProduct}
+      />
     </View>
   );
 };
@@ -183,6 +217,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f8f9fa',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
   },
   errorContainer: {
     flex: 1,
@@ -221,6 +260,17 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#007AFF',
+    padding: 12,
+    borderRadius: 8,
+  },
+  retryText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   emptyContainer: {
     flex: 1,

@@ -9,12 +9,13 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAppSelector } from '../redux/hooks';
-import { getAllProducts, getAllUsers, blockUser, unblockUser, deleteProduct } from '../api/firebase';
-import { User, Product } from '../types/index';
+import { useAppSelector, useAppDispatch } from '../redux/hooks';
+import { getAllProducts, getAllUsers, blockUser, unblockUser, deleteProduct, addProduct } from '../api/firebase';
+import { User, Product, ProductSubmission } from '../types/index';
 import { t } from '../utils/translations';
-import SearchModal from '../components/SearchModal';
 import AddProductModal from '../components/AddProductModal';
+import ProductSubmissionsScreen from './ProductSubmissionsScreen';
+import { searchProducts } from '../redux/slices/productsSlice';
 
 interface ExtendedUser extends User {
   canComment: boolean;
@@ -24,23 +25,20 @@ interface NewAdminScreenProps {
   navigation: any;
 }
 
-
-
 const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
   // State
   const [users, setUsers] = useState<ExtendedUser[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isDemo, setIsDemo] = useState(false);
-  
-  // Search modal state
-  const [showUserSearch, setShowUserSearch] = useState(false);
-  const [showProductSearch, setShowProductSearch] = useState(false);
   
   // Add product modal state
   const [showAddProductModal, setShowAddProductModal] = useState(false);
 
+  // Product submissions state
+  const [showSubmissionsScreen, setShowSubmissionsScreen] = useState(false);
+
   const currentUser = useAppSelector(state => state.user.currentUser);
+  const dispatch = useAppDispatch();
 
   // Check admin access
   useEffect(() => {
@@ -61,7 +59,6 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Try to load from Firebase
       const [usersData, productsData] = await Promise.all([
         getAllUsers(),
         getAllProducts()
@@ -69,162 +66,124 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
       
       setUsers(usersData || []);
       setProducts(productsData || []);
-      setIsDemo(false);
     } catch (error) {
-      console.log('Firebase not available, using demo mode');
-      // Use mock data
-      setUsers([
-        {
-          userId: 'demo-user-1',
-          email: 'user1@demo.com',
-          displayName: 'Demo User 1',
-          avatarUrl: 'https://via.placeholder.com/50x50?text=U1',
-          authMethod: 'email',
-          role: 'user',
-          isBlocked: false,
-          canComment: true
-        },
-        {
-          userId: 'demo-user-2',
-          email: 'user2@demo.com',
-          displayName: 'Demo User 2',
-          avatarUrl: 'https://via.placeholder.com/50x50?text=U2',
-          authMethod: 'email',
-          role: 'user',
-          isBlocked: false,
-          canComment: true
-        },
-        {
-          userId: 'demo-admin',
-          email: 'admin@demo.com',
-          displayName: 'Demo Admin',
-          avatarUrl: 'https://via.placeholder.com/50x50?text=A',
-          authMethod: 'email',
-          role: 'admin',
-          isBlocked: false,
-          canComment: true
-        }
-      ]);
-      
-      setProducts([
-        {
-          productId: 'demo-product-1',
-          name: 'Demo Product 1',
-          imageUrl: 'https://via.placeholder.com/300x300?text=Product+1',
-          nutriscoreGrade: 'A',
-          ingredients: 'Water, sugar, salt',
-          categories: ['beverages'],
-          allergens: [],
-          additives: [],
-          nutriments: {
-            calories: 100,
-            proteins: 5,
-            fats: { total: 2, saturated: 1 },
-            carbohydrates: { total: 20, sugar: 10 },
-            salt: 0.1
-          },
-          tags: ['vegan'],
-          isVegan: true,
-          isVegetarian: true,
-          hasLactose: false,
-          hasGluten: false,
-          createdBy: 'admin',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          productId: 'demo-product-2',
-          name: 'Demo Product 2',
-          imageUrl: 'https://via.placeholder.com/300x300?text=Product+2',
-          nutriscoreGrade: 'B',
-          ingredients: 'Milk, cocoa, sugar',
-          categories: ['dairy'],
-          allergens: ['milk'],
-          additives: [],
-          nutriments: {
-            calories: 150,
-            proteins: 8,
-            fats: { total: 5, saturated: 3 },
-            carbohydrates: { total: 15, sugar: 12 },
-            salt: 0.2
-          },
-          tags: ['vegetarian'],
-          isVegan: false,
-          isVegetarian: true,
-          hasLactose: true,
-          hasGluten: false,
-          createdBy: 'admin',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }
-      ]);
-      setIsDemo(true);
+      console.error('Error loading data:', error);
+      Alert.alert('Error', 'Failed to load data. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleUserUpdate = async (user: User, updates: Partial<User>) => {
+    if (!currentUser) return;
 
+    if (updates.isBlocked !== undefined) {
+      try {
+        if (updates.isBlocked) {
+          await blockUser(user.userId, currentUser.userId);
+        } else {
+          await unblockUser(user.userId, currentUser.userId);
+        }
+      } catch (error) {
+        console.error('Error updating user block status:', error);
+        Alert.alert('Error', 'Failed to update user status');
+        return;
+      }
+    }
 
- 
-  const searchUser = async (query: string): Promise<User | null> => {
-    const user = users.find(u => 
-      u.userId.toLowerCase().includes(query.toLowerCase()) ||
-      u.email.toLowerCase().includes(query.toLowerCase()) ||
-      u.displayName.toLowerCase().includes(query.toLowerCase())
-    );
-    return user || null;
+    setUsers(prev => prev.map(u => 
+      u.userId === user.userId ? { ...u, ...updates } : u
+    ));
   };
 
-  const searchProduct = async (query: string): Promise<Product | null> => {
-    const product = products.find(p => 
-      p.productId.toLowerCase().includes(query.toLowerCase()) ||
-      p.name.toLowerCase().includes(query.toLowerCase())
-    );
-    return product || null;
-  };
-
-   
-   const handleUserUpdate = async (user: User, updates: Partial<User>) => {
-     if (isDemo) {
-     
-       setUsers(prev => prev.map(u => 
-         u.userId === user.userId ? { ...u, ...updates } : u
-       ));
-       return;
-     }
-
-     if (!currentUser) return;
-
-   
-     if (updates.isBlocked !== undefined) {
-       if (updates.isBlocked) {
-         await blockUser(user.userId, currentUser.userId);
-       } else {
-         await unblockUser(user.userId, currentUser.userId);
-       }
-     }
-     
-   
-     await loadData();
-   };
-
- 
   const handleProductEdit = (product: Product) => {
     navigation.navigate('EditProduct', { product });
   };
 
-     const handleProductDelete = async (productId: string) => {
-     if (isDemo) {
-       setProducts(prev => prev.filter(p => p.productId !== productId));
-       return;
-     }
+  const handleProductDelete = async (productId: string) => {
+    if (!currentUser) return;
 
-     if (!currentUser) return;
+    Alert.alert(
+      'Confirm Delete',
+      'Are you sure you want to delete this product?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteProduct(productId, currentUser.userId);
+              setProducts(prev => prev.filter(p => p.productId !== productId));
+              Alert.alert('Success', 'Product deleted successfully');
+            } catch (error) {
+              console.error('Error deleting product:', error);
+              Alert.alert('Error', 'Failed to delete product');
+            }
+          }
+        }
+      ]
+    );
+  };
 
-     await deleteProduct(productId, currentUser.userId);
-     await loadData();
-   };
+  // Handlers for product submissions
+  const handleSubmissionApproved = async (submission: ProductSubmission, productData: Product) => {
+    if (!currentUser) return;
+
+    try {
+      // Create the product in Firebase
+      const savedProduct = await addProduct(
+        {
+          name: productData.name,
+          brand: productData.brand || '',
+          description: productData.description || '',
+          imageUrl: productData.imageUrl || '',
+          categories: productData.categories || [],
+          allergens: productData.allergens || [],
+          additives: productData.additives || [],
+          tags: productData.tags || [],
+          nutriscoreGrade: productData.nutriscoreGrade || 'C',
+          nutriments: productData.nutriments || {
+            calories: 0,
+            proteins: 0,
+            carbohydrates: { total: 0, sugar: 0 },
+            fats: { total: 0, saturated: 0, unsaturated: 0 },
+            salt: 0
+          },
+          ingredients: productData.ingredients || '',
+          isVegan: productData.isVegan || false,
+          isVegetarian: productData.isVegetarian || false,
+          hasLactose: productData.hasLactose || false,
+          hasGluten: productData.hasGluten || false,
+          weight: productData.weight || 0,
+          createdBy: 'admin'
+        },
+        currentUser.userId
+      );
+
+      // Add the approved product to the local products list
+      setProducts(prev => [...prev, savedProduct]);
+      
+      // Refresh the main products list in Redux store so it appears on HomeScreen
+      dispatch(searchProducts({ query: '', page: 1, pageSize: 100 }));
+      
+      Alert.alert(
+        t('submissionApproved'), 
+        'Продукт успішно затверджено та додано до бази даних!'
+      );
+      
+      // Reload products to ensure consistency
+      loadData();
+      
+    } catch (error) {
+      console.error('Error creating approved product:', error);
+      Alert.alert('Error', 'Помилка при створенні продукту в базі даних');
+    }
+  };
+
+  const handleSubmissionRejected = (submissionId: string, reason: string) => {
+    // Rejection handled by ProductSubmissionsScreen
+  };
 
   if (!currentUser || currentUser.role !== 'admin') {
     return (
@@ -240,14 +199,14 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('adminPanel')}</Text>
         <View style={styles.headerRight}>
-          <View style={[styles.statusIndicator, isDemo ? styles.demoMode : styles.liveMode]}>
+          <View style={styles.statusIndicator}>
             <Ionicons 
-              name={isDemo ? 'cloud-offline' : 'cloud-done'} 
+              name="cloud-done" 
               size={16} 
               color="#fff" 
             />
             <Text style={styles.statusText}>
-              {isDemo ? t('demo') : t('live')}
+              {t('live')}
             </Text>
           </View>
         </View>
@@ -274,10 +233,10 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
           
           <TouchableOpacity
             style={styles.searchButton}
-            onPress={() => setShowUserSearch(true)}
+            onPress={() => navigation.navigate('UserSearch')}
           >
-            <Ionicons name="search" size={20} color="#34572a" />
-            <Text style={styles.searchButtonText}>{t('searchUsers')}</Text>
+            <Ionicons name="people" size={20} color="#34572a" />
+            <Text style={styles.searchButtonText}>Пошук користувачів</Text>
             <Ionicons name="chevron-forward" size={20} color="#34572a" />
           </TouchableOpacity>
 
@@ -311,17 +270,15 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
           <Text style={styles.sectionTitle}>{t('productManagement')}</Text>
           <Text style={styles.sectionSubtitle}>{t('searchAndManageProducts')}</Text>
           
-
-
           {/* Quick Actions */}
           <View style={styles.quickActions}>
             <TouchableOpacity
               style={styles.searchButton}
-              onPress={() => setShowProductSearch(true)}
+              onPress={() => navigation.navigate('ProductSearch')}
             >
-                             <Ionicons name="search" size={20} color="#34572a" />
-               <Text style={styles.searchButtonText}>{t('searchProducts')}</Text>
-               <Ionicons name="chevron-forward" size={20} color="#34572a" />
+              <Ionicons name="search" size={20} color="#34572a" />
+              <Text style={styles.searchButtonText}>Пошук продуктів</Text>
+              <Ionicons name="chevron-forward" size={20} color="#34572a" />
             </TouchableOpacity>
             
             <TouchableOpacity
@@ -331,27 +288,17 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
               <Ionicons name="add-circle" size={24} color="#fff" />
               <Text style={styles.actionButtonText}>{t('addProduct')}</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, styles.submissionsButton]}
+              onPress={() => setShowSubmissionsScreen(true)}
+            >
+              <Ionicons name="document-text" size={24} color="#fff" />
+              <Text style={styles.actionButtonText}>{t('reviewSubmissions')}</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
-
-      {/* Search Modals */}
-      <SearchModal
-        visible={showUserSearch}
-        onClose={() => setShowUserSearch(false)}
-        type="users"
-        onSearch={searchUser}
-        onUserUpdate={handleUserUpdate}
-      />
-
-      <SearchModal
-        visible={showProductSearch}
-        onClose={() => setShowProductSearch(false)}
-        type="products"
-        onSearch={searchProduct}
-        onProductEdit={handleProductEdit}
-        onProductDelete={handleProductDelete}
-      />
 
       <AddProductModal
         visible={showAddProductModal}
@@ -360,6 +307,13 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
           setShowAddProductModal(false);
           loadData(); 
         }}
+      />
+
+      <ProductSubmissionsScreen
+        visible={showSubmissionsScreen}
+        onClose={() => setShowSubmissionsScreen(false)}
+        onSubmissionApproved={handleSubmissionApproved}
+        onSubmissionRejected={handleSubmissionRejected}
       />
     </View>
   );
@@ -400,11 +354,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
-  },
-  demoMode: {
-    backgroundColor: '#FF9500',
-  },
-  liveMode: {
     backgroundColor: '#34C759',
   },
   statusText: {
@@ -542,6 +491,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
+  },
+  submissionsButton: {
+    backgroundColor: '#FF9500',
   },
 });
 

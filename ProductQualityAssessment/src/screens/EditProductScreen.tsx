@@ -124,7 +124,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
       await updateProduct(productId, {
         name: product.name,
         description: product.description,
-        imageUrl: product.imageUrl || 'https://via.placeholder.com/300x300?text=No+Image',
+        imageUrl: product.imageUrl || '',
         nutriscoreGrade: product.nutriscoreGrade || 'C',
         ingredients: product.ingredients || '',
         categories: product.categories || [],

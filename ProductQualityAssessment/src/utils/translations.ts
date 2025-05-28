@@ -284,6 +284,44 @@ export interface TranslationKeys {
   beverages: string;
   demo: string;
   live: string;
+  
+  // Product submissions
+  suggestProduct: string;
+  suggestProductBanner: string;
+  productSubmissions: string;
+  submitProduct: string;
+  submissionForm: string;
+  additionalImages: string;
+  addMoreImages: string;
+  removeImage: string;
+  verificationInfo: string;
+  barcode: string;
+  sourceInfo: string;
+  manufacturer: string;
+  countryOfOrigin: string;
+  whereFoundProduct: string;
+  submissionSuccess: string;
+  submissionError: string;
+  productSubmitted: string;
+  submissionUnderReview: string;
+  
+  // Admin submissions review
+  reviewSubmissions: string;
+  pendingSubmissions: string;
+  submissionStatus: string;
+  submittedBy: string;
+  submittedOn: string;
+  reviewSubmission: string;
+  approveSubmission: string;
+  rejectSubmission: string;
+  rejectionReason: string;
+  approveConfirm: string;
+  rejectConfirm: string;
+  submissionApproved: string;
+  submissionRejected: string;
+  noSubmissions: string;
+  viewDetails: string;
+  editBeforeApproval: string;
 }
 
 // English translations
@@ -318,7 +356,7 @@ const en: TranslationKeys = {
   networkError: 'Could not connect to the server',
   searchPlaceholder: 'Search products...',
   categories: 'Categories',
-  recentProducts: 'Recent Products',
+  recentProducts: 'Recently Viewed Products',
   ingredients: 'Ingredients',
   nutrition: 'Nutrition Facts',
   calories: 'Calories',
@@ -572,6 +610,44 @@ const en: TranslationKeys = {
   beverages: 'Beverages',
   demo: 'Demo',
   live: 'Live',
+  
+  // Product submissions
+  suggestProduct: 'Suggest Product',
+  suggestProductBanner: 'Suggest Product Banner',
+  productSubmissions: 'Product Submissions',
+  submitProduct: 'Submit Product',
+  submissionForm: 'Submission Form',
+  additionalImages: 'Additional Images',
+  addMoreImages: 'Add More Images',
+  removeImage: 'Remove Image',
+  verificationInfo: 'Verification Info',
+  barcode: 'Barcode',
+  sourceInfo: 'Source Info',
+  manufacturer: 'Manufacturer',
+  countryOfOrigin: 'Country of Origin',
+  whereFoundProduct: 'Where Found Product',
+  submissionSuccess: 'Submission Success',
+  submissionError: 'Submission Error',
+  productSubmitted: 'Product Submitted',
+  submissionUnderReview: 'Submission Under Review',
+  
+  // Admin submissions review
+  reviewSubmissions: 'Review Submissions',
+  pendingSubmissions: 'Pending Submissions',
+  submissionStatus: 'Submission Status',
+  submittedBy: 'Submitted By',
+  submittedOn: 'Submitted On',
+  reviewSubmission: 'Review Submission',
+  approveSubmission: 'Approve Submission',
+  rejectSubmission: 'Reject Submission',
+  rejectionReason: 'Rejection Reason',
+  approveConfirm: 'Approve Confirm',
+  rejectConfirm: 'Reject Confirm',
+  submissionApproved: 'Submission Approved',
+  submissionRejected: 'Submission Rejected',
+  noSubmissions: 'No Submissions',
+  viewDetails: 'View Details',
+  editBeforeApproval: 'Edit Before Approval',
 }
 
 // Ukrainian translations
@@ -606,7 +682,7 @@ const uk: TranslationKeys = {
   networkError: 'Не вдалося підключитися до сервера',
   searchPlaceholder: 'Пошук продуктів...',
   categories: 'Категорії',
-  recentProducts: 'Нещодавні продукти',
+  recentProducts: 'Нещодавні переглянуті продукти',
   ingredients: 'Інгредієнти',
   nutrition: 'Поживна цінність',
   calories: 'Калорії',
@@ -860,6 +936,44 @@ const uk: TranslationKeys = {
   beverages: 'Напої',
   demo: 'Демо',
   live: 'Онлайн',
+  
+  // Product submissions
+  suggestProduct: 'Пропонувати продукт',
+  suggestProductBanner: 'Пропонувати банер продукту',
+  productSubmissions: 'Продуктові подачі',
+  submitProduct: 'Подати продукт',
+  submissionForm: 'Форма подачі',
+  additionalImages: 'Додаткові зображення',
+  addMoreImages: 'Додати більше зображень',
+  removeImage: 'Видалити зображення',
+  verificationInfo: 'Інформація для верифікації',
+  barcode: 'Штрих-код',
+  sourceInfo: 'Інформація про джерело',
+  manufacturer: 'Виробник',
+  countryOfOrigin: 'Країна походження',
+  whereFoundProduct: 'Де знайдено продукт',
+  submissionSuccess: 'Подача успішна',
+  submissionError: 'Помилка подачі',
+  productSubmitted: 'Продукт подано',
+  submissionUnderReview: 'Продукт у процесі перевірки',
+  
+  // Admin submissions review
+  reviewSubmissions: 'Перевірка подач',
+  pendingSubmissions: 'Очікуючі подачі',
+  submissionStatus: 'Статус подачі',
+  submittedBy: 'Поданий',
+  submittedOn: 'Подано',
+  reviewSubmission: 'Перевірка подачі',
+  approveSubmission: 'Підтвердити подачу',
+  rejectSubmission: 'Відхилити подачу',
+  rejectionReason: 'Причина відхилення',
+  approveConfirm: 'Підтвердити',
+  rejectConfirm: 'Відхилити',
+  submissionApproved: 'Подача підтверджена',
+  submissionRejected: 'Подача відхилена',
+  noSubmissions: 'Немає подач',
+  viewDetails: 'Переглянути деталі',
+  editBeforeApproval: 'Редагувати перед підтвердженням',
 }
 
 export type Language = 'en' | 'uk';

@@ -26,6 +26,8 @@ import ProfileScreen from '../screens/ProfileScreen';
 import AuthScreen from '../screens/AuthScreen';
 import NewAdminScreen from '../screens/NewAdminScreen';
 import EditProductScreen from '../screens/EditProductScreen';
+import ProductSearchScreen from '../screens/ProductSearchScreen';
+import UserSearchScreen from '../screens/UserSearchScreen';
 
 
 // Types
@@ -251,14 +253,30 @@ const Navigation = () => {
             />
             {currentUser.role === 'admin' && (
               <>
-
-
                 <Stack.Screen 
                   name="EditProduct" 
                   component={EditProductScreen as any} 
                   options={{ 
                     title: 'Редагувати продукт',
                     headerBackTitleVisible: false,
+                  }}
+                />
+                <Stack.Screen 
+                  name="ProductSearch" 
+                  component={ProductSearchScreen as any} 
+                  options={{ 
+                    title: 'Пошук продуктів',
+                    headerBackTitleVisible: false,
+                    headerShown: false,
+                  }}
+                />
+                <Stack.Screen 
+                  name="UserSearch" 
+                  component={UserSearchScreen as any} 
+                  options={{ 
+                    title: 'Пошук користувачів',
+                    headerBackTitleVisible: false,
+                    headerShown: false,
                   }}
                 />
               </>
