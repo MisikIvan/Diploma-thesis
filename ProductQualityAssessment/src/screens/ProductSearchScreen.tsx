@@ -197,7 +197,6 @@ const ProductSearchScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -216,7 +215,6 @@ const ProductSearchScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <View style={styles.searchInputContainer}>
           <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
@@ -243,7 +241,6 @@ const ProductSearchScreen: React.FC = () => {
         </Text>
       </View>
 
-      {/* Products List */}
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#34572a" />
@@ -280,7 +277,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#34572a',
-    paddingTop: 50,
+    paddingTop: 20,
     paddingBottom: 16,
     paddingHorizontal: 16,
     shadowColor: '#000',

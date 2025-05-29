@@ -9,6 +9,28 @@ export interface User {
   canComment: boolean;
   createdAt?: string;
   lastLogin?: string;
+  updatedAt?: string;
+  
+  // Personal details
+  age?: number;
+  height?: number; 
+  currentWeight?: number; 
+  goalWeight?: number; 
+  dateOfBirth?: string;
+  gender?: 'male' | 'female' | 'other';
+  
+  // Preferences
+  burnedCaloriesEnabled?: boolean;
+  dailyCaloriesGoal?: number;
+  dailyCarbsGoal?: number;
+  dailyFatsGoal?: number;
+  dailyProteinsGoal?: number;
+  
+  // Weight tracking
+  weightHistory?: Array<{
+    weight: number;
+    date: string;
+  }>;
 }
 
 export interface Product {
@@ -47,8 +69,6 @@ export interface Product {
   createdBy: 'admin' | 'api' | string;
   createdAt: string;
   updatedAt: string;
-  averageRating?: number;
-  ratingCount?: number;
 }
 
 export interface Comment {
@@ -64,27 +84,11 @@ export interface Comment {
   isDeleted?: boolean;
 }
 
-export interface AdminAction {
-  actionId: string;
-  adminId: string;
-  actionType: 'create_product' | 'update_product' | 'delete_product' | 'block_user' | 'unblock_user' | 'toggle_comment_permission' | 'moderate_comment';
-  targetId: string;
-  details: string;
-  timestamp: string;
-}
-
 export interface Favorite {
   favoriteId: string;
   userId: string;
   productId: string;
   addedAt: string;
-}
-
-export interface ViewHistory {
-  historyId: string;
-  userId: string;
-  productId: string;
-  viewedAt: string;
 }
 
 export type NutriScoreGrade = 'A' | 'B' | 'C' | 'D' | 'E';
@@ -99,7 +103,6 @@ export const getNutriScoreColor = (grade: NutriScoreGrade): NutriScoreColor => {
     case 'E': return '⛔️';
   }
 }; 
-
 
 export interface ProductSubmission {
   submissionId: string;

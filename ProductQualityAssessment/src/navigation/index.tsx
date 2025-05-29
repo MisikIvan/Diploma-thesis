@@ -23,12 +23,22 @@ import HomeScreen from '../screens/HomeScreen';
 import ProductDetailScreen from '../screens/ProductDetailScreen';
 import FavoritesScreen from '../screens/FavoritesScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import PersonalDetailsScreen from '../screens/PersonalDetailsScreen';
+import WeightPickerScreen from '../screens/WeightPickerScreen';
+import HeightPickerScreen from '../screens/HeightPickerScreen';
+import AgePickerScreen from '../screens/AgePickerScreen';
+import GenderPickerScreen from '../screens/GenderPickerScreen';
 import AuthScreen from '../screens/AuthScreen';
 import NewAdminScreen from '../screens/NewAdminScreen';
 import EditProductScreen from '../screens/EditProductScreen';
 import ProductSearchScreen from '../screens/ProductSearchScreen';
 import UserSearchScreen from '../screens/UserSearchScreen';
+import TermsOfServiceScreen from '../screens/TermsOfServiceScreen';
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 
+// Components
+import LoadingScreen from '../components/LoadingScreen';
+import ErrorScreen from '../components/ErrorScreen';
 
 // Types
 import { RootStackParamList, BottomTabParamList } from '../types/navigation';
@@ -169,34 +179,6 @@ const MainTabs = () => {
   );
 };
 
-const LoadingScreen = () => (
-  <Animated.View style={styles.container} entering={FadeInUp.duration(800)}>
-    <Animated.View entering={FadeInDown.delay(200).duration(600)}>
-      <ActivityIndicator size="large" color="#34572a" />
-    </Animated.View>
-    <Animated.Text 
-      style={styles.text} 
-      entering={FadeInDown.delay(400).duration(600)}
-    >
-      {t('loading')}
-    </Animated.Text>
-  </Animated.View>
-);
-
-const ErrorScreen = ({ message }: { message: string }) => (
-  <Animated.View style={styles.container} entering={FadeInUp.duration(800)}>
-    <Animated.View entering={SlideInLeft.delay(200).duration(600)}>
-      <Ionicons name="alert-circle-outline" size={50} color="#e74c3c" />
-    </Animated.View>
-    <Animated.Text 
-      style={styles.errorText} 
-      entering={SlideInRight.delay(400).duration(600)}
-    >
-      {message}
-    </Animated.Text>
-  </Animated.View>
-);
-
 const Navigation = () => {
   const dispatch = useAppDispatch();
   const { currentUser, loading, error } = useAppSelector(state => state.user);
@@ -207,7 +189,7 @@ const Navigation = () => {
   }, [dispatch]);
 
   if (loading) {
-    return <LoadingScreen />;
+    return <LoadingScreen message={t('loading')} />;
   }
 
   if (error) {
@@ -275,6 +257,55 @@ const Navigation = () => {
                 headerBackTitleVisible: false,
               })}
             />
+            <Stack.Screen
+              name="PersonalDetails"
+              component={PersonalDetailsScreen}
+              options={{ 
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="WeightPicker"
+              component={WeightPickerScreen as any}
+              options={{ 
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="HeightPicker"
+              component={HeightPickerScreen as any}
+              options={{ 
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="AgePicker"
+              component={AgePickerScreen as any}
+              options={{ 
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="GenderPicker"
+              component={GenderPickerScreen as any}
+              options={{ 
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="TermsOfService"
+              component={TermsOfServiceScreen}
+              options={{ 
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="PrivacyPolicy"
+              component={PrivacyPolicyScreen}
+              options={{ 
+                headerShown: false,
+              }}
+            />
             {currentUser.role === 'admin' && (
               <>
                 <Stack.Screen 
@@ -313,26 +344,7 @@ const Navigation = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-  },
-  text: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#34572a',
-    fontWeight: '500',
-  },
-  errorText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#e74c3c',
-    textAlign: 'center',
-    padding: 20,
-    fontWeight: '500',
-  },
+
 });
 
 export default Navigation; 

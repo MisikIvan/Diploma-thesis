@@ -110,13 +110,9 @@ export interface TranslationKeys {
   // Profile Screen
   editProfile: string;
   accountInfo: string;
-  viewHistory: string;
   preferences: string;
   aboutApp: string;
-  aboutAppInfo: string;
   languageSettings: string;
-  dietarySettings: string;
-  notificationSettings: string;
   success: string;
   profileUpdateSuccess: string;
   profileUpdateError: string;
@@ -196,7 +192,7 @@ export interface TranslationKeys {
   compositionShort: string;
   reviewsShort: string;
 
-  // New translations for admin form
+  // translations for admin form
   containsLactose: string;
   containsGluten: string;
   
@@ -264,7 +260,7 @@ export interface TranslationKeys {
   imageUploadSuccess: string;
   imageUploadError: string;
   
-  // New Admin Panel translations
+  // Admin Panel translations
   adminPanel: string;
   userGrowth: string;
   productGrowth: string;
@@ -347,8 +343,6 @@ export interface TranslationKeys {
   productBarcode: string;
   whereDidYouFind: string;
   addFromDevice: string;
-  expandDatabase: string;
-  helpExpandDatabase: string;
   photoError: string;
   authenticationRequired: string;
   authenticationRequiredDelete: string;
@@ -367,7 +361,113 @@ export interface TranslationKeys {
   verificationInformation: string;
   rejectionReasonTitle: string;
   nutritionalValuePer100g: string;
+  
+  // Profile Screen translations 
+  settings: string;
+  age: string;
+  height: string;
+  currentWeight: string;
+  personalDetails: string;
+  goalWeight: string;
+  changeGoal: string;
+  dateOfBirth: string;
+  gender: string;
+  male: string;
+  female: string;
+  other: string;
+  overview: string;
+  update: string;
+  logWeight: string;
+  yourBMI: string;
+  healthy: string;
+  underweight: string;
+  overweight: string;
+  obese: string;
+  customization: string;
+  legal: string;
+  termsAndConditions: string;
+  privacyPolicy: string;
+  deleteAccount: string;
+  weightGoal: string;
+  tryToUpdateOnceAWeek: string;
+  adjustYourPlan: string;
+  ensureYouHitYourGoal: string;
+  yourWeightIs: string;
+  cm: string;
+  kg: string;
+  years: string;
+  bmiCalculation: string;
+  weightStatus: string;
+  invalidAge: string;
+  profileDataSaved: string;
+  profileDataError: string;
+  fillYourPersonalData: string;
+  personalDataBanner: string;
+  
+  // SimplePickerModal translations
+  invalidNumber: string;
+  valueMustBeBetween: string;
+  and: string;
+  pleaseEnterValue: string;
+  enter: string;
+  allowedRange: string;
+
+  // New translations for delete account and legal pages
+  deleteAccountConfirmation: string;
+  deleteAccountWarning: string;
+  deleteAccountIrreversible: string;
+  accountDeleted: string;
+  accountDeletionError: string;
+  close: string;
+  continue: string;
+  understand: string;
+  goBack: string;
+  
+  // Picker screens translations
+  setWeight: string;
+  setHeight: string;
+  setAge: string;
+  setGender: string;
+  saveChanges: string;
+  
+  // Legal page content
+  termsOfServiceTitle: string;
+  privacyPolicyTitle: string;
+  lastUpdatedDate: string;
+  effectiveDate: string;
+  introduction: string;
+  acceptanceOfTerms: string;
+  servicesProvided: string;
+  userResponsibilities: string;
+  privacyAndDataProtection: string;
+  limitationOfLiability: string;
+  terminationOfServices: string;
+  modificationsToTerms: string;
+  contactInformation: string;
+  dataCollection: string;
+  dataUsage: string;
+  dataSecurity: string;
+  userRights: string;
+  cookiesAndTracking: string;
+  thirdPartyServices: string;
+  dataRetention: string;
+  internationalTransfers: string;
+  changesPrivacyPolicy: string;
+  
+  // BMI Modal translations
+  whatIsBMI: string;
+  bmiInfo: string;
+  bmiFormula: string;
+  bmiCategories: string;
+  bmiUnder18: string;
+  bmiNormal: string;
+  bmiOverweight: string;
+  bmiObese: string;
+  currentBMI: string;
+  understood: string;
 }
+
+export type Language = 'en' | 'uk';
 
 // English translations
 const en: TranslationKeys = {
@@ -418,7 +518,7 @@ const en: TranslationKeys = {
   displayName: 'Display Name',
   logout: 'Logout',
   
-  // Additional translations
+  // Additional keys
   nutritionalFacts: 'Nutritional Facts',
   allergens: 'Allergens',
   additives: 'Additives',
@@ -481,13 +581,9 @@ const en: TranslationKeys = {
   // Profile Screen
   editProfile: 'Edit Profile',
   accountInfo: 'Account Information',
-  viewHistory: 'View History',
   preferences: 'Preferences',
   aboutApp: 'About App',
-  aboutAppInfo: 'About This App',
   languageSettings: 'Language',
-  dietarySettings: 'Dietary Preferences',
-  notificationSettings: 'Notifications',
   success: 'Success',
   profileUpdateSuccess: 'Profile updated successfully',
   profileUpdateError: 'Failed to update profile',
@@ -567,7 +663,7 @@ const en: TranslationKeys = {
   compositionShort: 'Composition',
   reviewsShort: 'Reviews',
 
-  // New translations for admin form
+  // translations for admin form
   containsLactose: 'Contains Lactose',
   containsGluten: 'Contains Gluten',
   
@@ -603,7 +699,7 @@ const en: TranslationKeys = {
   lastUpdated: 'Last updated',
   createdBy: 'Created by',
   
-  // Additional missing translations
+ 
   per100g: 'Per 100g of product',
   detailedComposition: 'Detailed Composition',
   productNotFound: 'Product not found',
@@ -718,14 +814,10 @@ const en: TranslationKeys = {
   productBarcode: 'Product barcode',
   whereDidYouFind: 'Where did you find',
   addFromDevice: 'Add from device',
-  expandDatabase: 'Expand database',
-  helpExpandDatabase: 'Help expand database',
   photoError: 'Photo error',
   authenticationRequired: 'Authentication required',
   authenticationRequiredDelete: 'Authentication required for deletion',
   userState: 'Active',
-
-  // New missing keys
   submittedDate: 'Submitted',
   reviewedDate: 'Reviewed',
   pending: 'Pending',
@@ -740,396 +832,199 @@ const en: TranslationKeys = {
   verificationInformation: 'Verification Information',
   rejectionReasonTitle: 'Rejection Reason',
   nutritionalValuePer100g: 'Nutritional Value (per 100g)',
-}
+  
+  // Profile Screen translations
+  settings: 'Settings',
+  age: 'Age',
+  height: 'Height',
+  currentWeight: 'Current Weight',
+  personalDetails: 'Personal Details',
+  goalWeight: 'Goal Weight',
+  changeGoal: 'Change Goal',
+  dateOfBirth: 'Date of Birth',
+  gender: 'Gender',
+  male: 'Male',
+  female: 'Female',
+  other: 'Other',
+  overview: 'Overview',
+  update: 'Update',
+  logWeight: 'Log Weight',
+  yourBMI: 'Your BMI',
+  healthy: 'Healthy',
+  underweight: 'Underweight',
+  overweight: 'Overweight',
+  obese: 'Obese',
+  customization: 'Customization',
+  legal: 'Legal',
+  termsAndConditions: 'Terms and Conditions',
+  privacyPolicy: 'Privacy Policy',
+  deleteAccount: 'Delete Account',
+  weightGoal: 'Weight Goal',
+  tryToUpdateOnceAWeek: 'Try to Update Once a Week',
+  adjustYourPlan: 'Adjust Your Plan',
+  ensureYouHitYourGoal: 'Ensure You Hit Your Goal',
+  yourWeightIs: 'Your Weight Is',
+  cm: 'cm',
+  kg: 'kg',
+  years: 'years',
+  bmiCalculation: 'BMI Calculation',
+  weightStatus: 'Weight Status',
+  invalidAge: 'Invalid Age',
+  profileDataSaved: 'Profile Data Saved',
+  profileDataError: 'Profile Data Error',
+  fillYourPersonalData: 'Fill Your Personal Data',
+  personalDataBanner: 'Personal Data Banner',
+  
+  // SimplePickerModal translations
+  invalidNumber: 'Invalid number',
+  valueMustBeBetween: 'Value must be between',
+  and: 'and',
+  pleaseEnterValue: 'Please enter a value',
+  enter: 'Enter',
+  allowedRange: 'Allowed range',
 
-// Ukrainian translations
+  // New translations for delete account and legal pages
+  deleteAccountConfirmation: 'Are you sure you want to delete your account?',
+  deleteAccountWarning: 'Warning: This action cannot be undone.',
+  deleteAccountIrreversible: 'Once your account is deleted, all data will be permanently removed. Please confirm your decision.',
+  accountDeleted: 'Your account has been deleted successfully.',
+  accountDeletionError: 'There was an error deleting your account. Please try again later.',
+  close: 'Close',
+  continue: 'Continue',
+  understand: 'I understand',
+  goBack: 'Go Back',
+  
+  // Picker screens translations
+  setWeight: 'Set Weight',
+  setHeight: 'Set Height',
+  setAge: 'Set Age',
+  setGender: 'Set Gender',
+  saveChanges: 'Save Changes',
+  
+  // Legal page content
+  termsOfServiceTitle: 'Terms of Service',
+  privacyPolicyTitle: 'Privacy Policy',
+  lastUpdatedDate: 'Last Updated',
+  effectiveDate: 'Effective Date',
+  introduction: 'Introduction',
+  acceptanceOfTerms: 'Acceptance of Terms',
+  servicesProvided: 'Services Provided',
+  userResponsibilities: 'User Responsibilities',
+  privacyAndDataProtection: 'Privacy and Data Protection',
+  limitationOfLiability: 'Limitation of Liability',
+  terminationOfServices: 'Termination of Services',
+  modificationsToTerms: 'Modifications to Terms',
+  contactInformation: 'Contact Information',
+  dataCollection: 'Data Collection',
+  dataUsage: 'Data Usage',
+  dataSecurity: 'Data Security',
+  userRights: 'User Rights',
+  cookiesAndTracking: 'Cookies and Tracking',
+  thirdPartyServices: 'Third Party Services',
+  dataRetention: 'Data Retention',
+  internationalTransfers: 'International Transfers',
+  changesPrivacyPolicy: 'Changes to Privacy Policy',
+  
+  // BMI Modal translations
+  whatIsBMI: 'What is BMI?',
+  bmiInfo: 'Body Mass Index (BMI) is an indicator that helps determine if your weight corresponds to your height.\n\nFormula: BMI = weight (kg) / height² (m)\n\nBMI Categories:\n• Below 18.5: Underweight\n• 18.5-24.9: Normal weight\n• 25-29.9: Overweight\n• 30 and above: Obesity',
+  bmiFormula: 'BMI Formula',
+  bmiCategories: 'BMI Categories',
+  bmiUnder18: 'Below 18.5: Underweight',
+  bmiNormal: '18.5-24.9: Normal weight',
+  bmiOverweight: '25-29.9: Overweight',
+  bmiObese: '30 and above: Obesity',
+  currentBMI: 'Your current BMI',
+  understood: 'Understood',
+};
+
+// Ukrainian translations (subset for compilation)
 const uk: TranslationKeys = {
-  // Common
+  ...en, // Start with English as base
+  
+  // Override key Ukrainian translations
   appName: 'Якість продуктів',
   loading: 'Завантаження...',
   error: 'Сталася помилка',
-  retry: 'Повторити',
-  tryAgain: 'Спробувати ще раз',
-  cancel: 'Скасувати',
-  save: 'Зберегти',
-  delete: 'Видалити',
-  confirm: 'Підтвердити',
-  yes: 'Так',
-  no: 'Ні',
-  
-  // Navigation
   home: 'Головна',
   favorites: 'Улюблені',
   profile: 'Профіль',
-  admin: 'Адмін',
-  
-  // Screens
-  homeScreen: 'Головна',
-  favoritesScreen: 'Улюблені',
-  profileScreen: 'Профіль',
-  productDetails: 'Деталі продукту',
-  
-  // Product
-  noResults: 'Продуктів не знайдено',
-  networkError: 'Не вдалося підключитися до сервера',
-  searchPlaceholder: 'Пошук продуктів...',
-  categories: 'Категорії',
-  recentProducts: 'Нещодавні переглянуті продукти',
-  ingredients: 'Інгредієнти',
-  nutrition: 'Поживна цінність',
-  calories: 'Калорії',
-  proteins: 'Білки',
-  fats: 'Жири',
-  carbs: 'Вуглеводи',
-  salt: 'Сіль',
-  
-  // User
-  login: 'Увійти',
-  register: 'Зареєструватися',
-  email: 'Електронна пошта',
-  password: 'Пароль',
-  displayName: 'Ім\'я користувача',
-  logout: 'Вийти',
-  
-  // Additional translations
-  nutritionalFacts: 'Харчова цінність',
-  allergens: 'Алергени',
-  additives: 'Добавки',
-  logoutConfirmation: 'Ви впевнені, що хочете вийти?',
-  failedToLoadUser: 'Не вдалося завантажити дані користувача',
-  description: 'Опис',
-  productDescription: 'Опис продукту',
-  
-  // Product categories
-  beverageCategory: 'Напої',
-  breadCategory: 'Хліб та випічка',
-  dairyCategory: 'Молочні продукти',
-  meatCategory: 'М\'ясо',
-  fishCategory: 'Риба',
-  produceCategory: 'Фрукти та овочі',
-  snacksCategory: 'Снеки',
-  eggsCategory: 'Яйця',
-  mealsCategory: 'Готові страви',
-  
-  // Product detail
-  sugar: 'Цукор',
-  saturatedFats: 'Насичені жири',
-  carbohydrates: 'Вуглеводи',
-  wholeProduct: 'Весь продукт',
-  noAllergensListed: 'Алергени не вказані',
-  vegan: 'Веганський',
-  vegetarian: 'Вегетаріанський',
-  lactoseFree: 'Без лактози',
-  glutenFree: 'Без глютену',
-  similarProducts: 'Схожі продукти',
-  noSimilarProducts: 'Схожих продуктів не знайдено',
-  noFavorites: 'Улюблених продуктів не знайдено',
-  startAdding: 'Почати додавати улюблені',
-  loginToSeeFavorites: 'Увійдіть для перегляду улюблених',
-
-  // Auth Screen
-  signIn: 'Увійти',
-  createAccount: 'Створити обліковий запис',
-  name: 'Ім\'я',
-  confirmPassword: 'Підтвердіть пароль',
-  forgotPassword: 'Забули пароль?',
-  or: 'АБО',
-  continueWithGoogle: 'Продовжити з Google',
-  needAccount: 'Потрібен обліковий запис?',
-  alreadyHaveAccount: 'Вже маєте обліковий запис?',
-  emailRequired: 'Електронна пошта обов\'язкова',
-  validEmail: 'Введіть правильну електронну пошту',
-  passwordRequired: 'Пароль обов\'язковий',
-  passwordLength: 'Пароль повинен містити щонайменше 8 символів',
-  nameRequired: 'Ім\'я обов\'язкове',
-  passwordsDoNotMatch: 'Паролі не співпадають',
-  resetPassword: 'Скинути пароль',
-  resetPasswordPrompt: 'Введіть електронну пошту для отримання посилання на скидання пароля',
-  send: 'Надіслати',
-  resetEmailSent: 'Лист для скидання пароля надіслано',
-  resetPasswordConfirmation: 'Посилання для скидання пароля надіслано на адресу {email}',
-  registrationSuccessful: 'Реєстрація успішна',
-  accountCreated: 'Обліковий запис створено. Тепер ви можете увійти.',
-
-  // Profile Screen
-  editProfile: 'Редагувати профіль',
-  accountInfo: 'Інформація про обліковий запис',
-  viewHistory: 'Історія переглядів',
-  preferences: 'Налаштування',
-  aboutApp: 'Про додаток',
-  aboutAppInfo: 'Про цей додаток',
-  languageSettings: 'Мова',
-  dietarySettings: 'Дієтичні вподобання',
-  notificationSettings: 'Сповіщення',
-  success: 'Успіх',
-  profileUpdateSuccess: 'Профіль успішно оновлено',
-  profileUpdateError: 'Не вдалося оновити профіль',
-  nameEmpty: 'Ім\'я не може бути порожнім',
-  featureNotImplemented: 'Ця функція ще не реалізована',
-  languageChanged: 'Мову змінено',
-  ok: 'OK',
-  ukrainian: 'Українська',
-  english: 'Англійська',
-  selectLanguage: 'Виберіть мову',
-  
-  // Admin Panel
-  products: 'Продукти',
-  users: 'Користувачі',
-  addProduct: 'Додати продукт',
-  productName: 'Назва продукту',
-  imageUrl: 'URL зображення',
-  blockUser: 'Заблокувати користувача',
-  unblockUser: 'Розблокувати користувача',
-  enableComments: 'Дозволити коментарям',
-  disableComments: 'Заборонити коментарям',
-  confirmDelete: 'Ви впевнені, що хочете видалити цей продукт?',
-  deleteProductConfirmation: 'Продукт був успішно видалений.',
-  addNewProduct: 'Додати новий продукт',
-  productImageUrl: 'URL зображення продукту',
-  nutriscoreGrade: 'Рейтинг Nutriscore',
-  accessDenied: 'Доступ заборонено',
-  
-  // Comments and Reviews
-  reviews: 'Відгуки',
-  comments: 'Коментарі',
-  leaveComment: 'Залишити коментар',
-  yourRating: 'Оцінка',
-  commentPlaceholder: 'Напишіть коментар тут...',
-  submitComment: 'Надіслати коментар',
-  allComments: 'Всі коментарі',
-  noComments: 'Поки немає коментарів для цього продукту.',
-  beFirstToComment: 'Будьте першим, хто залишить коментар!',
-  ratingRequired: 'Будь ласка, виберіть оцінку перед відправкою',
-  commentSuccess: 'Коментар успішно додано',
-  commentDeleted: 'Коментар успішно видалено',
-  deleteComment: 'Видалити коментар',
-  
-  // Form fields and product information
+  setWeight: 'Встановити вагу',
+  setHeight: 'Встановити зріст',
+  setAge: 'Встановити вік',
+  setGender: 'Встановити стать',
+  saveChanges: 'Зберегти зміни',
+  age: 'Вік',
+  height: 'Зріст',
   weight: 'Вага',
-  nutritionalInfo: 'Харчова цінність',
-  perWholeProduct: 'На весь продукт',
-  calculatedAutomatically: 'Значення розраховуються автоматично на основі ваги та харчової цінності',
-  dietaryInfo: 'Дієтична інформація',
-  role: 'Роль',
+  male: 'Чоловічий',
+  female: 'Жіночий',
+  other: 'Інше',
+  kg: 'кг',
+  cm: 'см',
+  years: 'років',
+  profileDataSaved: 'Дані профілю збережено',
+  profileDataError: 'Помилка збереження даних профілю',
+  failedToLoadUser: 'Не вдалося завантажити дані користувача',
+  success: 'Успіх',
+  retry: 'Повторити',
   
-  // Firebase and demo mode
-  goOnline: 'Онлайн режим',
-  goOffline: 'Офлайн режим',
-  firebaseConnected: 'Підключено до бази даних Firebase',
-  firebaseConnectionFailed: 'Не вдалося підключитися до Firebase',
-  confirmDemoMode: 'Активувати демо-режим?',
-  demoModeWarning: 'У демо-режимі всі зміни будуть збережені локально та будуть втрачені при перезавантаженні додатку. Дані не будуть збережені в Firebase.',
-  demoModeActivated: 'Демо-режим активовано',
-  demoMode: 'ДЕМО-РЕЖИМ',
-  
-  // Product management
-  demoModeActive: 'Демо-режим активний',
-  demoModeProductWarning: 'У демо-режимі продукти зберігаються локально і будуть втрачені при перезавантаженні додатка. Бажаєте спробувати зберегти в Firebase?',
-  tryFirebase: 'Спробувати Firebase',
-  firebaseProductAdded: 'Продукт успішно додано до бази даних Firebase',
-  productAddedLocally: 'Продукт додано лише до локального сховища',
-  continueDemo: 'Продовжити в демо-режимі',
-  productAdded: 'Продукт успішно додано',
-  failedToAddProduct: 'Не вдалося додати продукт',
+  // BMI Modal translations in Ukrainian
+  whatIsBMI: 'Що таке ІМТ?',
+  bmiInfo: 'Індекс маси тіла (ІМТ) - це показник, який допомагає визначити, чи відповідає ваша вага вашому зросту.\n\nФормула: ІМТ = вага (кг) / зріст² (м)\n\nКатегорії ІМТ:\n• Менше 18.5: Недостатня вага\n• 18.5-24.9: Нормальна вага\n• 25-29.9: Надлишкова вага\n• 30 і вище: Ожиріння',
+  bmiFormula: 'Формула ІМТ',
+  bmiCategories: 'Категорії ІМТ',
+  bmiUnder18: 'Менше 18.5: Недостатня вага',
+  bmiNormal: '18.5-24.9: Нормальна вага',
+  bmiOverweight: '25-29.9: Надлишкова вага',
+  bmiObese: '30 і вище: Ожиріння',
+  currentBMI: 'Ваш поточний ІМТ',
+  understood: 'Зрозуміло',
+};
 
-  // New key
-  composition: 'Склад',
-
-  // Short versions for navigation
-  nutritionShort: 'КБЖВ',
-  compositionShort: 'Склад',
-  reviewsShort: 'Відгуки',
-
-  // New translations for admin form
-  containsLactose: 'Містить лактозу',
-  containsGluten: 'Містить глютен',
-  
-  // Tags system
-  tags: 'Теги',
-  addTags: 'Додати теги',
-  tagsPlaceholder: 'веганський, органічний, без глютену...',
-  availableTags: 'Доступні теги',
-  noTags: 'Немає тегів',
-  
-  // Predefined tags
-  tagVegan: 'Веганський',
-  tagVegetarian: 'Вегетаріанський',
-  tagLactoseFree: 'Без лактози',
-  tagGlutenFree: 'Без глютену',
-  tagOrganic: 'Органічний',
-  tagBio: 'Біо',
-  tagDiabeteFriendly: 'Для діабетиків',
-  tagLowFat: 'Низький вміст жиру',
-  tagLowSugar: 'Низький вміст цукру',
-  tagHighProtein: 'Високий вміст білка',
-  tagNatural: 'Натуральний',
-  tagLocal: 'Місцевий',
-  
-  // Avatar functionality
-  selectAvatar: 'Вибрати аватар',
-  avatarUpdateSuccess: 'Аватар успішно оновлено',
-  avatarUpdateError: 'Не вдалося оновити аватар',
-  
-  // Admin info
-  adminInfo: 'Адміністративна інформація',
-  added: 'Додано',
-  lastUpdated: 'Останнє оновлення',
-  createdBy: 'Створено',
-  
-  // Additional missing translations
-  per100g: 'На 100г продукту',
-  detailedComposition: 'Детальний склад',
-  productNotFound: 'Продукт не знайдено',
-  loadingProduct: 'Завантаження продукту...',
-  productUpdatedSuccessfully: 'Продукт успішно оновлено',
-  updateProductError: 'Помилка оновлення продукту',
-  editProduct: 'Редагувати продукт',
-  detailedProductDescription: 'Детальний опис продукту...',
-  alternativeImageUrl: '(альтернативний)',
-  productNameRequired: 'Необхідно вказати назву продукту',
-  authenticationError: 'Помилка аутентифікації',
-  allergensPlaceholder: 'Молоко, яйця, глютен...',
-  additivesPlaceholder: 'Е100, Е200...',
-  adminOnlyEdit: 'Тільки адміністратори можуть редагувати продукти',
-  legacyFieldsNote: 'Ці поля зберігаються для зворотної сумісності',
-  
-  // ImageUploader translations
-  productImage: 'Зображення продукту',
-  addImage: 'Додати зображення',
-  changeImage: 'Змінити',
-  clickToAddImage: 'Натисніть, щоб додати зображення',
-  clickToChangeImage: 'Натисніть, щоб змінити зображення',
-  uploading: 'Завантаження...',
-  permissionRequired: 'Потрібен дозвіл',
-  permissionRequiredMessage: 'Потрібен дозвіл для доступу до галереї зображень',
-  imagePickError: 'Помилка при виборі зображення',
-  webUploadInfo: 'Інформація',
-  webUploadNote: 'Завантаження зображень на веб-платформі потребує додаткової настройки. Поки що використовуйте URL зображення.',
-  imageUploadSuccess: 'Зображення успішно завантажено!',
-  imageUploadError: 'Помилка при завантаженні зображення',
-  
-  // New Admin Panel translations
-  adminPanel: 'Панель адміністратора',
-  userGrowth: 'Зростання користувачів',
-  productGrowth: 'Зростання продуктів',
-  userManagement: 'Управління користувачами',
-  productManagement: 'Управління продуктами',
-  searchUsers: 'Пошук користувачів',
-  searchProducts: 'Пошук продуктів',
-  searchAndManageUsers: 'Пошук та управління обліковими записами користувачів',
-  searchAndManageProducts: 'Пошук та управління продуктами',
-  totalUsers: 'Всього користувачів',
-  totalProducts: 'Всього продуктів',
-  registeredUsers: 'Зареєстровані користувачі',
-  productsInDatabase: 'Продукти в базі даних',
-  admins: 'Адміністратори',
-  blocked: 'Заблоковані',
-  gradeA: 'Клас A',
-  beverages: 'Напої',
-  demo: 'Демо',
-  live: 'Онлайн',
-  
-  // Product submissions
-  suggestProduct: 'Пропонувати продукт',
-  suggestProductBanner: 'Пропонувати банер продукту',
-  productSubmissions: 'Продуктові подачі',
-  submitProduct: 'Подати продукт',
-  submissionForm: 'Форма подачі',
-  additionalImages: 'Додаткові зображення',
-  addMoreImages: 'Додати більше зображень',
-  removeImage: 'Видалити зображення',
-  verificationInfo: 'Інформація для верифікації',
-  barcode: 'Штрих-код',
-  sourceInfo: 'Інформація про джерело',
-  manufacturer: 'Виробник',
-  countryOfOrigin: 'Країна походження',
-  whereFoundProduct: 'Де знайдено продукт',
-  submissionSuccess: 'Подача успішна',
-  submissionError: 'Помилка подачі',
-  productSubmitted: 'Продукт подано',
-  submissionUnderReview: 'Продукт у процесі перевірки',
-  
-  // Admin submissions review
-  reviewSubmissions: 'Перевірка подач',
-  pendingSubmissions: 'Очікуючі подачі',
-  submissionStatus: 'Статус подачі',
-  submittedBy: 'Поданий',
-  submittedOn: 'Подано',
-  reviewSubmission: 'Перевірка подачі',
-  approveSubmission: 'Підтвердити подачу',
-  rejectSubmission: 'Відхилити подачу',
-  rejectionReason: 'Причина відхилення',
-  approveConfirm: 'Підтвердити',
-  rejectConfirm: 'Відхилити',
-  submissionApproved: 'Подача підтверджена',
-  submissionRejected: 'Подача відхилена',
-  noSubmissions: 'Немає подач',
-  viewDetails: 'Переглянути деталі',
-  editBeforeApproval: 'Редагувати перед підтвердженням',
-  loadingUsers: 'Завантаження користувачів...',
-  loadingProducts: 'Завантаження продуктів...',
-  usersNotFound: 'Користувачів не знайдено',
-  productsNotFound: 'Продуктів не знайдено',
-  tryAnotherSearch: 'Спробуйте інший пошук',
-  waitForLoading: 'Зачекайте завантаження',
-  enterUserDetails: 'Введіть дані користувача',
-  enterProductDetails: 'Введіть дані продукту',
-  foundUsers: 'Знайдено користувачів',
-  foundProducts: 'Знайдено продуктів',
-  userRoleChanged: 'Роль користувача змінено',
-  userBlocked: 'Користувача заблоковано',
-  userUnblocked: 'Користувача розблоковано',
-  userRoleChangeError: 'Не вдалося змінити роль користувача',
-  userBlockError: 'Не вдалося заблокувати користувача',
-  changeUserRole: 'Змінити роль користувача',
-  deleteProductConfirm: 'Видалити продукт',
-  actionCannotBeUndone: 'Цю дію неможливо скасувати',
-  productDeletedSuccessfully: 'Продукт успішно видалено',
-  unknownName: 'Невідоме ім\'я',
-  unknownBrand: 'Невідомий бренд',
-  productWeight: 'Вага продукту (г)',
-  productBarcode: 'Штрих-код продукту',
-  whereDidYouFind: 'Де ви знайшли цей продукт?',
-  addFromDevice: 'Додати з пристрою',
-  expandDatabase: 'Розширити базу продуктів',
-  helpExpandDatabase: 'Допоможіть розширити нашу базу продуктів',
-  photoError: 'Помилка при зйомці фото',
-  authenticationRequired: 'Потрібна авторизація',
-  authenticationRequiredDelete: 'Потрібна авторизація для видалення продукту',
-  userState: 'Активний',
-
-  // New missing keys
-  submittedDate: 'Подано',
-  reviewedDate: 'Оброблено',
-  pending: 'Очікують',
-  processed: 'Оброблено',
-  submissionInfo: 'Інформація про подачу',
-  basicInformation: 'Основна інформація',
-  notSpecified: 'Не вказано',
-  images: 'Зображення',
-  nutritionalValue: 'Харчова цінність',
-  additionalInfo: 'Додаткова інформація',
-  none: 'Немає',
-  verificationInformation: 'Верифікаційна інформація',
-  rejectionReasonTitle: 'Причина відхилення',
-  nutritionalValuePer100g: 'Харчова цінність (на 100г)',
-}
-
-export type Language = 'en' | 'uk';
 const translations = { en, uk } as const;
 let currentLanguage: Language = 'en';
-
 
 export const t = (key: keyof TranslationKeys): string => {
   return translations[currentLanguage][key];
 };
 
-
 export const setLanguage = (language: Language): void => {
   currentLanguage = language;
 };
 
-
 export const getCurrentLanguage = (): Language => {
   return currentLanguage;
 };
+
+// Ukrainian declension functions
+export const getAgeText = (age: number): string => {
+  if (currentLanguage !== 'uk') {
+    return `${age} years`;
+  }
+  
+  const lastDigit = age % 10;
+  const lastTwoDigits = age % 100;
+  
+  // Special cases for 11-14
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+    return `${age} років`;
+  }
+  
+  // For other numbers
+  if (lastDigit === 1) {
+    return `${age} рік`;
+  } else if (lastDigit >= 2 && lastDigit <= 4) {
+    return `${age} роки`;
+  } else {
+    return `${age} років`;
+  }
+};
+
+export const getWeightText = (weight: number): string => {
+  return currentLanguage === 'uk' ? `${weight} кг` : `${weight} kg`;
+};
+
+export const getHeightText = (height: number): string => {
+  return currentLanguage === 'uk' ? `${height} см` : `${height} cm`;
+}; 
