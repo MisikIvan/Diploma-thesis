@@ -31,7 +31,7 @@ const ProductCard: React.FC<ProductCardProps> = memo(({ product, onPress, compac
     onPress(product);
   };
 
-  // 🔄 ОПТИМІЗОВАНІ ТЕГИ - з безпечною обробкою помилок
+  
   let productTags: string[] = [];
   let firstTag: string | undefined;
   let additionalTagsCount = 0;
@@ -39,7 +39,7 @@ const ProductCard: React.FC<ProductCardProps> = memo(({ product, onPress, compac
   try {
     productTags = getTagsFromProduct(product);
     if (productTags.length > 0) {
-      // 🔄 БЕЗПЕЧНА ПЕРЕВІРКА першого тегу
+     
       const firstTagDisplayName = getTagDisplayName(productTags[0]);
       if (firstTagDisplayName && typeof firstTagDisplayName === 'string' && firstTagDisplayName.trim() !== '') {
         firstTag = firstTagDisplayName;
@@ -77,7 +77,7 @@ const ProductCard: React.FC<ProductCardProps> = memo(({ product, onPress, compac
               </Text>
             ) : null}
             
-            {/* 🔄 ОПТИМІЗОВАНІ ТЕГИ - тільки якщо є */}
+  
             {firstTag && (
               <View style={styles.tagsContainer}>
                 <View style={[

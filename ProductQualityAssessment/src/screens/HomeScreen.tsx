@@ -35,7 +35,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // 🔄 ОПТИМІЗОВАНА ІНІЦІАЛІЗАЦІЯ
+ 
   useEffect(() => {
     if (!hasInitialLoad) {
       loadProducts();
@@ -46,7 +46,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   }, [hasInitialLoad, currentUser?.userId]);
 
-  // 🔄 ОПТИМІЗОВАНИЙ FOCUS EFFECT - без складних операцій
+ 
   useFocusEffect(
     useCallback(() => {
       loadProducts();
@@ -61,7 +61,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   };
 
-  // 🔄 ОПТИМІЗОВАНИЙ REFRESH
+ 
   const handleRefresh = async () => {
     setRefreshing(true);
     (global as any).lastInteractionTime = Date.now();
@@ -78,7 +78,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   };
 
-  // 🔄 ОПТИМІЗОВАНИЙ PRODUCT PRESS - мінімальна логіка
+ 
   const handleProductPress = (product: Product) => {
     navigation.navigate('ProductDetail', { productId: product.productId });
   };
@@ -108,15 +108,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   };
 
-  // 🔄 МЕМОІЗОВАНИЙ RENDER ITEM
+
   const renderProductItem = React.useCallback(({ item }: { item: Product }) => (
     <ProductCard product={item} onPress={handleProductPress} />
   ), []);
 
-  // 🔄 СТАБІЛЬНИЙ KEY EXTRACTOR
+  
   const keyExtractor = React.useCallback((item: Product) => item.productId, []);
 
-  // 🔄 МЕМОІЗОВАНИЙ HEADER
+ 
   const listHeader = useMemo(() => (
     <View>
       <CategoryList 
@@ -135,7 +135,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     </View>
   ), [selectedCategory, recentProducts]);
 
-  // 🔄 МЕМОІЗОВАНІ ДАНІ ДЛЯ FLATLIST
+ 
   const displayProducts = useMemo(() => {
     return filteredProducts.length > 0 ? filteredProducts : products;
   }, [filteredProducts, products]);
@@ -184,7 +184,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         }
       />
 
-      {/* Error indicator for partial errors */}
+     
       {error && products.length > 0 && (
         <View style={styles.bottomErrorIndicator}>
           <Text style={styles.bottomErrorText}>
@@ -193,7 +193,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         </View>
       )}
 
-      {/* Product Submission Form */}
+        
       <ProductSubmissionForm
         visible={showSubmissionForm}
         onClose={() => setShowSubmissionForm(false)}

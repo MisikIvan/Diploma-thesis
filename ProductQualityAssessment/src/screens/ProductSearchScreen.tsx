@@ -17,6 +17,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
 import { Product } from '../types/index';
 import { getAllProducts, deleteProduct, auth } from '../api/firebase';
+import { t } from '../utils/translations';
 
 type ProductSearchScreenNavigationProp = StackNavigationProp<RootStackParamList, 'ProductSearch'>;
 
@@ -27,7 +28,6 @@ const ProductSearchScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Live search - фільтруємо продукти в реальному часі
   const filteredProducts = useMemo(() => {
     if (!searchQuery.trim()) return products;
     
@@ -59,6 +59,15 @@ const ProductSearchScreen: React.FC = () => {
     setRefreshing(false);
   };
 
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+    
+      navigation.navigate('Main');
+    }
+  };
+
   const handleEditProduct = (product: Product) => {
     Alert.alert(
       'Редагувати продукт',
@@ -68,7 +77,7 @@ const ProductSearchScreen: React.FC = () => {
         {
           text: 'Редагувати',
           onPress: () => {
-            // Навігація до екрану редагування
+          
             navigation.navigate('ProductDetail', { productId: product.productId });
           },
         },
@@ -95,7 +104,7 @@ const ProductSearchScreen: React.FC = () => {
               
               await deleteProduct(product.productId, currentUser.uid);
               Alert.alert('Успіх', 'Продукт успішно видалено');
-              await loadProducts(); // Оновлюємо список
+              await loadProducts(); 
             } catch (error) {
               console.error('Error deleting product:', error);
               Alert.alert('Помилка', 'Не вдалося видалити продукт');
@@ -129,8 +138,8 @@ const ProductSearchScreen: React.FC = () => {
         <Text style={styles.productName} numberOfLines={2}>
           {item.name}
         </Text>
-        <Text style={styles.productBrand}>
-          {item.brand || 'Невідомий бренд'}
+        <Text style={styles.productBrand} numberOfLines={1}>
+          {item.brand || t('unknownBrand')}
         </Text>
         <Text style={styles.productId}>
           ID: {item.productId}
@@ -171,12 +180,12 @@ const ProductSearchScreen: React.FC = () => {
     <View style={styles.emptyState}>
       <Ionicons name="search" size={64} color="#ccc" />
       <Text style={styles.emptyTitle}>
-        {searchQuery ? 'Продукти не знайдено' : 'Завантаження продуктів...'}
+        {searchQuery ? t('productsNotFound') : t('loadingProducts')}
       </Text>
       <Text style={styles.emptySubtitle}>
         {searchQuery 
-          ? `Спробуйте інший пошуковий запит замість "${searchQuery}"`
-          : 'Зачекайте, поки завантажаться всі продукти'
+          ? t('tryAnotherSearch')
+          : t('waitForLoading')
         }
       </Text>
     </View>
@@ -192,12 +201,12 @@ const ProductSearchScreen: React.FC = () => {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          onPress={handleGoBack}
         >
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         
-        <Text style={styles.headerTitle}>Пошук продуктів</Text>
+        <Text style={styles.headerTitle}>{t('searchProducts')}</Text>
         
         <TouchableOpacity
           style={styles.refreshButton}
@@ -213,7 +222,7 @@ const ProductSearchScreen: React.FC = () => {
           <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Введіть назву продукту, бренд або ID..."
+            placeholder={t('enterProductDetails')}
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor="#999"
@@ -230,7 +239,7 @@ const ProductSearchScreen: React.FC = () => {
         </View>
         
         <Text style={styles.resultsCount}>
-          {loading ? 'Завантаження...' : `Знайдено: ${filteredProducts.length} продуктів`}
+          {loading ? t('loading') : `${t('foundProducts')}: ${filteredProducts.length}`}
         </Text>
       </View>
 
@@ -238,7 +247,7 @@ const ProductSearchScreen: React.FC = () => {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#34572a" />
-          <Text style={styles.loadingText}>Завантаження продуктів...</Text>
+          <Text style={styles.loadingText}>{t('loadingProducts')}</Text>
         </View>
       ) : (
         <FlatList

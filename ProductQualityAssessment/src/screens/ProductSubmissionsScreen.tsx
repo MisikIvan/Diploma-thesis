@@ -54,7 +54,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
     try {
       setLoading(true);
       
-      // Завантажуємо паралельно всі типи подач
+     
       const [pending, approved, rejected] = await Promise.all([
         getSubmissionsByStatus('pending'),
         getSubmissionsByStatus('approved'),
@@ -101,7 +101,6 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
       Alert.alert('Успіх', 'Заявку схвалено та продукт додано до бази даних');
       
       if (onSubmissionApproved) {
-        // Create a complete Product object
         const product: Product = {
           productId: `prod-${Date.now()}`,
           ...selectedSubmission.productData,
@@ -200,11 +199,11 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
             {t('submittedBy')}: {item.userDisplayName}
           </Text>
           <Text style={styles.submissionDate}>
-            Подано: {new Date(item.submittedAt).toLocaleDateString('uk-UA')}
+            {t('submittedDate')}: {new Date(item.submittedAt).toLocaleDateString('uk-UA')}
           </Text>
           {item.reviewedAt && (
             <Text style={styles.submissionDate}>
-              Оброблено: {new Date(item.reviewedAt).toLocaleDateString('uk-UA')}
+              {t('reviewedDate')}: {new Date(item.reviewedAt).toLocaleDateString('uk-UA')}
             </Text>
           )}
         </View>
@@ -233,7 +232,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
               <Ionicons name="close" size={24} color="#666" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Подачі продуктів</Text>
+            <Text style={styles.headerTitle}>{t('productSubmissions')}</Text>
             <View style={styles.placeholder} />
           </View>
 
@@ -249,7 +248,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
                 color={activeTab === 'pending' ? '#fff' : '#666'} 
               />
               <Text style={[styles.tabText, activeTab === 'pending' && styles.activeTabText]}>
-                Очікують ({pendingSubmissions.length})
+                {t('pending')} ({pendingSubmissions.length})
               </Text>
             </TouchableOpacity>
             
@@ -263,7 +262,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
                 color={activeTab === 'processed' ? '#fff' : '#666'} 
               />
               <Text style={[styles.tabText, activeTab === 'processed' && styles.activeTabText]}>
-                Оброблено ({processedSubmissions.length})
+                {t('processed')} ({processedSubmissions.length})
               </Text>
             </TouchableOpacity>
           </View>
@@ -271,7 +270,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#007AFF" />
-              <Text style={styles.loadingText}>Завантаження подач...</Text>
+              <Text style={styles.loadingText}>{t('loading')}</Text>
             </View>
           ) : (activeTab === 'pending' ? pendingSubmissions : processedSubmissions).length === 0 ? (
             <View style={styles.emptyContainer}>
@@ -281,12 +280,12 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
                 color="#ccc" 
               />
               <Text style={styles.emptyText}>
-                {activeTab === 'pending' ? 'Немає подач на розгляді' : 'Немає оброблених подач'}
+                {activeTab === 'pending' ? t('noSubmissions') : t('noSubmissions')}
               </Text>
               <Text style={styles.emptySubtext}>
                 {activeTab === 'pending' 
-                  ? 'Користувачі ще не надіслали жодних пропозицій продуктів'
-                  : 'Ще немає затверджених або відхилених подач'
+                  ? t('noSubmissions')
+                  : t('noSubmissions')
                 }
               </Text>
             </View>
@@ -329,7 +328,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
           {selectedSubmission && (
             <ScrollView style={styles.detailContent}>
               <View style={styles.detailSection}>
-                <Text style={styles.sectionTitle}>Інформація про подачу</Text>
+                <Text style={styles.sectionTitle}>{t('submissionInfo')}</Text>
                 <Text style={styles.detailText}>
                   <Text style={styles.detailLabel}>Подав: </Text>
                   {selectedSubmission.userDisplayName}
@@ -347,23 +346,23 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
               </View>
 
               <View style={styles.detailSection}>
-                <Text style={styles.sectionTitle}>Основна інформація</Text>
+                <Text style={styles.sectionTitle}>{t('basicInformation')}</Text>
                 <Text style={styles.detailText}>
                   <Text style={styles.detailLabel}>Назва: </Text>
                   {editedProductData?.name}
                 </Text>
                 <Text style={styles.detailText}>
                   <Text style={styles.detailLabel}>Бренд: </Text>
-                  {editedProductData?.brand || 'Не вказано'}
+                  {editedProductData?.brand || t('notSpecified')}
                 </Text>
                 <Text style={styles.detailText}>
                   <Text style={styles.detailLabel}>Опис: </Text>
-                  {editedProductData?.description || 'Не вказано'}
+                  {editedProductData?.description || t('notSpecified')}
                 </Text>
               </View>
 
               <View style={styles.detailSection}>
-                <Text style={styles.sectionTitle}>Зображення</Text>
+                <Text style={styles.sectionTitle}>{t('images')}</Text>
                 {editedProductData?.imageUrl && (
                   <Image 
                     source={{ uri: editedProductData.imageUrl }} 
@@ -380,7 +379,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
               </View>
 
               <View style={styles.detailSection}>
-                <Text style={styles.sectionTitle}>Харчова цінність</Text>
+                <Text style={styles.sectionTitle}>{t('nutritionalValue')}</Text>
                 <Text style={styles.detailText}>
                   <Text style={styles.detailLabel}>Калорії: </Text>
                   {editedProductData?.nutriments.calories} ккал
@@ -400,38 +399,38 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
               </View>
 
               <View style={styles.detailSection}>
-                <Text style={styles.sectionTitle}>Додаткова інформація</Text>
+                <Text style={styles.sectionTitle}>{t('additionalInfo')}</Text>
                 <Text style={styles.detailText}>
                   <Text style={styles.detailLabel}>Інгредієнти: </Text>
                   {editedProductData?.ingredients}
                 </Text>
                 <Text style={styles.detailText}>
                   <Text style={styles.detailLabel}>Алергени: </Text>
-                  {editedProductData?.allergens.join(', ') || 'Немає'}
+                  {editedProductData?.allergens.join(', ') || t('none')}
                 </Text>
                 <Text style={styles.detailText}>
                   <Text style={styles.detailLabel}>Теги: </Text>
-                  {editedProductData?.tags.join(', ') || 'Немає'}
+                  {editedProductData?.tags.join(', ') || t('none')}
                 </Text>
               </View>
 
               <View style={styles.detailSection}>
-                <Text style={styles.sectionTitle}>Верифікаційна інформація</Text>
+                <Text style={styles.sectionTitle}>{t('verificationInformation')}</Text>
                 <Text style={styles.detailText}>
                   <Text style={styles.detailLabel}>Штрих-код: </Text>
-                  {editedProductData?.barcode || 'Не вказано'}
+                  {editedProductData?.barcode || t('notSpecified')}
                 </Text>
                 <Text style={styles.detailText}>
                   <Text style={styles.detailLabel}>Виробник: </Text>
-                  {editedProductData?.manufacturer || 'Не вказано'}
+                  {editedProductData?.manufacturer || t('notSpecified')}
                 </Text>
                 <Text style={styles.detailText}>
                   <Text style={styles.detailLabel}>Країна: </Text>
-                  {editedProductData?.countryOfOrigin || 'Не вказано'}
+                  {editedProductData?.countryOfOrigin || t('notSpecified')}
                 </Text>
                 <Text style={styles.detailText}>
                   <Text style={styles.detailLabel}>Джерело: </Text>
-                  {editedProductData?.source || 'Не вказано'}
+                  {editedProductData?.source || t('notSpecified')}
                 </Text>
               </View>
 

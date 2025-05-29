@@ -322,6 +322,51 @@ export interface TranslationKeys {
   noSubmissions: string;
   viewDetails: string;
   editBeforeApproval: string;
+  loadingUsers: string;
+  loadingProducts: string;
+  usersNotFound: string;
+  productsNotFound: string;
+  tryAnotherSearch: string;
+  waitForLoading: string;
+  enterUserDetails: string;
+  enterProductDetails: string;
+  foundUsers: string;
+  foundProducts: string;
+  userRoleChanged: string;
+  userBlocked: string;
+  userUnblocked: string;
+  userRoleChangeError: string;
+  userBlockError: string;
+  changeUserRole: string;
+  deleteProductConfirm: string;
+  actionCannotBeUndone: string;
+  productDeletedSuccessfully: string;
+  unknownName: string;
+  unknownBrand: string;
+  productWeight: string;
+  productBarcode: string;
+  whereDidYouFind: string;
+  addFromDevice: string;
+  expandDatabase: string;
+  helpExpandDatabase: string;
+  photoError: string;
+  authenticationRequired: string;
+  authenticationRequiredDelete: string;
+  userState: string;
+  submittedDate: string;
+  reviewedDate: string;
+  pending: string;
+  processed: string;
+  submissionInfo: string;
+  basicInformation: string;
+  notSpecified: string;
+  images: string;
+  nutritionalValue: string;
+  additionalInfo: string;
+  none: string;
+  verificationInformation: string;
+  rejectionReasonTitle: string;
+  nutritionalValuePer100g: string;
 }
 
 // English translations
@@ -648,6 +693,53 @@ const en: TranslationKeys = {
   noSubmissions: 'No Submissions',
   viewDetails: 'View Details',
   editBeforeApproval: 'Edit Before Approval',
+  loadingUsers: 'Loading users...',
+  loadingProducts: 'Loading products...',
+  usersNotFound: 'Users not found',
+  productsNotFound: 'Products not found',
+  tryAnotherSearch: 'Try another search',
+  waitForLoading: 'Wait for loading',
+  enterUserDetails: 'Enter user details',
+  enterProductDetails: 'Enter product details',
+  foundUsers: 'Users found',
+  foundProducts: 'Products found',
+  userRoleChanged: 'User role changed',
+  userBlocked: 'User blocked',
+  userUnblocked: 'User unblocked',
+  userRoleChangeError: 'Error changing user role',
+  userBlockError: 'Error blocking user',
+  changeUserRole: 'Change user role',
+  deleteProductConfirm: 'Delete product?',
+  actionCannotBeUndone: 'Action cannot be undone',
+  productDeletedSuccessfully: 'Product deleted successfully',
+  unknownName: 'Unknown name',
+  unknownBrand: 'Unknown brand',
+  productWeight: 'Product weight',
+  productBarcode: 'Product barcode',
+  whereDidYouFind: 'Where did you find',
+  addFromDevice: 'Add from device',
+  expandDatabase: 'Expand database',
+  helpExpandDatabase: 'Help expand database',
+  photoError: 'Photo error',
+  authenticationRequired: 'Authentication required',
+  authenticationRequiredDelete: 'Authentication required for deletion',
+  userState: 'Active',
+
+  // New missing keys
+  submittedDate: 'Submitted',
+  reviewedDate: 'Reviewed',
+  pending: 'Pending',
+  processed: 'Processed',
+  submissionInfo: 'Submission Information',
+  basicInformation: 'Basic Information',
+  notSpecified: 'Not specified',
+  images: 'Images',
+  nutritionalValue: 'Nutritional Value',
+  additionalInfo: 'Additional Information',
+  none: 'None',
+  verificationInformation: 'Verification Information',
+  rejectionReasonTitle: 'Rejection Reason',
+  nutritionalValuePer100g: 'Nutritional Value (per 100g)',
 }
 
 // Ukrainian translations
@@ -974,6 +1066,53 @@ const uk: TranslationKeys = {
   noSubmissions: 'Немає подач',
   viewDetails: 'Переглянути деталі',
   editBeforeApproval: 'Редагувати перед підтвердженням',
+  loadingUsers: 'Завантаження користувачів...',
+  loadingProducts: 'Завантаження продуктів...',
+  usersNotFound: 'Користувачів не знайдено',
+  productsNotFound: 'Продуктів не знайдено',
+  tryAnotherSearch: 'Спробуйте інший пошук',
+  waitForLoading: 'Зачекайте завантаження',
+  enterUserDetails: 'Введіть дані користувача',
+  enterProductDetails: 'Введіть дані продукту',
+  foundUsers: 'Знайдено користувачів',
+  foundProducts: 'Знайдено продуктів',
+  userRoleChanged: 'Роль користувача змінено',
+  userBlocked: 'Користувача заблоковано',
+  userUnblocked: 'Користувача розблоковано',
+  userRoleChangeError: 'Не вдалося змінити роль користувача',
+  userBlockError: 'Не вдалося заблокувати користувача',
+  changeUserRole: 'Змінити роль користувача',
+  deleteProductConfirm: 'Видалити продукт',
+  actionCannotBeUndone: 'Цю дію неможливо скасувати',
+  productDeletedSuccessfully: 'Продукт успішно видалено',
+  unknownName: 'Невідоме ім\'я',
+  unknownBrand: 'Невідомий бренд',
+  productWeight: 'Вага продукту (г)',
+  productBarcode: 'Штрих-код продукту',
+  whereDidYouFind: 'Де ви знайшли цей продукт?',
+  addFromDevice: 'Додати з пристрою',
+  expandDatabase: 'Розширити базу продуктів',
+  helpExpandDatabase: 'Допоможіть розширити нашу базу продуктів',
+  photoError: 'Помилка при зйомці фото',
+  authenticationRequired: 'Потрібна авторизація',
+  authenticationRequiredDelete: 'Потрібна авторизація для видалення продукту',
+  userState: 'Активний',
+
+  // New missing keys
+  submittedDate: 'Подано',
+  reviewedDate: 'Оброблено',
+  pending: 'Очікують',
+  processed: 'Оброблено',
+  submissionInfo: 'Інформація про подачу',
+  basicInformation: 'Основна інформація',
+  notSpecified: 'Не вказано',
+  images: 'Зображення',
+  nutritionalValue: 'Харчова цінність',
+  additionalInfo: 'Додаткова інформація',
+  none: 'Немає',
+  verificationInformation: 'Верифікаційна інформація',
+  rejectionReasonTitle: 'Причина відхилення',
+  nutritionalValuePer100g: 'Харчова цінність (на 100г)',
 }
 
 export type Language = 'en' | 'uk';

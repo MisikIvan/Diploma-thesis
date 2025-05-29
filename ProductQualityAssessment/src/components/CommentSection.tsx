@@ -37,7 +37,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ productId }) => {
       return;
     }
     
-    console.log('Стан користувача:', {
+    console.log('User state:', {
       userId: currentUser.userId,
       canComment: currentUser.canComment,
       isBlocked: currentUser.isBlocked,

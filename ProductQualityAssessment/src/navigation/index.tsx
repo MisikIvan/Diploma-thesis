@@ -3,7 +3,7 @@ import { View, Text, ActivityIndicator, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons, FontAwesome5, Feather } from '@expo/vector-icons';
 import Animated, { 
   FadeInDown, 
   FadeInUp, 
@@ -36,7 +36,12 @@ import { RootStackParamList, BottomTabParamList } from '../types/navigation';
 const Stack = createStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<BottomTabParamList>();
 
-const AnimatedTabIcon = ({ focused, iconName, color }: { focused: boolean, iconName: string, color: string }) => {
+const AnimatedTabIcon = ({ focused, iconName, iconType, color }: { 
+  focused: boolean, 
+  iconName: string, 
+  iconType: 'ionicons' | 'material' | 'fontawesome5' | 'feather',
+  color: string 
+}) => {
   const scale = useSharedValue(focused ? 1.2 : 1);
   const opacity = useSharedValue(focused ? 1 : 0.7);
 
@@ -55,9 +60,23 @@ const AnimatedTabIcon = ({ focused, iconName, color }: { focused: boolean, iconN
     opacity: opacity.value,
   }));
 
+  const renderIcon = () => {
+    const size = 24;
+    switch (iconType) {
+      case 'material':
+        return <MaterialIcons name={iconName as any} size={size} color={color} />;
+      case 'fontawesome5':
+        return <FontAwesome5 name={iconName as any} size={size} color={color} />;
+      case 'feather':
+        return <Feather name={iconName as any} size={size} color={color} />;
+      default:
+        return <Ionicons name={iconName as any} size={size} color={color} />;
+    }
+  };
+
   return (
     <Animated.View style={animatedStyle}>
-      <Ionicons name={iconName as any} size={24} color={color} />
+      {renderIcon()}
     </Animated.View>
   );
 };
@@ -72,44 +91,49 @@ const MainTabs = () => {
       screenOptions={({ route }: { route: any }) => ({
         tabBarIcon: ({ focused, color }: { focused: boolean; color: string }) => {
           let iconName = '';
+          let iconType: 'ionicons' | 'material' | 'fontawesome5' | 'feather' = 'ionicons';
 
           if (route.name === 'Home') {
-            iconName = focused ? 'home' : 'home-outline';
+            iconName = focused ? 'home' : 'home';
+            iconType = 'feather';
           } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline';
+            iconName = focused ? 'user' : 'user';
+            iconType = 'feather';
           } else if (route.name === 'Favorites') {
-            iconName = focused ? 'heart' : 'heart-outline';
+            iconName = focused ? 'heart' : 'heart';
+            iconType = 'feather';
           } else if (route.name === 'Admin') {
-            iconName = focused ? 'settings' : 'settings-outline';
+            iconName = focused ? 'shield' : 'shield';
+            iconType = 'feather';
           }
 
-          return <AnimatedTabIcon focused={focused} iconName={iconName} color={color} />;
+          return <AnimatedTabIcon focused={focused} iconName={iconName} iconType={iconType} color={color} />;
         },
         tabBarActiveTintColor: '#ffffff',
         tabBarInactiveTintColor: 'rgba(255, 255, 255, 0.6)',
         tabBarStyle: {
           backgroundColor: '#34572a',
           borderTopWidth: 0,
-          height: 70,
-          borderRadius: 30,
+          height: 75,
+          borderRadius: 35,
           position: 'absolute',
           bottom: 20,
           left: 20,
           right: 20,
-          elevation: 8,
+          elevation: 12,
           shadowColor: '#000',
           shadowOffset: {
             width: 0,
-            height: 6,
+            height: 8,
           },
-          shadowOpacity: 0.4,
-          shadowRadius: 8,
+          shadowOpacity: 0.5,
+          shadowRadius: 12,
         },
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: '600',
+          fontWeight: '700',
           marginTop: 4,
-          marginBottom: 8,
+          marginBottom: 12,
         },
         tabBarItemStyle: {
           padding: 8,
@@ -257,15 +281,15 @@ const Navigation = () => {
                   name="EditProduct" 
                   component={EditProductScreen as any} 
                   options={{ 
-                    title: 'Редагувати продукт',
+                    title: t('editProduct'),
                     headerBackTitleVisible: false,
                   }}
                 />
                 <Stack.Screen 
                   name="ProductSearch" 
-                  component={ProductSearchScreen as any} 
+                  component={ProductSearchScreen} 
                   options={{ 
-                    title: 'Пошук продуктів',
+                    title: t('searchProducts'),
                     headerBackTitleVisible: false,
                     headerShown: false,
                   }}
@@ -274,7 +298,7 @@ const Navigation = () => {
                   name="UserSearch" 
                   component={UserSearchScreen as any} 
                   options={{ 
-                    title: 'Пошук користувачів',
+                    title: t('searchUsers'),
                     headerBackTitleVisible: false,
                     headerShown: false,
                   }}

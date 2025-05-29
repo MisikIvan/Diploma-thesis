@@ -37,9 +37,8 @@ export interface Product {
     };
     salt?: number;
   };
-  // Replaced with tags system
-  tags: string[]; // ['vegan', 'vegetarian', 'lactose-free', 'gluten-free', 'organic', 'bio', etc.]
-  // Keep original fields for backward compatibility during migration
+
+  tags: string[];
   isVegan: boolean;
   isVegetarian: boolean;
   hasLactose: boolean;
@@ -101,7 +100,7 @@ export const getNutriScoreColor = (grade: NutriScoreGrade): NutriScoreColor => {
   }
 }; 
 
-// Product submission types
+
 export interface ProductSubmission {
   submissionId: string;
   userId: string;
@@ -111,13 +110,12 @@ export interface ProductSubmission {
   reviewedAt?: string;
   reviewedBy?: string;
   rejectionReason?: string;
-  // Product data
   productData: {
     name: string;
     description?: string;
     brand?: string;
     imageUrl?: string;
-    additionalImages?: string[]; // Multiple images support
+    additionalImages?: string[]; 
     nutriscoreGrade: 'A' | 'B' | 'C' | 'D' | 'E';
     nutriscoreScore?: number; 
     categories: string[];
@@ -144,9 +142,8 @@ export interface ProductSubmission {
     hasLactose: boolean;
     hasGluten: boolean;
     weight?: number;
-    // Verification fields
     barcode?: string;
-    source?: string; // Where user found this product
+    source?: string; 
     manufacturer?: string;
     countryOfOrigin?: string;
   };

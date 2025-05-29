@@ -68,7 +68,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         setUser(userData);
         setEditedName(userData.displayName);
       } else {
-        // Redirect to auth if no user data found
+      
         navigation.navigate('Auth');
       }
     } catch (error) {

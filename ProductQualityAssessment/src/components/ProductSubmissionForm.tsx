@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { MaterialIcons, FontAwesome5, Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { ProductSubmission } from '../types';
 import { t } from '../utils/translations';
@@ -55,7 +56,6 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
     hasLactose: false,
     hasGluten: false,
     weight: 0,
-    // Verification fields
     barcode: '',
     source: '',
     manufacturer: '',
@@ -123,7 +123,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
     onClose();
   };
 
-  // Request permissions for image picker
+
   const requestPermissions = async () => {
     if (Platform.OS !== 'web') {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -156,7 +156,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
       if (!result.canceled && result.assets[0]) {
         const imageUri = result.assets[0].uri;
         
-        // Add to main image if empty, otherwise add to additional images
+      
         if (!formData.imageUrl) {
           setFormData(prev => ({ ...prev, imageUrl: imageUri }));
         } else {
@@ -201,7 +201,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
       if (!result.canceled && result.assets[0]) {
         const imageUri = result.assets[0].uri;
         
-        // Add to main image if empty, otherwise add to additional images
+       
         if (!formData.imageUrl) {
           setFormData(prev => ({ ...prev, imageUrl: imageUri }));
         } else {
@@ -221,11 +221,11 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
     }
   };
 
-  // Show image picker options
+
   const showImagePickerOptions = () => {
     Alert.alert(
       'Додати зображення',
-      'Оберіть спосіб додавання зображення',
+      'Виберіть спосіб додавання зображення',
       [
         { text: t('cancel'), style: 'cancel' },
         { text: '📷 Зробити фото', onPress: takePhotoWithCamera },
@@ -234,7 +234,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
     );
   };
 
-  // Add image from URL
+
   const addImageFromUrl = () => {
     if (newImageUrl.trim()) {
       if (!formData.imageUrl) {
@@ -249,7 +249,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
     }
   };
 
-  // Remove image by index
+ 
   const removeImage = (index: number) => {
     setFormData(prev => ({
       ...prev,
@@ -357,21 +357,31 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <Ionicons name="close" size={24} color="#666" />
+            <Feather name="x" size={24} color="#666" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{t('submitProduct')}</Text>
+          <View style={styles.headerTitleContainer}>
+            <FontAwesome5 name="plus-circle" size={20} color="#34572a" style={styles.headerIcon} />
+            <Text style={styles.headerTitle}>{t('submitProduct')}</Text>
+          </View>
           <TouchableOpacity onPress={handleSubmit} style={styles.submitButton}>
-            <Text style={styles.submitButtonText}>{t('submitProduct')}</Text>
+            <FontAwesome5 name="paper-plane" size={16} color="#fff" style={styles.submitIcon} />
+            <Text style={styles.submitButtonText}>Надіслати</Text>
           </TouchableOpacity>
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Basic Information */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Основна інформація</Text>
+            <View style={styles.sectionHeader}>
+              <Feather name="info" size={20} color="#34572a" />
+              <Text style={styles.sectionTitle}>{t('basicInformation')}</Text>
+            </View>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t('productName')} *</Text>
+              <View style={styles.labelContainer}>
+                <FontAwesome5 name="tag" size={14} color="#666" />
+                <Text style={styles.label}>{t('productName')} *</Text>
+              </View>
               <TextInput
                 style={styles.input}
                 value={formData.name}
@@ -381,7 +391,10 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Бренд</Text>
+              <View style={styles.labelContainer}>
+                <MaterialIcons name="business" size={14} color="#666" />
+                <Text style={styles.label}>Бренд</Text>
+              </View>
               <TextInput
                 style={styles.input}
                 value={formData.brand}
@@ -391,7 +404,10 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t('description')}</Text>
+              <View style={styles.labelContainer}>
+                <Feather name="file-text" size={14} color="#666" />
+                <Text style={styles.label}>{t('description')}</Text>
+              </View>
               <TextInput
                 style={[styles.input, styles.textArea]}
                 value={formData.description}
@@ -405,7 +421,10 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
 
           {/* Images */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Зображення</Text>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="photo-library" size={20} color="#34572a" />
+              <Text style={styles.sectionTitle}>Зображення</Text>
+            </View>
             
             {/* Image Upload Buttons */}
             <View style={styles.imageButtonsContainer}>
@@ -414,9 +433,9 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                 onPress={showImagePickerOptions}
                 disabled={isUploadingImage}
               >
-                <Ionicons name="camera" size={20} color={isUploadingImage ? "#999" : "#34572a"} />
+                <MaterialIcons name="add-a-photo" size={20} color={isUploadingImage ? "#999" : "#34572a"} />
                 <Text style={[styles.imagePickerButtonText, isUploadingImage && styles.imagePickerButtonTextDisabled]}>
-                  {isUploadingImage ? 'Завантаження...' : 'Додати з пристрою'}
+                  {isUploadingImage ? t('uploading') : t('addFromDevice')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -471,7 +490,10 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
 
           {/* Nutriscore */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Nutriscore</Text>
+            <View style={styles.sectionHeader}>
+              <FontAwesome5 name="medal" size={20} color="#34572a" />
+              <Text style={styles.sectionTitle}>Nutriscore</Text>
+            </View>
             <View style={styles.gradeContainer}>
               {(['A', 'B', 'C', 'D', 'E'] as const).map(grade => (
                 <TouchableOpacity
@@ -495,7 +517,10 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
 
           {/* Categories */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Категорії</Text>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="category" size={20} color="#34572a" />
+              <Text style={styles.sectionTitle}>Категорії</Text>
+            </View>
             <View style={styles.addItemContainer}>
               <View style={styles.pickerContainer}>
                 {/* Simplified category selection */}
@@ -507,7 +532,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                 />
               </View>
               <TouchableOpacity style={styles.addButton} onPress={addCategory}>
-                <Ionicons name="add" size={20} color="#34572a" />
+                <FontAwesome5 name="plus" size={16} color="#34572a" />
               </TouchableOpacity>
             </View>
             <View style={styles.tagContainer}>
@@ -518,7 +543,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                   onPress={() => removeCategory(category)}
                 >
                   <Text style={styles.tagText}>{category}</Text>
-                  <Ionicons name="close" size={16} color="#34572a" />
+                  <Feather name="x" size={14} color="#34572a" />
                 </TouchableOpacity>
               ))}
             </View>
@@ -526,7 +551,10 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
 
           {/* Ingredients */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('ingredients')} *</Text>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="list-alt" size={20} color="#34572a" />
+              <Text style={styles.sectionTitle}>{t('ingredients')} *</Text>
+            </View>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={formData.ingredients}
@@ -539,7 +567,10 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
 
           {/* Nutrition */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Харчова цінність (на 100г)</Text>
+            <View style={styles.sectionHeader}>
+              <FontAwesome5 name="chart-pie" size={20} color="#34572a" />
+              <Text style={styles.sectionTitle}>{t('nutritionalValuePer100g')}</Text>
+            </View>
             
             <View style={styles.nutritionGrid}>
               <View style={styles.nutritionItem}>
@@ -798,16 +829,28 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 8,
   },
+  headerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    marginRight: 8,
+  },
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: '#333',
   },
   submitButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#34572a',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
+  },
+  submitIcon: {
+    marginRight: 8,
   },
   submitButtonText: {
     color: '#fff',
@@ -823,20 +866,30 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#34572a',
-    marginBottom: 16,
+    marginLeft: 8,
   },
   inputGroup: {
     marginBottom: 16,
+  },
+  labelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   label: {
     fontSize: 14,
     fontWeight: '500',
     color: '#333',
-    marginBottom: 8,
+    marginRight: 8,
   },
   input: {
     borderWidth: 1,

@@ -698,12 +698,12 @@ export const uploadUserAvatar = async (userId: string, imageFile: File): Promise
   }
 };
 
-// Product Submissions Functions
+
 export const createSubmission = async (submission: Omit<ProductSubmission, 'submissionId' | 'submittedAt'>): Promise<ProductSubmission> => {
   try {
     const submissionData: ProductSubmission = {
       ...submission,
-      submissionId: '', // Will be set by Firestore
+      submissionId: '', 
       submittedAt: new Date().toISOString(),
     };
 
@@ -714,7 +714,7 @@ export const createSubmission = async (submission: Omit<ProductSubmission, 'subm
       submissionId: docRef.id,
     };
 
-    // Update the document with the ID
+
     await updateDoc(doc(db, 'productSubmissions', docRef.id), {
       submissionId: docRef.id
     });
@@ -739,12 +739,12 @@ export const getSubmissions = async (): Promise<ProductSubmission[]> => {
     submissionsSnapshot.forEach((doc) => {
       const data = doc.data() as ProductSubmission;
       
-      // 🔍 ВИПРАВЛЕННЯ: Гарантуємо що submissionId існує
+   
       if (!data.submissionId || data.submissionId.trim() === '') {
         console.log('🔥 Found submission without submissionId, using document ID:', doc.id);
         data.submissionId = doc.id;
         
-        // Async update the document with the correct submissionId
+    
         updateDoc(doc.ref, { submissionId: doc.id }).catch(updateError => {
           console.warn('🔥 Could not update submissionId in document:', updateError);
         });
@@ -760,7 +760,7 @@ export const getSubmissions = async (): Promise<ProductSubmission[]> => {
       submissions.push(data);
     });
     
-    // Sort by submission date (newest first)
+ 
     submissions.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
     
     console.log('🔥 getSubmissions: Returning', submissions.length, 'submissions');
@@ -785,7 +785,7 @@ export const getSubmissionsByStatus = async (status: 'pending' | 'approved' | 'r
       submissions.push(doc.data() as ProductSubmission);
     });
     
-    // Sort by submission date (newest first)
+   
     submissions.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
     
     return submissions;
@@ -802,7 +802,7 @@ export const updateSubmissionStatus = async (
   rejectionReason?: string
 ): Promise<void> => {
   try {
-    // Validate submissionId
+  
     if (!submissionId || submissionId.trim() === '') {
       throw new Error('Invalid submissionId: cannot be empty');
     }
@@ -819,7 +819,7 @@ export const updateSubmissionStatus = async (
       updateData.rejectionReason = rejectionReason;
     }
 
-    // First, check if the document exists
+   
     const submissionRef = doc(db, 'productSubmissions', submissionId);
     const submissionDoc = await getDoc(submissionRef);
     
@@ -830,7 +830,7 @@ export const updateSubmissionStatus = async (
     console.log('🔥 Document exists, updating submission status...');
     await updateDoc(submissionRef, updateData);
     
-    // Log admin action
+  
     await addAdminAction(
       reviewedBy,
       status === 'approved' ? 'create_product' : 'delete_product',
@@ -849,7 +849,7 @@ export const deleteSubmission = async (submissionId: string, adminId: string): P
   try {
     await deleteDoc(doc(db, 'productSubmissions', submissionId));
     
-    // Log admin action
+   
     await addAdminAction(
       adminId,
       'delete_product',
@@ -878,7 +878,7 @@ export const getUserSubmissions = async (userId: string): Promise<ProductSubmiss
       submissions.push(doc.data() as ProductSubmission);
     });
     
-    // Sort by submission date (newest first)
+ 
     submissions.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
     
     return submissions;

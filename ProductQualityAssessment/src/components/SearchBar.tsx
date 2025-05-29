@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Feather from 'react-native-vector-icons/Feather';
 import { t } from '../utils/translations';
 
 interface SearchBarProps {
@@ -24,15 +25,15 @@ const SearchBar: React.FC<SearchBarProps> = ({
   const handleChangeText = (text: string) => {
     setQuery(text);
     
-    // Clear previous timeout
+    
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
     
-    // Set new timeout for debounced search
+  
     const newTimeoutId = setTimeout(() => {
       onSearch(text);
-    }, 300); // 300ms debounce
+    }, 300); 
     
     setTimeoutId(newTimeoutId);
   };
@@ -55,10 +56,10 @@ const SearchBar: React.FC<SearchBarProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
-        <Icon name="magnify" size={20} color="#6c757d" style={styles.searchIcon} />
+        <Feather name="search" size={20} color="#6c757d" style={styles.searchIcon} />
         <TextInput
           style={styles.input}
-          placeholder={t('searchPlaceholder') || 'Пошук продуктів...'}
+          placeholder={t('searchPlaceholder')}
           value={query}
           onChangeText={handleChangeText}
           returnKeyType="search"
@@ -68,13 +69,13 @@ const SearchBar: React.FC<SearchBarProps> = ({
         />
         {query.length > 0 && (
           <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
-            <Icon name="close-circle" size={20} color="#6c757d" />
+            <Feather name="x-circle" size={18} color="#6c757d" />
           </TouchableOpacity>
         )}
       </View>
       {onFilterPress && (
         <TouchableOpacity style={styles.filterButton} onPress={onFilterPress}>
-          <Icon name="filter-variant" size={20} color="#fff" />
+          <MaterialCommunityIcons name="tune-variant" size={22} color="#fff" />
         </TouchableOpacity>
       )}
     </View>

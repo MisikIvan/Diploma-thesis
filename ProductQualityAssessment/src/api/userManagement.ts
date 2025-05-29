@@ -1,7 +1,7 @@
 import { doc, updateDoc } from 'firebase/firestore';
 import { db, auth, addAdminAction } from './firebase';
 
-// Additional functions for user management
+
 export const updateUserRole = async (userId: string, newRole: 'user' | 'admin'): Promise<void> => {
   try {
     const userDocRef = doc(db, 'users', userId);
@@ -10,7 +10,7 @@ export const updateUserRole = async (userId: string, newRole: 'user' | 'admin'):
       updatedAt: new Date().toISOString()
     });
     
-    // Log admin action
+  
     const currentUser = auth.currentUser;
     if (currentUser) {
       await addAdminAction(
@@ -31,11 +31,11 @@ export const updateUserBlockStatus = async (userId: string, isBlocked: boolean):
     const userDocRef = doc(db, 'users', userId);
     await updateDoc(userDocRef, {
       isBlocked: isBlocked,
-      canComment: !isBlocked, // Заблоковані користувачі не можуть коментувати
+      canComment: !isBlocked,
       updatedAt: new Date().toISOString()
     });
     
-    // Log admin action
+
     const currentUser = auth.currentUser;
     if (currentUser) {
       await addAdminAction(

@@ -77,7 +77,6 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
 
   useFocusEffect(
     useCallback(() => {
-      // Optimized focus effect
       loadProductData();
       checkFavoriteStatus();
     }, [productId, currentUser?.userId])
@@ -86,7 +85,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
   useFocusEffect(
     useCallback(() => {
       return () => {
-        // Optimized cleanup
+      
       };
     }, [])
   );
@@ -149,7 +148,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
   const renderTabContent = () => {
     if (!currentProduct) return null;
     
-    // 🔄 ОПТИМІЗОВАНІ ТЕГИ - з безпечною обробкою
+  
     let productTags: string[] = [];
     try {
       productTags = getTagsFromProduct(currentProduct);
@@ -222,7 +221,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
               </View>
             </View>
 
-            {/* Whole product nutrition if weight is available */}
+            {/*  */}
             {currentProduct.weight && currentProduct.weight > 0 && (
               <View style={styles.wholeProductSection}>
                 <Text style={styles.wholeProductTitle}>
@@ -335,7 +334,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
                       const tagDisplayName = getTagDisplayName(tag);
                       const tagColor = getTagColor(tag);
                       
-                      // 🔄 БЕЗПЕЧНА ПЕРЕВІРКА - пропускаємо порожні теги
+                     
                       if (!tagDisplayName || typeof tagDisplayName !== 'string' || tagDisplayName.trim() === '') {
                         return null;
                       }
