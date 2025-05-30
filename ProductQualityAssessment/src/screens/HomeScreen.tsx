@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { View, FlatList, ActivityIndicator, StyleSheet, Text, Alert, TouchableOpacity, ToastAndroid } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
-import { searchProducts, setCurrentProduct, setSelectedCategory, loadRecentProducts, addToViewHistory } from '../redux/slices/productsSlice';
+import { searchProducts, setCurrentProduct, loadRecentProducts, addToViewHistory } from '../redux/slices/productsSlice';
 import { useFocusEffect } from '@react-navigation/native';
-import CategoryList from '../components/CategoryList';
 import SearchBar from '../components/SearchBar';
 import RecentProducts from '../components/RecentProducts';
 import ProductCard from '../components/ui/ProductCard';
@@ -22,7 +21,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { 
     products = [], 
     recentProducts = [], 
-    selectedCategory = null, 
     loading: isLoading = false, 
     error = null,
     filteredProducts = [],
@@ -51,9 +49,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       
       // Search in product ID/barcode
       if (product.productId.toLowerCase().includes(searchTerm)) return true;
-      
-      // Search in categories
-      if (product.categories?.some((cat: string) => cat.toLowerCase().includes(searchTerm))) return true;
       
       // Search in ingredients
       if (product.ingredients?.toLowerCase().includes(searchTerm)) return true;
@@ -126,11 +121,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     navigation.navigate('ProductDetail', { productId: product.productId });
   };
 
-  const handleCategorySelect = (categoryId: string | null) => {
-    (global as any).lastInteractionTime = Date.now();
-    dispatch(setSelectedCategory(categoryId));
-  };
-
   const handleSuggestProduct = () => {
     if (!currentUser) {
       navigation.navigate('Auth');
@@ -161,15 +151,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const displayProducts = useMemo(() => {
     let baseProducts = searchFilteredProducts;
     
-    if (selectedCategory && filteredProducts.length > 0) {
-      return filteredProducts.filter(p => 
-        !localSearchQuery.trim() || 
-        searchFilteredProducts.some(sp => sp.productId === p.productId)
-      );
-    }
-    
     return baseProducts;
-  }, [searchFilteredProducts, filteredProducts, selectedCategory, localSearchQuery]);
+  }, [searchFilteredProducts, localSearchQuery]);
 
   
   const listHeader = useMemo(() => (
@@ -194,11 +177,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         </View>
       )}
       
-      <CategoryList 
-        selectedCategory={selectedCategory}
-        onSelectCategory={handleCategorySelect}
-      />
-
       {recentProducts.length > 0 && !localSearchQuery.trim() && (
         <RecentProducts 
           products={recentProducts}
@@ -210,7 +188,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         <SuggestProductBanner onPress={handleSuggestProduct} />
       )}
     </View>
-  ), [selectedCategory, recentProducts, localSearchQuery, handleSearch, displayProducts]);
+  ), [recentProducts, localSearchQuery, handleSearch, displayProducts]);
 
   if (isLoading && products.length === 0) {
     return (

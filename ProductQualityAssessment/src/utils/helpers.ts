@@ -69,18 +69,6 @@ export const highlightAllergens = (text: string, allergens: string[]): string =>
 };
 
 
-export const groupByCategory = (products: Product[]): Record<string, Product[]> => {
-  return products.reduce((acc, product) => {
-    const category = product.categories[0] || 'uncategorized';
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(product);
-    return acc;
-  }, {} as Record<string, Product[]>);
-};
-
-
 export const sortByNutriScore = (products: Product[]): Product[] => {
   return [...products].sort((a, b) => {
     const scoreA = a.nutriscoreGrade.charCodeAt(0);

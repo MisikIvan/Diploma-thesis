@@ -40,7 +40,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     imageUrl: '',
     nutriscoreGrade: 'C' as NutriScoreGrade,
     ingredients: '',
-    categories: [],
     allergens: [],
     additives: [],
     nutriments: {
@@ -87,7 +86,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
       imageUrl: '',
       nutriscoreGrade: 'C' as NutriScoreGrade,
       ingredients: '',
-      categories: [],
       allergens: [],
       additives: [],
       nutriments: {
@@ -131,7 +129,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
         imageUrl: newProduct.imageUrl || '',
         nutriscoreGrade: newProduct.nutriscoreGrade || 'C',
         ingredients: newProduct.ingredients || '',
-        categories: newProduct.categories || [],
         allergens: newProduct.allergens || [],
         additives: newProduct.additives || [],
         nutriments: newProduct.nutriments || {
@@ -423,17 +420,6 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                 additives: text.split(',').map(additive => additive.trim()).filter(additive => additive)
               })}
               placeholder={t('additivesPlaceholder')}
-            />
-            
-            <Text style={styles.inputLabel}>{t('categories')}</Text>
-            <TextInput
-              style={styles.input}
-              value={newProduct.categories?.join(', ')}
-              onChangeText={(text) => setNewProduct({
-                ...newProduct, 
-                categories: text.split(',').map(cat => cat.trim()).filter(cat => cat)
-              })}
-              placeholder={`${t('dairyCategory')}, ${t('beverageCategory')}`}
             />
             
             <Text style={styles.sectionTitle}>{t('tags')}</Text>
