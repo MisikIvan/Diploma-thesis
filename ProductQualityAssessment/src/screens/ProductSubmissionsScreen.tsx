@@ -67,7 +67,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
       ));
     } catch (error) {
       console.error('Error loading submissions:', error);
-      Alert.alert('Помилка', 'Не вдалося завантажити заявки');
+      Alert.alert(t('error'), t('errorLoadingSubmissions'));
     } finally {
       setLoading(false);
     }
@@ -92,13 +92,13 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
       setLoading(true);
       const currentUser = auth.currentUser;
       if (!currentUser) {
-        Alert.alert('Помилка', 'Потрібна авторизація');
+        Alert.alert(t('error'), t('authRequiredForAction'));
         return;
       }
       
       await updateSubmissionStatus(selectedSubmission.submissionId, 'approved', currentUser.uid);
       
-      Alert.alert('Успіх', 'Заявку схвалено та продукт додано до бази даних');
+      Alert.alert(t('success'), t('submissionApprovedSuccess'));
       
       if (onSubmissionApproved) {
         const product: Product = {
@@ -116,7 +116,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
       await loadSubmissions();
     } catch (error) {
       console.error('Error approving submission:', error);
-      Alert.alert('Помилка', 'Не вдалося схвалити заявку');
+      Alert.alert(t('error'), t('submissionApprovalFailed'));
     } finally {
       setLoading(false);
     }
@@ -130,7 +130,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
 
   const confirmReject = async () => {
     if (!selectedSubmission || !rejectionReason.trim()) {
-      Alert.alert('Помилка', 'Будь ласка, вкажіть причину відхилення');
+      Alert.alert(t('error'), t('rejectionReasonIsRequired'));
       return;
     }
 
@@ -138,13 +138,13 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
       setLoading(true);
       const currentUser = auth.currentUser;
       if (!currentUser) {
-        Alert.alert('Помилка', 'Потрібна авторизація');
+        Alert.alert(t('error'), t('authRequiredForAction'));
         return;
       }
       
       await updateSubmissionStatus(selectedSubmission.submissionId, 'rejected', currentUser.uid, rejectionReason);
       
-      Alert.alert('Успіх', 'Заявку відхилено');
+      Alert.alert(t('success'), t('submissionRejectedSuccess'));
       
       if (onSubmissionRejected) {
         onSubmissionRejected(selectedSubmission.submissionId, rejectionReason);
@@ -156,7 +156,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
       await loadSubmissions();
     } catch (error) {
       console.error('Error rejecting submission:', error);
-      Alert.alert('Помилка', 'Не вдалося відхилити заявку');
+      Alert.alert(t('error'), t('submissionRejectionFailed'));
     } finally {
       setLoading(false);
     }
@@ -173,9 +173,9 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'pending': return 'На розгляді';
-      case 'approved': return 'Затверджено';
-      case 'rejected': return 'Відхилено';
+      case 'pending': return t('statusOnReview');
+      case 'approved': return t('statusApprovedText');
+      case 'rejected': return t('statusRejectedText');
       default: return status;
     }
   };
@@ -484,7 +484,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
               style={styles.rejectInput}
               value={rejectionReason}
               onChangeText={setRejectionReason}
-              placeholder="Вкажіть причину відхилення..."
+              placeholder={t('rejectionReasonPlaceholderText')}
               multiline
               numberOfLines={4}
               textAlignVertical="top"

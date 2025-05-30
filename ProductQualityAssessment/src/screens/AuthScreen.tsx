@@ -49,8 +49,8 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
 
     // Check rate limiting
     const rateLimitKey = `auth_${email}`;
-    if (!ValidationUtils.checkRateLimit(rateLimitKey, 5, 300000)) { // 5 attempts per 5 minutes
-      Alert.alert('Too Many Attempts', 'Please wait 5 minutes before trying again.');
+    if (!ValidationUtils.checkRateLimit(rateLimitKey, 5, 300000)) { 
+      Alert.alert(t('tooManyAttempts'), t('waitFiveMinutes'));
       return false;
     }
 
@@ -142,7 +142,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
         }
       }
       
-      Alert.alert('Authentication Error', errorMessage);
+      Alert.alert(t('authenticationError'), errorMessage);
       console.error('Auth error:', err);
     }
   };
@@ -150,7 +150,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const handleForgotPassword = () => {
     const emailResult = ValidationUtils.email(email);
     if (!emailResult.isValid) {
-      Alert.alert('Invalid Email', 'Please enter a valid email address first.');
+      Alert.alert(t('invalidEmail'), t('enterValidEmail'));
       return;
     }
 
@@ -179,7 +179,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       setIsLoading(false);
     } catch (err: any) {
       setIsLoading(false);
-      Alert.alert('Google Sign In Error', err.message || t('error'));
+      Alert.alert(t('googleSignInError'), err.message || t('error'));
       console.error('Google sign in error:', err);
     }
   };

@@ -66,7 +66,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
       })
       .catch(err => {
         console.error('Error fetching product:', err);
-        ToastAndroid.show('Could not load product details. Trying offline mode...', ToastAndroid.SHORT);
+        ToastAndroid.show(t('couldNotLoadProductDetails'), ToastAndroid.SHORT);
       });
   }, [dispatch, productId]);
 
@@ -108,7 +108,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
 
   const toggleFavorite = async () => {
     if (!currentUser?.userId || !productId) {
-      Alert.alert(t('error'), 'Please log in to add favorites');
+      Alert.alert(t('error'), t('pleaseLogInToAddFavorites'));
       return;
     }
 
@@ -135,13 +135,13 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
       }));
 
       ToastAndroid.show(
-        newFavoriteStatus ? 'Added to favorites' : 'Removed from favorites',
+        newFavoriteStatus ? t('addedToFavorites') : t('removedFromFavorites'),
         ToastAndroid.SHORT
       );
     } catch (error) {
       console.error('Error toggling favorite:', error);
       setIsFavorite(originalFavoriteStatus);
-      Alert.alert(t('error'), 'Failed to update favorites');
+      Alert.alert(t('error'), t('failedToUpdateFavorites'));
     }
   };
 

@@ -198,7 +198,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
           style={styles.input}
           value={product.imageUrl}
           onChangeText={(text) => setProduct({...product, imageUrl: text})}
-          placeholder="https://example.com/image.jpg"
+          placeholder={t('imageUrlPlaceholder')}
         />
         
         <Text style={styles.inputLabel}>{t('weight')} (г)</Text>
@@ -209,7 +209,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
             const weight = parseFloat(text) || 0;
             setProduct({...product, weight});
           }}
-          placeholder="0"
+          placeholder={t('zeroPlaceholder')}
           keyboardType="numeric"
         />
         
@@ -229,7 +229,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder="0"
+          placeholder={t('zeroPlaceholder')}
           keyboardType="numeric"
         />
         
@@ -247,7 +247,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder="0"
+          placeholder={t('zeroPlaceholder')}
           keyboardType="numeric"
         />
         
@@ -268,7 +268,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder="0"
+          placeholder={t('zeroPlaceholder')}
           keyboardType="numeric"
         />
         
@@ -289,7 +289,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder="0"
+          placeholder={t('zeroPlaceholder')}
           keyboardType="numeric"
         />
         
@@ -310,7 +310,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder="0"
+          placeholder={t('zeroPlaceholder')}
           keyboardType="numeric"
         />
         
@@ -331,7 +331,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder="0"
+          placeholder={t('zeroPlaceholder')}
           keyboardType="numeric"
         />
         
@@ -349,7 +349,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder="0"
+          placeholder={t('zeroPlaceholder')}
           keyboardType="numeric"
         />
         

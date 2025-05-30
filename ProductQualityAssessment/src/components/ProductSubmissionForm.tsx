@@ -126,7 +126,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
       if (status !== 'granted') {
         Alert.alert(
           t('permissionRequired'),
-          'Потрібен дозвіл для доступу до галереї зображень'
+          t('galleryPermissionNeeded')
         );
         return false;
       }
@@ -162,11 +162,11 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
           }));
         }
         
-        Alert.alert(t('success'), 'Зображення успішно додано!');
+        Alert.alert(t('success'), t('imageAddedSuccessfully'));
       }
     } catch (error) {
       console.error('Error picking image:', error);
-      Alert.alert(t('error'), 'Помилка при виборі зображення');
+      Alert.alert(t('error'), t('imageSelectionErrorOccurred'));
     } finally {
       setIsUploadingImage(false);
     }
@@ -182,7 +182,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
       if (status !== 'granted') {
         Alert.alert(
           t('permissionRequired'),
-          'Потрібен дозвіл для доступу до камери'
+          t('cameraPermissionNeeded')
         );
         return;
       }
@@ -207,11 +207,11 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
           }));
         }
         
-        Alert.alert(t('success'), 'Фото успішно додано!');
+        Alert.alert(t('success'), t('photoAddedSuccessfully'));
       }
     } catch (error) {
       console.error('Error taking photo:', error);
-      Alert.alert(t('error'), 'Помилка при зйомці фото');
+      Alert.alert(t('error'), t('photoCapturingError'));
     } finally {
       setIsUploadingImage(false);
     }
@@ -220,12 +220,12 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
 
   const showImagePickerOptions = () => {
     Alert.alert(
-      'Додати зображення',
-      'Виберіть спосіб додавання зображення',
+      t('addImageButton'),
+      t('selectImageMethodText'),
       [
         { text: t('cancel'), style: 'cancel' },
-        { text: '📷 Зробити фото', onPress: takePhotoWithCamera },
-        { text: '🖼️ Вибрати з галереї', onPress: pickImageFromDevice },
+        { text: t('takePhoto'), onPress: takePhotoWithCamera },
+        { text: t('selectFromGallery'), onPress: pickImageFromDevice },
       ]
     );
   };
@@ -360,8 +360,8 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
         setFormData(prev => ({ ...prev, barcode: barcode }));
         Alert.alert(
           t('productNotFound'),
-          `Штрих-код ${barcode} було збережено, але дані продукту не знайдено в базі. Будь ласка, заповніть форму вручну.`,
-          [{ text: 'OK' }]
+          t('barcodeSavedButNotFound'),
+          [{ text: t('ok') }]
         );
       }
     } catch (error) {
@@ -369,8 +369,8 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
       setFormData(prev => ({ ...prev, barcode: barcode }));
       Alert.alert(
         t('networkError'),
-        `Штрих-код ${barcode} було збережено, але не вдалося завантажити дані продукту. Перевірте підключення до Інтернету.`,
-        [{ text: 'OK' }]
+        t('barcodeSavedButNetworkError'),
+        [{ text: t('ok') }]
       );
     } finally {
       setIsFetchingProductData(false);
@@ -384,17 +384,17 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
 
   const handleSubmit = () => {
     if (!currentUser) {
-      Alert.alert('Error', 'You must be logged in to submit a product');
+      Alert.alert(t('error'), t('authRequiredToSubmit'));
       return;
     }
 
     if (!formData.name.trim()) {
-      Alert.alert('Error', t('productNameRequired'));
+      Alert.alert(t('error'), t('productNameRequired'));
       return;
     }
 
     if (!formData.ingredients.trim()) {
-      Alert.alert('Error', 'Ingredients are required');
+      Alert.alert(t('error'), t('ingredientsAreRequired'));
       return;
     }
 
@@ -424,7 +424,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
           </View>
           <TouchableOpacity onPress={handleSubmit} style={styles.submitButton}>
             <FontAwesome5 name="paper-plane" size={16} color="#fff" style={styles.submitIcon} />
-            <Text style={styles.submitButtonText}>Надіслати</Text>
+            <Text style={styles.submitButtonText}>{t('submitProduct')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -451,7 +451,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
             <View style={styles.inputGroup}>
               <View style={styles.labelContainer}>
                 <MaterialIcons name="business" size={14} color="#666" />
-                <Text style={styles.label}>Бренд</Text>
+                <Text style={styles.label}>{t('brand')}</Text>
               </View>
               <TextInput
                 style={styles.input}
@@ -507,7 +507,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                         {t('scanBarcode')}
                       </Text>
                       <Text style={styles.scanButtonSubtext}>
-                        Швидке автозаповнення
+                        {t('quickAutofill')}
                       </Text>
                     </View>
                     <MaterialIcons name="arrow-forward" size={20} color="rgba(255,255,255,0.8)" />
@@ -530,7 +530,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                   style={styles.barcodeInput}
                   value={formData.barcode}
                   onChangeText={(text) => setFormData(prev => ({ ...prev, barcode: text }))}
-                  placeholder="1234567890123"
+                  placeholder={t('barcodePlaceholder')}
                   keyboardType="numeric"
                   maxLength={13}
                   placeholderTextColor="#999"
@@ -542,7 +542,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                   <View style={styles.barcodeInfoHeader}>
                     <MaterialIcons name="check-circle" size={20} color="#28a745" />
                     <Text style={styles.barcodeInfoTitle}>
-                      {t('barcode')} збережено
+                      {t('barcodeSaved')}
                     </Text>
                   </View>
                   <Text style={styles.barcodeNumber}>
@@ -613,7 +613,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                   style={styles.input}
                   value={newImageUrl}
                   onChangeText={setNewImageUrl}
-                  placeholder="https://example.com/image.jpg"
+                  placeholder={t('imageUrlPlaceholder')}
                 />
                 <TouchableOpacity 
                   style={styles.addButton} 
@@ -686,7 +686,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                     ...prev,
                     nutriments: { ...prev.nutriments, calories: Number(text) || 0 }
                   }))}
-                  placeholder="0"
+                  placeholder={t('zeroPlaceholder')}
                   keyboardType="numeric"
                 />
               </View>
@@ -700,7 +700,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                     ...prev,
                     nutriments: { ...prev.nutriments, proteins: Number(text) || 0 }
                   }))}
-                  placeholder="0"
+                  placeholder={t('zeroPlaceholder')}
                   keyboardType="numeric"
                 />
               </View>
@@ -719,7 +719,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                       fats: { ...prev.nutriments.fats, total: Number(text) || 0 }
                     }
                   }))}
-                  placeholder="0"
+                  placeholder={t('zeroPlaceholder')}
                   keyboardType="numeric"
                 />
               </View>
@@ -728,7 +728,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                 <Text style={styles.label}>{t('saturatedFats')}</Text>
                 <TextInput
                   style={styles.input}
-                  value={formData.nutriments.fats.saturated?.toString() || ''}
+                  value={formData.nutriments.fats.saturated.toString()}
                   onChangeText={(text) => setFormData(prev => ({
                     ...prev,
                     nutriments: {
@@ -736,7 +736,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                       fats: { ...prev.nutriments.fats, saturated: Number(text) || 0 }
                     }
                   }))}
-                  placeholder="0"
+                  placeholder={t('zeroPlaceholder')}
                   keyboardType="numeric"
                 />
               </View>
@@ -755,7 +755,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                       carbohydrates: { ...prev.nutriments.carbohydrates, total: Number(text) || 0 }
                     }
                   }))}
-                  placeholder="0"
+                  placeholder={t('zeroPlaceholder')}
                   keyboardType="numeric"
                 />
               </View>
@@ -764,7 +764,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                 <Text style={styles.label}>{t('sugar')}</Text>
                 <TextInput
                   style={styles.input}
-                  value={formData.nutriments.carbohydrates.sugar?.toString() || ''}
+                  value={formData.nutriments.carbohydrates.sugar.toString()}
                   onChangeText={(text) => setFormData(prev => ({
                     ...prev,
                     nutriments: {
@@ -772,7 +772,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                       carbohydrates: { ...prev.nutriments.carbohydrates, sugar: Number(text) || 0 }
                     }
                   }))}
-                  placeholder="0"
+                  placeholder={t('zeroPlaceholder')}
                   keyboardType="numeric"
                 />
               </View>
@@ -782,12 +782,12 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
               <Text style={styles.label}>{t('saltGrams')}</Text>
               <TextInput
                 style={styles.input}
-                value={formData.nutriments.salt?.toString() || ''}
+                value={formData.nutriments.salt.toString()}
                 onChangeText={(text) => setFormData(prev => ({
                   ...prev,
                   nutriments: { ...prev.nutriments, salt: Number(text) || 0 }
                 }))}
-                placeholder="0"
+                placeholder={t('zeroPlaceholder')}
                 keyboardType="numeric"
               />
             </View>
@@ -797,8 +797,11 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
               <TextInput
                 style={styles.input}
                 value={formData.weight?.toString() || ''}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, weight: Number(text) || 0 }))}
-                placeholder="0"
+                onChangeText={(text) => setFormData(prev => ({
+                  ...prev,
+                  weight: Number(text) || 0
+                }))}
+                placeholder={t('zeroPlaceholder')}
                 keyboardType="numeric"
               />
             </View>

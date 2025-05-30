@@ -131,6 +131,7 @@ export interface TranslationKeys {
   users: string;
   addProduct: string;
   productName: string;
+  brand: string;
   imageUrl: string;
   blockUser: string;
   unblockUser: string;
@@ -241,7 +242,6 @@ export interface TranslationKeys {
   detailedProductDescription: string;
   alternativeImageUrl: string;
   productNameRequired: string;
-  authenticationError: string;
   allergensPlaceholder: string;
   additivesPlaceholder: string;
   adminOnlyEdit: string;
@@ -511,6 +511,162 @@ export interface TranslationKeys {
   grantPermission: string;
   scanAgain: string;
   keepDeviceStable: string;
+  quickAutofill: string;
+  
+  // New hardcoded text translations
+  loadingSubmissions: string;
+  authRequired: string;
+  approvalSuccess: string;
+  approvalError: string;
+  rejectionReasonRequired: string;
+  rejectionSuccess: string;
+  rejectionError: string;
+  
+  // Product search translations
+  deleteProduct: string;
+  deleteProductAuth: string;
+  productDeleteSuccess: string;
+  productDeleteError: string;
+  
+  // Product submission form translations
+  galleryPermissionRequired: string;
+  imageAddedSuccess: string;
+  imageSelectionError: string;
+  cameraPermissionRequired: string;
+  photoAddedSuccess: string;
+  selectImageMethod: string;
+  selectFromGallery: string;
+  takePhoto: string;
+  ingredientsRequired: string;
+  submitProductAuth: string;
+  
+  // Status translations
+  statusPending: string;
+  statusApproved: string;
+  statusRejected: string;
+  
+  // Common error messages
+  failedToLoad: string;
+  updateFailed: string;
+  deleteFailed: string;
+  uploadFailed: string;
+  permissionDenied: string;
+  
+  // Placeholders
+  rejectionReasonPlaceholder: string;
+  
+  // Auth screen messages
+  tooManyAttempts: string;
+  waitFiveMinutes: string;
+  invalidEmail: string;
+  enterValidEmail: string;
+  googleSignInError: string;
+  authenticationError: string;
+  
+  // Additional hardcoded strings that need translation
+  editProductAction: string;
+  cancelAction: string;
+  editAction: string;
+  deleteProductAction: string;
+  deleteAction: string;
+  deleteProductRequiresAuth: string;
+  productDeleteFailed: string;
+  errorLoadingSubmissions: string;
+  authRequiredForAction: string;
+  submissionApprovedSuccess: string;
+  submissionApprovalFailed: string;
+  rejectionReasonIsRequired: string;
+  submissionRejectedSuccess: string;
+  submissionRejectionFailed: string;
+  
+  // Status text
+  statusOnReview: string;
+  statusApprovedText: string;
+  statusRejectedText: string;
+  
+  // Placeholder texts
+  rejectionReasonPlaceholderText: string;
+  imageUrlPlaceholder: string;
+  zeroPlaceholder: string;
+  barcodePlaceholder: string;
+  
+  // Product submission form
+  imageAddedSuccessfully: string;
+  imageSelectionErrorOccurred: string;
+  galleryPermissionNeeded: string;
+  cameraPermissionNeeded: string;
+  photoAddedSuccessfully: string;
+  photoCapturingError: string;
+  addImageButton: string;
+  selectImageMethodText: string;
+  authRequiredToSubmit: string;
+  ingredientsAreRequired: string;
+  
+  // Profile and general errors
+  pleaseLogInToAddFavorites: string;
+  failedToUpdateFavorites: string;
+  errorLoadingData: string;
+  failedToUpdateUserStatus: string;
+  errorCreatingProductInDatabase: string;
+  
+  // HomeScreen specific
+  productSubmissionRequest: string;
+  productSubmissionError: string;
+  
+  // Legal page content placeholders
+  welcomeToApp: string;
+  appNameInQuotes: string;
+  termsAcceptanceText: string;
+  privacyPolicyIntroText: string;
+  healthDataNote: string;
+  contactFormNote: string;
+  productApprovedSuccessfully: string;
+  
+  // Additional form labels that appear in components
+  chooseImageSource: string;
+  selectImageSource: string;
+  
+  // Barcode scanning messages
+  barcodeSavedButNotFound: string;
+  barcodeSavedButNetworkError: string;
+  barcodeSaved: string;
+  
+  // HomeScreen error messages
+  connectionErrorDetails: string;
+  tryAgainButton: string;
+  connectionProblemsShowing: string;
+  
+  // Terms of Service content
+  termsIntroText: string;
+  termsAcceptanceFullText: string;
+  servicesProvidedFullText: string;
+  userResponsibilitiesFullText: string;
+  privacyDataProtectionFullText: string;
+  limitationLiabilityFullText: string;
+  terminationServicesFullText: string;
+  modificationsTermsFullText: string;
+  contactInformationFullText: string;
+  lastUpdatedDate29May: string;
+
+  // Privacy Policy content
+  privacyIntroText: string;
+  privacyIntroText2: string;
+  dataCollectionFullText: string;
+  dataUsageFullText: string;
+  dataSecurityFullText: string;
+  dataSecurityMeasuresText: string;
+  userRightsFullText: string;
+  cookiesTrackingFullText: string;
+  thirdPartyServicesFullText: string;
+  dataRetentionFullText: string;
+  internationalTransfersFullText: string;
+  changesPrivacyPolicyFullText: string;
+  privacyContactInformationFullText: string;
+
+  // Toast messages
+  couldNotLoadProductDetails: string;
+  addedToFavorites: string;
+  removedFromFavorites: string;
 }
 
 export type Language = 'en' | 'uk';
@@ -648,6 +804,7 @@ const en: TranslationKeys = {
   users: 'Users',
   addProduct: 'Add Product',
   productName: 'Product Name',
+  brand: 'Brand',
   imageUrl: 'Image URL',
   blockUser: 'Block User',
   unblockUser: 'Unblock User',
@@ -747,7 +904,7 @@ const en: TranslationKeys = {
   lastUpdated: 'Last updated',
   createdBy: 'Created by',
   
- 
+  // Additional missing translations
   per100g: 'Per 100g of product',
   detailedComposition: 'Detailed Composition',
   productNotFound: 'Product not found',
@@ -758,7 +915,6 @@ const en: TranslationKeys = {
   detailedProductDescription: 'Detailed product description...',
   alternativeImageUrl: '(alternative)',
   productNameRequired: 'Product name is required',
-  authenticationError: 'Authentication error',
   allergensPlaceholder: 'Milk, eggs, gluten...',
   additivesPlaceholder: 'E100, E200...',
   adminOnlyEdit: 'Only administrators can edit products',
@@ -1028,6 +1184,162 @@ const en: TranslationKeys = {
   grantPermission: 'Grant Permission',
   scanAgain: 'Scan Again',
   keepDeviceStable: 'Keep Device Stable',
+  quickAutofill: 'Quick Autofill',
+  
+  // New hardcoded text translations
+  loadingSubmissions: 'Loading submissions...',
+  authRequired: 'Authentication required',
+  approvalSuccess: 'Approval successful',
+  approvalError: 'Approval error',
+  rejectionReasonRequired: 'Rejection reason is required',
+  rejectionSuccess: 'Rejection successful',
+  rejectionError: 'Rejection error',
+  
+  // Product search translations
+  deleteProduct: 'Delete Product',
+  deleteProductAuth: 'Delete product authentication',
+  productDeleteSuccess: 'Product deleted successfully',
+  productDeleteError: 'Error deleting product',
+  
+  // Product submission form translations
+  galleryPermissionRequired: 'Gallery permission required',
+  imageAddedSuccess: 'Image added successfully',
+  imageSelectionError: 'Error selecting image',
+  cameraPermissionRequired: 'Camera permission required',
+  photoAddedSuccess: 'Photo added successfully',
+  selectImageMethod: 'Select image method',
+  selectFromGallery: 'Select from gallery',
+  takePhoto: 'Take photo',
+  ingredientsRequired: 'Ingredients required',
+  submitProductAuth: 'Submit product authentication',
+  
+  // Status translations
+  statusPending: 'Pending',
+  statusApproved: 'Approved',
+  statusRejected: 'Rejected',
+  
+  // Common error messages
+  failedToLoad: 'Failed to load',
+  updateFailed: 'Update failed',
+  deleteFailed: 'Delete failed',
+  uploadFailed: 'Upload failed',
+  permissionDenied: 'Permission denied',
+  
+  // Placeholders
+  rejectionReasonPlaceholder: 'Enter rejection reason',
+  
+  // Auth screen messages
+  tooManyAttempts: 'Too many attempts',
+  waitFiveMinutes: 'Wait 5 minutes',
+  invalidEmail: 'Invalid email',
+  enterValidEmail: 'Enter a valid email',
+  googleSignInError: 'Google sign-in error',
+  authenticationError: 'Authentication error',
+  
+  // Additional hardcoded strings that need translation
+  editProductAction: 'Edit product',
+  cancelAction: 'Cancel',
+  editAction: 'Edit',
+  deleteProductAction: 'Delete product',
+  deleteAction: 'Delete',
+  deleteProductRequiresAuth: 'Delete product requires authentication',
+  productDeleteFailed: 'Product delete failed',
+  errorLoadingSubmissions: 'Error loading submissions',
+  authRequiredForAction: 'Authentication required for action',
+  submissionApprovedSuccess: 'Submission approved successfully',
+  submissionApprovalFailed: 'Submission approval failed',
+  rejectionReasonIsRequired: 'Rejection reason is required',
+  submissionRejectedSuccess: 'Submission rejected successfully',
+  submissionRejectionFailed: 'Submission rejection failed',
+  
+  // Status text
+  statusOnReview: 'On review',
+  statusApprovedText: 'Approved',
+  statusRejectedText: 'Rejected',
+  
+  // Placeholder texts
+  rejectionReasonPlaceholderText: 'Enter rejection reason',
+  imageUrlPlaceholder: 'Enter image URL',
+  zeroPlaceholder: '0',
+  barcodePlaceholder: 'Enter barcode',
+  
+  // Product submission form
+  imageAddedSuccessfully: 'Image added successfully',
+  imageSelectionErrorOccurred: 'Error selecting image',
+  galleryPermissionNeeded: 'Gallery permission needed',
+  cameraPermissionNeeded: 'Camera permission needed',
+  photoAddedSuccessfully: 'Photo added successfully',
+  photoCapturingError: 'Photo capturing error',
+  addImageButton: 'Add Image',
+  selectImageMethodText: 'Select image method',
+  authRequiredToSubmit: 'Authentication required to submit',
+  ingredientsAreRequired: 'Ingredients are required',
+  
+  // Profile and general errors
+  pleaseLogInToAddFavorites: 'Please log in to add favorites',
+  failedToUpdateFavorites: 'Failed to update favorites',
+  errorLoadingData: 'Error loading data',
+  failedToUpdateUserStatus: 'Failed to update user status',
+  errorCreatingProductInDatabase: 'Error creating product in database',
+  
+  // HomeScreen specific
+  productSubmissionRequest: 'Product submission request',
+  productSubmissionError: 'Product submission error',
+  
+  // Legal page content placeholders
+  welcomeToApp: 'Welcome to our app',
+  appNameInQuotes: 'Product Quality',
+  termsAcceptanceText: 'Acceptance of terms',
+  privacyPolicyIntroText: 'Privacy policy introduction',
+  healthDataNote: 'Health data note',
+  contactFormNote: 'Contact form note',
+  productApprovedSuccessfully: 'Product approved successfully',
+  
+  // Additional form labels that appear in components
+  chooseImageSource: 'Choose image source',
+  selectImageSource: 'Select image source',
+  
+  // Barcode scanning messages
+  barcodeSavedButNotFound: 'Barcode saved but not found',
+  barcodeSavedButNetworkError: 'Barcode saved but network error',
+  barcodeSaved: 'Barcode saved',
+  
+  // HomeScreen error messages
+  connectionErrorDetails: 'Failed to connect to server. Try restarting the app.',
+  tryAgainButton: 'Try Again',
+  connectionProblemsShowing: '⚠️ Connection problems, showing cached data',
+  
+  // Terms of Service content
+  termsIntroText: 'Welcome to the "Product Quality Assessment" app ("App"). This app is designed to provide users with information about food product quality, composition, and nutritional value. By using our app, you agree to these Terms of Use.',
+  termsAcceptanceFullText: 'By downloading, installing, or using this app, you acknowledge that you have read, understood, and agree to comply with these Terms of Use. If you do not agree with any part of these terms, please do not use the app.',
+  servicesProvidedFullText: 'Our app provides the following services:\n\n• Viewing detailed information about composition and nutritional value\n• Saving favorite products\n• Tools for tracking weight and health',
+  userResponsibilitiesFullText: 'By using the app, you agree to:\n\n• Provide accurate personal information\n• Not violate intellectual property rights\n• Not use the app for illegal purposes\n• Not transmit harmful content or viruses\n• Comply with all applicable laws and regulations',
+  privacyDataProtectionFullText: 'Your privacy is important to us. Information about how we collect, use, and protect your personal data is detailed in our Privacy Policy. By using the app, you also agree to the terms of our Privacy Policy.',
+  limitationLiabilityFullText: 'THE APP IS PROVIDED "AS IS" WITHOUT ANY WARRANTIES. WE ARE NOT LIABLE FOR:\n\n• Accuracy of product information\n• Damages from using inaccurate information\n• Technical failures or service unavailability\n• Data loss or security breaches\n\nMaximum liability is limited to $50 USD.',
+  terminationServicesFullText: 'We reserve the right to terminate or suspend your access to the app at any time without prior notice if you violate these Terms of Use or use the app inappropriately.',
+  modificationsTermsFullText: 'We may update these Terms of Use from time to time. We will notify you of all changes by posting updated terms in the app. By continuing to use the app after changes are made, you agree to the new terms.',
+  contactInformationFullText: 'If you have questions about these Terms of Use, please contact us:\n\nEmail: support@productquality.app\nPhone: +380 (44) 123-45-67\nAddress: Kyiv, Khreschatyk St, 1',
+  lastUpdatedDate29May: 'Last Updated: 29 May 2023',
+
+  // Privacy Policy content
+  privacyIntroText: 'This Privacy Policy describes our policies and procedures on the collection, use and disclosure of your information when you use the "Product Quality Assessment" app and tells you about your privacy rights and how the law protects you.',
+  privacyIntroText2: 'We use your personal data to provide and improve our service. By using the app, you agree to the collection and use of information in accordance with this Privacy Policy.',
+  dataCollectionFullText: 'We may collect the following types of information:\n\n• Personal data: name, email, age, gender, physical parameters\n• Usage data: information about how you use the app\n• Device data: IP address, browser type, operating system\n• Product information: scan history, favorite products\n• Health data: weight, height, health goals (with your consent)',
+  dataUsageFullText: 'The Company may use personal data for the following purposes:\n\n• Providing and maintaining our app\n• Personalizing your user experience\n• Usage analysis to improve services\n• Communication about updates and news\n• Security and fraud prevention\n• Legal compliance',
+  dataSecurityFullText: 'The security of your personal data is important to us, but remember that no method of transmission over the internet or electronic storage is 100% secure. While we strive to use commercially acceptable means to protect your personal data, we cannot guarantee its absolute security.',
+  dataSecurityMeasuresText: 'We use the following security measures:\n\n• Data encryption during transmission and storage\n• Regular security audits\n• Limited access to personal data\n• Staff training on privacy matters',
+  userRightsFullText: 'Under applicable law, you have the following rights:\n\n• Right of access to your personal data\n• Right to correct inaccurate data\n• Right to delete your data\n• Right to restrict processing\n• Right to data portability\n• Right to object to processing',
+  cookiesTrackingFullText: 'Our app may use tracking technologies to improve user experience. We may use:\n\n• Analytics tools to understand app usage\n• Cookies to save settings\n• Device identifiers for personalization',
+  thirdPartyServicesFullText: 'Our app may contain links to third-party services that we do not control. We strongly advise you to review the Privacy Policy of every website you visit.\n\nThird-party services we may use:\n• Firebase (Google) - for data storage\n• Analytics services for app improvement',
+  dataRetentionFullText: 'We retain your personal data only for as long as necessary for the purposes set out in this Privacy Policy. We may also retain data to comply with legal obligations, resolve disputes, and enforce our agreements.',
+  internationalTransfersFullText: 'Your information, including personal data, may be processed on computers located outside your country where data protection laws may differ. We take steps to ensure proper protection of your data during such transfers.',
+  changesPrivacyPolicyFullText: 'We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy in the app. We will also notify you via email and/or prominent notice in the app before the changes take effect.',
+  privacyContactInformationFullText: 'If you have questions about this Privacy Policy, please contact us:\n\nEmail: privacy@productquality.app\nPhone: +380 (44) 123-45-67\nAddress: Kyiv, Khreschatyk St, 1\n\nYou can also contact us through the feedback form in the app.',
+
+  // Toast messages
+  couldNotLoadProductDetails: 'Could not load product details',
+  addedToFavorites: 'Added to favorites',
+  removedFromFavorites: 'Removed from favorites',
 };
 
 // Ukrainian translations (complete)
@@ -1163,6 +1475,7 @@ const uk: TranslationKeys = {
   users: 'Користувачі',
   addProduct: 'Додати продукт',
   productName: 'Назва продукту',
+  brand: 'Бренд',
   imageUrl: 'URL зображення',
   blockUser: 'Заблокувати користувача',
   unblockUser: 'Розблокувати користувача',
@@ -1262,7 +1575,7 @@ const uk: TranslationKeys = {
   lastUpdated: 'Останнє оновлення',
   createdBy: 'Створено',
   
- 
+  // Additional missing translations
   per100g: 'На 100г продукту',
   detailedComposition: 'Детальний склад',
   productNotFound: 'Продукт не знайдений',
@@ -1273,7 +1586,6 @@ const uk: TranslationKeys = {
   detailedProductDescription: 'Детальний опис продукту...',
   alternativeImageUrl: '(альтернативний)',
   productNameRequired: 'Необхідно вказати назву продукту',
-  authenticationError: 'Помилка аутентифікації',
   allergensPlaceholder: 'Молоко, яйця, глютен...',
   additivesPlaceholder: 'Е100, Е200...',
   adminOnlyEdit: 'Тільки адміністратори можуть редагувати продукти',
@@ -1543,6 +1855,162 @@ const uk: TranslationKeys = {
   grantPermission: 'Надати дозвіл',
   scanAgain: 'Сканувати знову',
   keepDeviceStable: 'Тримайте пристрій стабільно. Штрих-код буде відсканований автоматично.',
+  quickAutofill: 'Швидке автозаповнення',
+  
+  // New hardcoded text translations
+  loadingSubmissions: 'Завантаження пропозицій...',
+  authRequired: 'Автентифікація необхідна',
+  approvalSuccess: 'Затвердження успішне',
+  approvalError: 'Помилка затвердження',
+  rejectionReasonRequired: 'Необхідно вказати причину відхилення',
+  rejectionSuccess: 'Відхилення успішне',
+  rejectionError: 'Помилка відхилення',
+  
+  // Product search translations
+  deleteProduct: 'Видалити продукт',
+  deleteProductAuth: 'Автентифікація для видалення продукту',
+  productDeleteSuccess: 'Продукт видалений успішно',
+  productDeleteError: 'Помилка видалення продукту',
+  
+  // Product submission form translations
+  galleryPermissionRequired: 'Дозвіл на доступ до галереї зображень',
+  imageAddedSuccess: 'Зображення додано успішно',
+  imageSelectionError: 'Помилка вибору зображення',
+  cameraPermissionRequired: 'Дозвіл на доступ до камери',
+  photoAddedSuccess: 'Фото додано успішно',
+  selectImageMethod: 'Виберіть метод додавання зображення',
+  selectFromGallery: 'Виберіть з галереї',
+  takePhoto: 'Зробіть фото',
+  ingredientsRequired: 'Необхідно вказати інгредієнти',
+  submitProductAuth: 'Автентифікація для надсилання продукту',
+  
+  // Status translations
+  statusPending: 'В очікуванні',
+  statusApproved: 'Затверджено',
+  statusRejected: 'Відхилено',
+  
+  // Common error messages
+  failedToLoad: 'Не вдалося завантажити',
+  updateFailed: 'Не вдалося оновити',
+  deleteFailed: 'Не вдалося видалити',
+  uploadFailed: 'Не вдалося завантажити',
+  permissionDenied: 'Доступ заборонено',
+  
+  // Placeholders
+  rejectionReasonPlaceholder: 'Введіть причину відхилення',
+  
+  // Auth screen messages
+  tooManyAttempts: 'Занадто багато спроб',
+  waitFiveMinutes: 'Зачекайте 5 хвилин',
+  invalidEmail: 'Недійсна електронна пошта',
+  enterValidEmail: 'Введіть дійсну електронну пошту',
+  googleSignInError: 'Помилка входу з Google',
+  authenticationError: 'Помилка аутентифікації',
+  
+  // Additional hardcoded strings that need translation
+  editProductAction: 'Редагувати продукт',
+  cancelAction: 'Скасувати',
+  editAction: 'Редагувати',
+  deleteProductAction: 'Видалити продукт',
+  deleteAction: 'Видалити',
+  deleteProductRequiresAuth: 'Потрібна авторизація для видалення продукту',
+  productDeleteFailed: 'Не вдалося видалити продукт',
+  errorLoadingSubmissions: 'Помилка завантаження заявок',
+  authRequiredForAction: 'Потрібна авторизація',
+  submissionApprovedSuccess: 'Заявку схвалено та продукт додано до бази даних',
+  submissionApprovalFailed: 'Не вдалося схвалити заявку',
+  rejectionReasonIsRequired: 'Будь ласка, вкажіть причину відхилення',
+  submissionRejectedSuccess: 'Заявку відхилено',
+  submissionRejectionFailed: 'Не вдалося відхилити заявку',
+  
+  // Status text
+  statusOnReview: 'На розгляді',
+  statusApprovedText: 'Затверджено',
+  statusRejectedText: 'Відхилено',
+  
+  // Placeholder texts
+  rejectionReasonPlaceholderText: 'Вкажіть причину відхилення...',
+  imageUrlPlaceholder: 'https://example.com/image.jpg',
+  zeroPlaceholder: '0',
+  barcodePlaceholder: '1234567890123',
+  
+  // Product submission form
+  imageAddedSuccessfully: 'Зображення успішно додано!',
+  imageSelectionErrorOccurred: 'Помилка при виборі зображення',
+  galleryPermissionNeeded: 'Потрібен дозвіл для доступу до галереї зображень',
+  cameraPermissionNeeded: 'Потрібен дозвіл для доступу до камери',
+  photoAddedSuccessfully: 'Фото успішно додано!',
+  photoCapturingError: 'Помилка при зйомці фото',
+  addImageButton: 'Додати зображення',
+  selectImageMethodText: 'Виберіть спосіб додавання зображення',
+  authRequiredToSubmit: 'Ви повинні увійти в систему, щоб подати продукт',
+  ingredientsAreRequired: 'Необхідно вказати інгредієнти',
+  
+  // Profile and general errors
+  pleaseLogInToAddFavorites: 'Увійдіть в систему, щоб додати в улюблені',
+  failedToUpdateFavorites: 'Не вдалося оновити улюблені',
+  errorLoadingData: 'Помилка завантаження даних. Спробуйте ще раз.',
+  failedToUpdateUserStatus: 'Не вдалося оновити статус користувача',
+  errorCreatingProductInDatabase: 'Помилка при створенні продукту в базі даних',
+  
+  // HomeScreen specific
+  productSubmissionRequest: 'Заявку на продукт',
+  productSubmissionError: 'Помилка при надсиланні продукту. Спробуйте пізніше.',
+  
+  // Legal page content placeholders
+  welcomeToApp: 'Ласкаво просимо до додатку',
+  appNameInQuotes: '"Оцінка якості продуктів"',
+  termsAcceptanceText: 'Використовуючи цей додаток, ви погоджуєтесь з умовами користування',
+  privacyPolicyIntroText: 'Ця політика конфіденційності описує, як ми збираємо та використовуємо дані',
+  healthDataNote: 'Дані про здоров\'я: вага, зріст, цілі здоров\'я (за вашою згодою)',
+  contactFormNote: 'Ви також можете зв\'язатися з нами через форму зворотного зв\'язку',
+  productApprovedSuccessfully: 'Продукт успішно затверджено та додано до бази даних!',
+  
+  // Additional form labels that appear in components
+  chooseImageSource: 'Виберіть джерело зображення',
+  selectImageSource: 'Виберіть джерело зображення',
+  
+  // Barcode scanning messages
+  barcodeSavedButNotFound: 'Штрих-код збережено, але продукт не знайдено в базі. Заповніть форму вручну.',
+  barcodeSavedButNetworkError: 'Штрих-код збережено, але не вдалося завантажити дані. Перевірте підключення.',
+  barcodeSaved: 'Штрих-код збережено',
+  
+  // HomeScreen error messages
+  connectionErrorDetails: 'Не вдалося підключитися до сервера. Спробуйте перезавантажити додаток.',
+  tryAgainButton: 'Спробувати знову',
+  connectionProblemsShowing: '⚠️ Проблеми з підключенням, показано кешовані дані',
+  
+  // Terms of Service content
+  termsIntroText: 'Ласкаво просимо до додатку "Оцінка якості продуктів" ("Додаток"). Цей додаток розроблено для надання користувачам інформації про якість харчових продуктів, їх склад та харчову цінність. Використовуючи наш додаток, ви погоджуєтеся з цими Умовами користування.',
+  termsAcceptanceFullText: 'Завантажуючи, встановлюючи або використовуючи цей додаток, ви підтверджуєте, що прочитали, зрозуміли та погоджуєтеся дотримуватися цих Умов користування. Якщо ви не погоджуєтеся з будь-якою частиною цих умов, будь ласка, не користуйтеся додатком.',
+  servicesProvidedFullText: 'Наш додаток надає наступні послуги:\n\n• Перегляд детальної інформації про склад та харчову цінність\n• Збереження улюблених продуктів\n• Інструменти для відстеження ваги та здоров\'я',
+  userResponsibilitiesFullText: 'Використовуючи додаток, ви зобов\'язуєтеся:\n\n• Надавати точну особисту інформацію\n• Не порушувати права інтелектуальної власності\n• Не використовувати додаток для незаконних цілей\n• Не передавати шкідливий контент або віруси\n• Дотримуватися всіх застосовних законів та норм',
+  privacyDataProtectionFullText: 'Ваша приватність важлива для нас. Інформація про те, як ми збираємо, використовуємо та захищаємо ваші особисті дані, детально описана в нашій Політиці конфіденційності. Використовуючи додаток, ви також погоджуєтеся з умовами нашої Політики конфіденційності.',
+  limitationLiabilityFullText: 'ДОДАТОК НАДАЄТЬСЯ "ЯК Є" БЕЗ БУДЬ-ЯКИХ ГАРАНТІЙ. МИ НЕ НЕСЕМО ВІДПОВІДАЛЬНОСТІ ЗА:\n\n• Точність інформації про продукти\n• Збитки від використання неточної інформації\n• Технічні збої або недоступність сервісу\n• Втрату даних або порушення безпеки\n\nМаксимальна відповідальність обмежується сумою 50 доларів США.',
+  terminationServicesFullText: 'Ми залишаємо за собою право припинити або призупинити ваш доступ до додатку в будь-який час без попереднього повідомлення, якщо ви порушуєте ці Умови користування або використовуєте додаток неналежним чином.',
+  modificationsTermsFullText: 'Ми можемо час від часу оновлювати ці Умови користування. Про всі зміни ми повідомимо шляхом публікації оновлених умов у додатку. Продовжуючи користуватися додатком після внесення змін, ви погоджуєтеся з новими умовами.',
+  contactInformationFullText: 'Якщо у вас є питання щодо цих Умов користування, будь ласка, зв\'яжіться з нами:\n\nEmail: support@productquality.app\nТелефон: +380 (44) 123-45-67\nАдреса: м. Київ, вул. Хрещатик, 1',
+  lastUpdatedDate29May: 'Останнє оновлення: 29 травня 2023',
+
+  // Privacy Policy content
+  privacyIntroText: 'Ця Політика конфіденційності описує наші політики та процедури щодо збору, використання та розкриття вашої інформації, коли ви користуєтеся додатком "Оцінка якості продуктів", і розповідає вам про ваші права на приватність та як закон захищає вас.',
+  privacyIntroText2: 'Ми використовуємо ваші особисті дані для надання та покращення послуг. Користуючись додатком, ви погоджуєтеся на збір та використання інформації відповідно до цієї Політики конфіденційності.',
+  dataCollectionFullText: 'Ми можемо збирати наступні типи інформації:\n\n• Особисті дані: ім\'я, електронна пошта, вік, стать, фізичні параметри\n• Дані про використання: інформація про те, як ви користуєтеся додатком\n• Дані пристрою: IP-адреса, тип браузера, операційна система\n• Інформація про продукти: сканована історія, улюблені продукти\n• Дані про здоров\'я: вага, зріст, цілі здоров\'я (за вашою згодою)',
+  dataUsageFullText: 'Компанія може використовувати особисті дані для наступних цілей:\n\n• Надання та підтримка нашого додатку\n• Персоналізація вашого досвіду користування\n• Аналіз використання для покращення послуг\n• Зв\'язок з вами щодо оновлень та новин\n• Забезпечення безпеки та попередження шахрайства\n• Дотримання правових зобов\'язань',
+  dataSecurityFullText: 'Безпека ваших особистих даних важлива для нас, але пам\'ятайте, що жоден метод передачі через інтернет або метод електронного зберігання не є 100% безпечним. Хоча ми прагнемо використовувати комерційно прийнятні засоби для захисту ваших особистих даних, ми не можемо гарантувати їх абсолютну безпеку.',
+  dataSecurityMeasuresText: 'Ми використовуємо наступні заходи безпеки:\n\n• Шифрування даних при передачі та зберіганні\n• Регулярні аудити безпеки\n• Обмежений доступ до особистих даних\n• Навчання персоналу з питань конфіденційності',
+  userRightsFullText: 'Відповідно до застосовного законодавства, ви маєте наступні права:\n\n• Право доступу до ваших особистих даних\n• Право на виправлення неточних даних\n• Право на видалення ваших даних\n• Право на обмеження обробки\n• Право на портативність даних\n• Право на заперечення проти обробки',
+  cookiesTrackingFullText: 'Наш додаток може використовувати технології відстеження для покращення користувацького досвіду. Ми можемо використовувати:\n\n• Аналітичні інструменти для розуміння використання додатку\n• Файли cookie для збереження налаштувань\n• Ідентифікатори пристроїв для персоналізації',
+  thirdPartyServicesFullText: 'Наш додаток може містити посилання на сторонні сервіси, якими ми не керуємо. Ми настійно радимо вам ознайомитися з Політикою конфіденційності кожного сайту, який ви відвідуєте.\n\nСторонні сервіси, які ми можемо використовувати:\n• Firebase (Google) - для зберігання даних\n• Аналітичні сервіси для поліпшення додатку',
+  dataRetentionFullText: 'Ми зберігаємо ваші особисті дані лише стільки, скільки необхідно для цілей, викладених у цій Політиці конфіденційності. Ми також можемо зберігати дані для дотримання правових зобов\'язань, вирішення спорів та забезпечення виконання наших угод.',
+  internationalTransfersFullText: 'Ваша інформація, включаючи особисті дані, може оброблятися на комп\'ютерах, розташованих поза вашою країною, де закони про захист даних можуть відрізнятися. Ми вживаємо заходів для забезпечення належного захисту ваших даних під час таких передач.',
+  changesPrivacyPolicyFullText: 'Ми можемо оновлювати нашу Політику конфіденційності час від часу. Ми повідомимо вас про будь-які зміни, опублікувавши нову Політику конфіденційності у додатку. Ми також повідомимо вас електронною поштою та/або через помітне повідомлення у додатку до того, як зміни набудуть чинності.',
+  privacyContactInformationFullText: 'Якщо у вас є питання щодо цієї Політики конфіденційності, будь ласка, зв\'яжіться з нами:\n\nEmail: privacy@productquality.app\nТелефон: +380 (44) 123-45-67\nАдреса: м. Київ, вул. Хрещатик, 1\n\nВи також можете зв\'язатися з нами через форму зворотного зв\'язку у додатку.',
+
+  // Toast messages
+  couldNotLoadProductDetails: 'Не вдалося завантажити деталі продукту',
+  addedToFavorites: 'Додано до улюблених',
+  removedFromFavorites: 'Видалено з улюблених',
 };
 
 const translations = { en, uk } as const;

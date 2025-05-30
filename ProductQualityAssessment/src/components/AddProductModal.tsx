@@ -211,7 +211,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
               style={styles.input}
               value={newProduct.imageUrl}
               onChangeText={(text) => setNewProduct({...newProduct, imageUrl: text})}
-              placeholder="https://example.com/image.jpg"
+              placeholder={t('imageUrlPlaceholder')}
             />
             
             <Text style={styles.inputLabel}>{t('weight')} (г)</Text>
@@ -222,7 +222,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                 const weight = parseFloat(text) || 0;
                 setNewProduct({...newProduct, weight});
               }}
-              placeholder="0"
+              placeholder={t('zeroPlaceholder')}
               keyboardType="numeric"
             />
             
@@ -242,7 +242,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   }
                 });
               }}
-              placeholder="0"
+              placeholder={t('zeroPlaceholder')}
               keyboardType="numeric"
             />
             
@@ -260,7 +260,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   }
                 });
               }}
-              placeholder="0"
+              placeholder={t('zeroPlaceholder')}
               keyboardType="numeric"
             />
             
@@ -281,7 +281,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   }
                 });
               }}
-              placeholder="0"
+              placeholder={t('zeroPlaceholder')}
               keyboardType="numeric"
             />
             
@@ -302,7 +302,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   }
                 });
               }}
-              placeholder="0"
+              placeholder={t('zeroPlaceholder')}
               keyboardType="numeric"
             />
             
@@ -323,7 +323,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   }
                 });
               }}
-              placeholder="0"
+              placeholder={t('zeroPlaceholder')}
               keyboardType="numeric"
             />
             
@@ -344,7 +344,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   }
                 });
               }}
-              placeholder="0"
+              placeholder={t('zeroPlaceholder')}
               keyboardType="numeric"
             />
             
@@ -362,7 +362,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   }
                 });
               }}
-              placeholder="0"
+              placeholder={t('zeroPlaceholder')}
               keyboardType="numeric"
             />
             
