@@ -515,48 +515,72 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                 disabled={isFetchingProductData}
               >
                 {isFetchingProductData ? (
-                  <>
+                  <View style={styles.loadingContent}>
                     <MaterialIcons name="hourglass-empty" size={20} color="#999" />
                     <Text style={[styles.barcodeScanButtonText, styles.barcodeScanButtonTextDisabled]}>
-                      {t('loading')}...
+                      {t('fetchingProductData')}...
                     </Text>
-                  </>
+                  </View>
                 ) : (
-                  <>
-                    <MaterialIcons name="qr-code-scanner" size={20} color="#fff" />
-                    <Text style={styles.barcodeScanButtonText}>
-                      {t('scanBarcode')}
-                    </Text>
-                  </>
+                  <View style={styles.scanButtonContent}>
+                    <View style={styles.scanIconContainer}>
+                      <MaterialIcons name="qr-code-scanner" size={28} color="#fff" />
+                    </View>
+                    <View style={styles.scanTextContainer}>
+                      <Text style={styles.barcodeScanButtonText}>
+                        {t('scanBarcode')}
+                      </Text>
+                      <Text style={styles.scanButtonSubtext}>
+                        Швидке автозаповнення
+                      </Text>
+                    </View>
+                    <MaterialIcons name="arrow-forward" size={20} color="rgba(255,255,255,0.8)" />
+                  </View>
                 )}
               </TouchableOpacity>
               
-              <Text style={styles.orText}>{t('orText')}</Text>
+              <View style={styles.dividerContainer}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.orText}>{t('orText')}</Text>
+                <View style={styles.dividerLine} />
+              </View>
               
-              <View style={styles.barcodeInputContainer}>
-                <Text style={styles.label}>{t('enterBarcodeManually')}:</Text>
+              <View style={styles.manualInputContainer}>
+                <View style={styles.labelContainer}>
+                  <MaterialIcons name="keyboard" size={16} color="#666" />
+                  <Text style={styles.label}>{t('enterBarcodeManually')}</Text>
+                </View>
                 <TextInput
-                  style={styles.input}
+                  style={styles.barcodeInput}
                   value={formData.barcode}
                   onChangeText={(text) => setFormData(prev => ({ ...prev, barcode: text }))}
                   placeholder="1234567890123"
                   keyboardType="numeric"
                   maxLength={13}
+                  placeholderTextColor="#999"
                 />
               </View>
               
               {formData.barcode && (
-                <View style={styles.barcodeInfo}>
-                  <MaterialIcons name="check-circle" size={16} color="#28a745" />
-                  <Text style={styles.barcodeInfoText}>
-                    {t('barcode')}: {formData.barcode}
+                <View style={styles.barcodeInfoCard}>
+                  <View style={styles.barcodeInfoHeader}>
+                    <MaterialIcons name="check-circle" size={20} color="#28a745" />
+                    <Text style={styles.barcodeInfoTitle}>
+                      {t('barcode')} збережено
+                    </Text>
+                  </View>
+                  <Text style={styles.barcodeNumber}>
+                    {formData.barcode}
                   </Text>
                 </View>
               )}
               
-              <Text style={styles.barcodeHelp}>
-                💡 {t('barcodeAutoFillHelp')}
-              </Text>
+              <View style={styles.helpContainer}>
+                <MaterialIcons name="info" size={16} color="#34572a" />
+                <Text style={styles.barcodeHelp}>
+                  {t('barcodeAutoFillHelp')}
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -1235,6 +1259,79 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
     lineHeight: 16,
+  },
+  loadingContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  scanIconContainer: {
+    padding: 8,
+    borderWidth: 2,
+    borderColor: '#fff',
+    borderRadius: 8,
+  },
+  scanTextContainer: {
+    flex: 1,
+  },
+  scanButtonSubtext: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#fff',
+  },
+  manualInputContainer: {
+    marginBottom: 12,
+  },
+  barcodeInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#fff',
+  },
+  barcodeInfoCard: {
+    backgroundColor: '#f0f8f0',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  barcodeInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  barcodeInfoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#28a745',
+    marginLeft: 8,
+  },
+  barcodeNumber: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+  },
+  helpContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
 });
 
