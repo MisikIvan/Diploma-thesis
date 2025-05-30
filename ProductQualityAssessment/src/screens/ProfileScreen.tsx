@@ -231,11 +231,24 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     setCurrentLanguage(language);
     await saveLanguage(language);
     
-    Alert.alert(t('languageChanged'), '', [
-      { text: t('ok'), onPress: () => {
-        loadUserData();
-      }}
-    ]);
+  
+    setUser(null);
+    setIsLoading(true);
+    
+   
+    setTimeout(async () => {
+      await loadUserData();
+      
+      Alert.alert(t('languageChanged'), '', [
+        { text: t('ok'), onPress: () => {
+         
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Main' }],
+          });
+        }}
+      ]);
+    }, 100);
   };
 
   if (isLoading) {
@@ -358,6 +371,22 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           >
             <Text style={styles.menuItemText}>{t('personalDetails')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#666" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.languageMenuItem}
+            onPress={() => setShowLanguageSelector(true)}
+          >
+            <View style={styles.menuItemWithIcon}>
+              <Ionicons name="language" size={20} color="#666" style={styles.menuIcon} />
+              <Text style={styles.menuItemTextFixed}>{t('languageSettings')}</Text>
+            </View>
+            <View style={styles.languageInfo}>
+              <Text style={styles.languageText} numberOfLines={1}>
+                {currentLanguage === 'uk' ? t('ukrainianShort') : t('englishShort')}
+              </Text>
+              <Ionicons name="chevron-forward" size={20} color="#666" />
+            </View>
           </TouchableOpacity>
         </View>
 
@@ -692,6 +721,41 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 120,
+  },
+  menuItemWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  menuIcon: {
+    marginRight: 8,
+  },
+  languageInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    maxWidth: 120,
+    justifyContent: 'flex-end',
+  },
+  languageText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'right',
+    flexShrink: 1,
+  },
+  menuItemTextFixed: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+  },
+  languageMenuItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f3f4',
   },
 });
 

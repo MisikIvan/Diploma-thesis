@@ -4,7 +4,7 @@ import { Provider } from 'react-redux';
 import 'react-native-reanimated';
 import store from './src/redux/store';
 import Navigation from './src/navigation';
-import { t } from './src/utils/translations';
+import { t, setLanguage } from './src/utils/translations';
 import { initializeLanguage } from './src/utils/languageStorage';
 
 export default function App() {
@@ -15,8 +15,10 @@ export default function App() {
     async function init() {
       try {
         console.log('Initializing app...');
-        await initializeLanguage();
-        console.log('Language initialized');
+       
+        setLanguage('uk');
+        const language = await initializeLanguage();
+        console.log('Language initialized to:', language);
         setIsInitialized(true);
       } catch (err) {
         console.error('Error initializing app:', err);

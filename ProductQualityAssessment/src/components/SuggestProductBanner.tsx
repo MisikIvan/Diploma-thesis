@@ -28,15 +28,15 @@ const SuggestProductBanner: React.FC<SuggestProductBannerProps> = ({ onPress }) 
               <Text style={styles.title}>{t('suggestProduct')}</Text>
             </View>
             <Text style={styles.subtitle}>
-              Допоможіть розширити нашу базу продуктів
+              {t('helpExpandDatabase')}
             </Text>
             <View style={styles.featureRow}>
               <MaterialIcons name="camera-alt" size={16} color="rgba(255, 255, 255, 0.8)" />
-              <Text style={styles.featureText}>Фото</Text>
+              <Text style={styles.featureText}>{t('photo')}</Text>
               <MaterialIcons name="qr-code-scanner" size={16} color="rgba(255, 255, 255, 0.8)" />
-              <Text style={styles.featureText}>Штрих-код</Text>
+              <Text style={styles.featureText}>{t('barcode')}</Text>
               <FontAwesome5 name="award" size={16} color="rgba(255, 255, 255, 0.8)" />
-              <Text style={styles.featureText}>Бали</Text>
+              <Text style={styles.featureText}>{t('points')}</Text>
             </View>
           </View>
           
