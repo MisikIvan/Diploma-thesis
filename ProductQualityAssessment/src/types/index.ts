@@ -41,7 +41,6 @@ export interface Product {
   imageUrl?: string;
   nutriscoreGrade: 'A' | 'B' | 'C' | 'D' | 'E';
   nutriscoreScore?: number; 
-  categories: string[];
   ingredients: string;
   allergens: string[];
   additives: string[];
@@ -91,6 +90,13 @@ export interface Favorite {
   addedAt: string;
 }
 
+export interface ViewHistory {
+  historyId: string;
+  userId: string;
+  productId: string;
+  viewedAt: string;
+}
+
 export type NutriScoreGrade = 'A' | 'B' | 'C' | 'D' | 'E';
 export type NutriScoreColor = '🟢' | '🟡' | '🟠' | '🔴' | '⛔️';
 
@@ -121,7 +127,6 @@ export interface ProductSubmission {
     additionalImages?: string[]; 
     nutriscoreGrade: 'A' | 'B' | 'C' | 'D' | 'E';
     nutriscoreScore?: number; 
-    categories: string[];
     ingredients: string;
     allergens: string[];
     additives: string[];

@@ -465,16 +465,6 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
               </Text>
             </View>
 
-            <View style={styles.categoriesContainer}>
-              {currentProduct.categories && Array.isArray(currentProduct.categories) && (
-                currentProduct.categories.map((cat, index) => (
-                  <View key={index} style={styles.categoryTag}>
-                    <Text style={styles.categoryText}>{cat}</Text>
-                  </View>
-                ))
-              )}
-            </View>
-
             {currentProduct.description && (
               <Text style={styles.productDescription}>{currentProduct.description}</Text>
             )}
@@ -623,23 +613,6 @@ const styles = StyleSheet.create({
   },
   nutriScoreEmoji: {
     fontSize: 18,
-  },
-  categoriesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 8,
-  },
-  categoryTag: {
-    backgroundColor: '#E0F7FA',
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  categoryText: {
-    color: '#00838F',
-    fontSize: 14,
   },
   tabsContainer: {
     flexDirection: 'row',

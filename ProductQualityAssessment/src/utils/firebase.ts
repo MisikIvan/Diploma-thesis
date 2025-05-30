@@ -94,15 +94,6 @@ export const FirebaseService = {
       await setDoc(doc(db, 'products', product.productId), product);
     },
 
-    getProductsByCategory: async (category: string): Promise<Product[]> => {
-      const q = query(
-        collection(db, 'products'),
-        where('categories', 'array-contains', category)
-      );
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => doc.data() as Product);
-    },
-
     searchProducts: async (searchTerm: string, maxResults = 20): Promise<Product[]> => {
     
       const q = query(

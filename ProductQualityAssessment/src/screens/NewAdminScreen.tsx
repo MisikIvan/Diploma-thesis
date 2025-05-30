@@ -138,7 +138,6 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
           brand: productData.brand || '',
           description: productData.description || '',
           imageUrl: productData.imageUrl || '',
-          categories: productData.categories || [],
           allergens: productData.allergens || [],
           additives: productData.additives || [],
           tags: productData.tags || [],
@@ -206,7 +205,7 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
               color="#fff" 
             />
             <Text style={styles.statusText}>
-              {t('live')}
+              Live
             </Text>
           </View>
         </View>

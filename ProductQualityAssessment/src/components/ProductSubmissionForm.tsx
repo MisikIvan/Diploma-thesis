@@ -41,7 +41,6 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
     imageUrl: '',
     additionalImages: [] as string[],
     nutriscoreGrade: 'A' as 'A' | 'B' | 'C' | 'D' | 'E',
-    categories: [] as string[],
     ingredients: '',
     allergens: [] as string[],
     additives: [] as string[],
@@ -65,17 +64,12 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
   });
 
   const [newImageUrl, setNewImageUrl] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedAllergen, setSelectedAllergen] = useState('');
   const [selectedAdditive, setSelectedAdditive] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [isFetchingProductData, setIsFetchingProductData] = useState(false);
-
-  const categories = [
-    'beverages', 'bread', 'dairy', 'meat', 'fish', 'produce', 'snacks', 'eggs', 'meals'
-  ];
 
   const commonAllergens = [
     'Milk', 'Eggs', 'Fish', 'Shellfish', 'Tree nuts', 'Peanuts', 'Wheat', 'Soybeans'
@@ -93,7 +87,6 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
       imageUrl: '',
       additionalImages: [],
       nutriscoreGrade: 'A',
-      categories: [],
       ingredients: '',
       allergens: [],
       additives: [],
@@ -116,7 +109,6 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
       countryOfOrigin: '',
     });
     setNewImageUrl('');
-    setSelectedCategory('');
     setSelectedAllergen('');
     setSelectedAdditive('');
     setSelectedTag('');
@@ -261,23 +253,6 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
     }));
   };
 
-  const addCategory = () => {
-    if (selectedCategory && !formData.categories.includes(selectedCategory)) {
-      setFormData(prev => ({
-        ...prev,
-        categories: [...prev.categories, selectedCategory]
-      }));
-      setSelectedCategory('');
-    }
-  };
-
-  const removeCategory = (category: string) => {
-    setFormData(prev => ({
-      ...prev,
-      categories: prev.categories.filter(c => c !== category)
-    }));
-  };
-
   const addAllergen = () => {
     if (selectedAllergen && !formData.allergens.includes(selectedAllergen)) {
       setFormData(prev => ({
@@ -353,7 +328,6 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
           barcode: barcode,
           ingredients: productData.ingredients || prev.ingredients,
           nutriscoreGrade: productData.nutriscoreGrade || prev.nutriscoreGrade,
-          categories: productData.categories?.length > 0 ? productData.categories : prev.categories,
           allergens: productData.allergens?.length > 0 ? productData.allergens : prev.allergens,
           additives: productData.additives?.length > 0 ? productData.additives : prev.additives,
           tags: productData.tags?.length > 0 ? productData.tags : prev.tags,
@@ -428,7 +402,9 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
       userId: currentUser.userId,
       userDisplayName: currentUser.displayName,
       status: 'pending',
-      productData: { ...formData },
+      productData: { 
+        ...formData
+      },
     };
 
     onSubmit(submission);
@@ -678,39 +654,6 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
           </View>
 
         
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <MaterialIcons name="category" size={20} color="#34572a" />
-              <Text style={styles.sectionTitle}>{t('categories')}</Text>
-            </View>
-            <View style={styles.addItemContainer}>
-              <View style={styles.pickerContainer}>
-                <TextInput
-                  style={styles.input}
-                  value={selectedCategory}
-                  onChangeText={setSelectedCategory}
-                  placeholder={t('enterCategory')}
-                />
-              </View>
-              <TouchableOpacity style={styles.addButton} onPress={addCategory}>
-                <FontAwesome5 name="plus" size={16} color="#34572a" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.tagContainer}>
-              {formData.categories.map(category => (
-                <TouchableOpacity
-                  key={category}
-                  style={styles.tag}
-                  onPress={() => removeCategory(category)}
-                >
-                  <Text style={styles.tagText}>{category}</Text>
-                  <Feather name="x" size={14} color="#34572a" />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-     
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="list-alt" size={20} color="#34572a" />

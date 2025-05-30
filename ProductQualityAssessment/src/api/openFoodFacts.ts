@@ -9,7 +9,6 @@ interface OpenFoodFactsProduct {
   image_url?: string;
   nutriscore_grade?: string;
   nutriscore_score?: number;
-  categories_tags?: string[];
   ingredients_text?: string;
   allergens_tags?: string[];
   additives_tags?: string[];
@@ -63,11 +62,6 @@ const transformProduct = (offProduct: OpenFoodFactsProduct): Product => {
   ) || false;
 
 
-  const categories = offProduct.categories_tags?.map(cat => 
-    cat.replace('en:', '').replace(/-/g, ' ')
-  ) || [];
-
-
   let nutriscoreGrade: NutriScoreGrade;
   if (offProduct.nutriscore_grade && 
       ['A', 'B', 'C', 'D', 'E'].includes(offProduct.nutriscore_grade.toUpperCase())) {
@@ -82,7 +76,6 @@ const transformProduct = (offProduct: OpenFoodFactsProduct): Product => {
     description: '',
     imageUrl: offProduct.image_url || '',
     nutriscoreGrade,
-    categories,
     ingredients: offProduct.ingredients_text || '',
     allergens: offProduct.allergens_tags?.map(tag => tag.replace('en:', '')) || [],
     additives: offProduct.additives_tags?.map(tag => tag.replace('en:', '')) || [],

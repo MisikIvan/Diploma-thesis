@@ -35,8 +35,7 @@ const ProductSearchScreen: React.FC = () => {
     return products.filter(product => 
       product.name.toLowerCase().includes(query) ||
       product.brand?.toLowerCase().includes(query) ||
-      product.productId.toLowerCase().includes(query) ||
-      product.categories?.some(cat => cat.toLowerCase().includes(query))
+      product.productId.toLowerCase().includes(query)
     );
   }, [products, searchQuery]);
 

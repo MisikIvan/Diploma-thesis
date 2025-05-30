@@ -15,6 +15,7 @@ import {
 import { t } from '../utils/translations';
 import { useAppDispatch } from '../redux/hooks';
 import { login, register, googleLogin } from '../redux/slices/userSlice';
+import { ValidationUtils } from '../utils/validation';
 
 interface AuthScreenProps {
   navigation: any; 
@@ -28,14 +29,14 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ [key: string]: string[] }>({});
 
   const resetForm = () => {
     setEmail('');
     setPassword('');
     setConfirmPassword('');
     setName('');
-    setError(null);
+    setErrors({});
   };
 
   const toggleAuthMode = () => {
@@ -44,45 +45,45 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
   };
 
   const validateForm = (): boolean => {
-    if (!email.trim()) {
-      setError(t('emailRequired'));
+    const newErrors: { [key: string]: string[] } = {};
+
+    // Check rate limiting
+    const rateLimitKey = `auth_${email}`;
+    if (!ValidationUtils.checkRateLimit(rateLimitKey, 5, 300000)) { // 5 attempts per 5 minutes
+      Alert.alert('Too Many Attempts', 'Please wait 5 minutes before trying again.');
       return false;
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError(t('validEmail'));
-      return false;
+    // Email validation
+    const emailResult = ValidationUtils.email(email);
+    if (!emailResult.isValid) {
+      newErrors.email = emailResult.errors;
     }
 
-    if (!password.trim()) {
-      setError(t('passwordRequired'));
-      return false;
+    // Password validation
+    const passwordResult = ValidationUtils.password(password);
+    if (!passwordResult.isValid) {
+      newErrors.password = passwordResult.errors;
     }
 
-    if (password.length < 8) {
-      setError(t('passwordLength'));
-      return false;
-    }
-
+   
     if (!isLogin) {
-      if (!name.trim()) {
-        setError(t('nameRequired'));
-        return false;
+      const nameResult = ValidationUtils.name(name);
+      if (!nameResult.isValid) {
+        newErrors.name = nameResult.errors;
       }
 
+      // Password confirmation
       if (password !== confirmPassword) {
-        setError(t('passwordsDoNotMatch'));
-        return false;
+        newErrors.confirmPassword = ['Passwords do not match'];
       }
     }
 
-    return true;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async () => {
-    setError(null);
-    
     if (!validateForm()) {
       return;
     }
@@ -90,15 +91,17 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     setIsLoading(true);
 
     try {
-      if (isLogin) {
-      
-        console.log('Logging in with:', email, password);
-        await dispatch(login({ email, password })).unwrap();
-      
-      } else {
+      const sanitizedEmail = ValidationUtils.sanitizeText(email).toLowerCase().trim();
+      const sanitizedName = ValidationUtils.sanitizeText(name);
 
-        console.log('Registering with:', email, password, name);
-        await dispatch(register({ email, password, displayName: name })).unwrap();
+      if (isLogin) {
+        await dispatch(login({ email: sanitizedEmail, password })).unwrap();
+      } else {
+        await dispatch(register({ 
+          email: sanitizedEmail, 
+          password, 
+          displayName: sanitizedName 
+        })).unwrap();
         Alert.alert(
           t('registrationSuccessful'),
           t('accountCreated'),
@@ -116,13 +119,41 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       setIsLoading(false);
     } catch (err: any) {
       setIsLoading(false);
-      setError(err.message || t('error'));
+      
+      // Handle specific Firebase errors
+      let errorMessage = t('error');
+      if (err.code) {
+        switch (err.code) {
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+            errorMessage = 'Invalid email or password';
+            break;
+          case 'auth/email-already-in-use':
+            errorMessage = 'Email is already registered';
+            break;
+          case 'auth/too-many-requests':
+            errorMessage = 'Too many failed attempts. Please try again later.';
+            break;
+          case 'auth/network-request-failed':
+            errorMessage = 'Network error. Please check your connection.';
+            break;
+          default:
+            errorMessage = err.message || t('error');
+        }
+      }
+      
+      Alert.alert('Authentication Error', errorMessage);
       console.error('Auth error:', err);
     }
   };
 
   const handleForgotPassword = () => {
-    // Firebase password reset
+    const emailResult = ValidationUtils.email(email);
+    if (!emailResult.isValid) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address first.');
+      return;
+    }
+
     Alert.alert(
       t('resetPassword'),
       t('resetPasswordPrompt'),
@@ -131,12 +162,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
         { 
           text: t('send'), 
           onPress: () => {
-            if (!email.trim()) {
-              setError(t('emailRequired'));
-              return;
-            }
-            
-         
             Alert.alert(
               t('resetEmailSent'),
               t('resetPasswordConfirmation').replace('{email}', email)
@@ -151,13 +176,25 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
     try {
       setIsLoading(true);
       await dispatch(googleLogin()).unwrap();
-    
       setIsLoading(false);
     } catch (err: any) {
       setIsLoading(false);
-      setError(err.message || t('error'));
+      Alert.alert('Google Sign In Error', err.message || t('error'));
       console.error('Google sign in error:', err);
     }
+  };
+
+  const renderFieldErrors = (fieldName: string) => {
+    if (errors[fieldName] && errors[fieldName].length > 0) {
+      return (
+        <View style={styles.errorContainer}>
+          {errors[fieldName].map((error, index) => (
+            <Text key={index} style={styles.errorText}>• {error}</Text>
+          ))}
+        </View>
+      );
+    }
+    return null;
   };
 
   return (
@@ -182,24 +219,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
           </Text>
         </View>
 
-        {error && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        )}
-
-        {!isLogin && (
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>{t('name')}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder={t('name')}
-              value={name}
-              onChangeText={setName}
-              autoCapitalize="words"
-            />
-          </View>
-        )}
+        {renderFieldErrors('email')}
+        {renderFieldErrors('password')}
+        {renderFieldErrors('name')}
+        {renderFieldErrors('confirmPassword')}
 
         <View style={styles.inputContainer}>
           <Text style={styles.label}>{t('email')}</Text>
