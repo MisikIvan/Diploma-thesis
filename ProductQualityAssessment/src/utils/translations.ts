@@ -324,6 +324,16 @@ export interface TranslationKeys {
   photo: string;
   points: string;
   
+  // Search functionality
+  searchResults: string;
+  liveSearch: string;
+  quickSearch: string;
+  searchTips: string;
+  searchByName: string;
+  searchByBrand: string;
+  searchByIngredients: string;
+  clearSearch: string;
+  
   // Admin submissions review
   reviewSubmissions: string;
   pendingSubmissions: string;
@@ -831,6 +841,16 @@ const en: TranslationKeys = {
   photo: 'Photo',
   points: 'Points',
   
+  // Search functionality
+  searchResults: 'Search Results',
+  liveSearch: 'Live Search',
+  quickSearch: 'Quick Search',
+  searchTips: 'Search Tips',
+  searchByName: 'Search by Name',
+  searchByBrand: 'Search by Brand',
+  searchByIngredients: 'Search by Ingredients',
+  clearSearch: 'Clear Search',
+  
   // Admin submissions review
   reviewSubmissions: 'Review Submissions',
   pendingSubmissions: 'Pending Submissions',
@@ -1010,7 +1030,7 @@ const en: TranslationKeys = {
   keepDeviceStable: 'Keep Device Stable',
 };
 
-// Ukrainian translations
+// Ukrainian translations (complete)
 const uk: TranslationKeys = {
   // Common
   appName: 'Якість продуктів',
@@ -1334,7 +1354,17 @@ const uk: TranslationKeys = {
   productWeightGrams: 'Вага продукту (грами)',
   helpExpandDatabase: 'Допоможіть розширити базу даних продуктів',
   photo: 'Фото',
-  points: 'Балів',
+  points: 'Оцінка',
+  
+  // Search functionality
+  searchResults: 'Результати пошуку',
+  liveSearch: 'Пошук',
+  quickSearch: 'Швидкий пошук',
+  searchTips: 'Поради для пошуку',
+  searchByName: 'Пошук за назвою',
+  searchByBrand: 'Пошук за брендом',
+  searchByIngredients: 'Пошук за інгредієнтами',
+  clearSearch: 'Очистити пошук',
   
   // Admin submissions review
   reviewSubmissions: 'Відгуки перевірки',

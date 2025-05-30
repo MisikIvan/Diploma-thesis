@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet, Text, ActivityIndicator } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Feather from 'react-native-vector-icons/Feather';
 import { t } from '../utils/translations';
@@ -8,15 +8,18 @@ interface SearchBarProps {
   initialQuery?: string;
   onSearch: (query: string) => void;
   onFilterPress?: () => void;
+  loading?: boolean;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ 
   initialQuery = '',
   onSearch,
-  onFilterPress 
+  onFilterPress,
+  loading = false
 }) => {
   const [query, setQuery] = useState(initialQuery);
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
+  const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
     setQuery(initialQuery);
@@ -24,16 +27,16 @@ const SearchBar: React.FC<SearchBarProps> = ({
 
   const handleChangeText = (text: string) => {
     setQuery(text);
-    
+    setIsTyping(true);
     
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
     
-  
     const newTimeoutId = setTimeout(() => {
       onSearch(text);
-    }, 300); 
+      setIsTyping(false);
+    }, 300);
     
     setTimeoutId(newTimeoutId);
   };
@@ -42,11 +45,13 @@ const SearchBar: React.FC<SearchBarProps> = ({
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
+    setIsTyping(false);
     onSearch(query);
   };
 
   const handleClear = () => {
     setQuery('');
+    setIsTyping(false);
     if (timeoutId) {
       clearTimeout(timeoutId);
     }
