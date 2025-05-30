@@ -1,25 +1,16 @@
 import { doc, updateDoc } from 'firebase/firestore';
 import { db, auth, addAdminAction } from './firebase';
 
-// Additional functions for user management
-export const updateUserRole = async (userId: string, newRole: 'user' | 'admin'): Promise<void> => {
+
+export const updateUserRole = async (userId: string, role: 'user' | 'admin'): Promise<void> => {
   try {
     const userDocRef = doc(db, 'users', userId);
     await updateDoc(userDocRef, {
-      role: newRole,
+      role: role,
       updatedAt: new Date().toISOString()
     });
     
-    // Log admin action
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-      await addAdminAction(
-        currentUser.uid,
-        'update_product',
-        userId,
-        `Changed user role to ${newRole}`
-      );
-    }
+    console.log(`User role updated to ${role} for user:`, userId);
   } catch (error) {
     console.error('Error updating user role:', error);
     throw error;
@@ -31,20 +22,10 @@ export const updateUserBlockStatus = async (userId: string, isBlocked: boolean):
     const userDocRef = doc(db, 'users', userId);
     await updateDoc(userDocRef, {
       isBlocked: isBlocked,
-      canComment: !isBlocked, // Заблоковані користувачі не можуть коментувати
       updatedAt: new Date().toISOString()
     });
     
-    // Log admin action
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-      await addAdminAction(
-        currentUser.uid,
-        isBlocked ? 'block_user' : 'unblock_user',
-        userId,
-        `User ${isBlocked ? 'blocked' : 'unblocked'}`
-      );
-    }
+    console.log(`User block status updated to ${isBlocked} for user:`, userId);
   } catch (error) {
     console.error('Error updating user block status:', error);
     throw error;

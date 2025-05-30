@@ -9,6 +9,28 @@ export interface User {
   canComment: boolean;
   createdAt?: string;
   lastLogin?: string;
+  updatedAt?: string;
+  
+  // Personal details
+  age?: number;
+  height?: number; 
+  currentWeight?: number; 
+  goalWeight?: number; 
+  dateOfBirth?: string;
+  gender?: 'male' | 'female' | 'other';
+  
+  // Preferences
+  burnedCaloriesEnabled?: boolean;
+  dailyCaloriesGoal?: number;
+  dailyCarbsGoal?: number;
+  dailyFatsGoal?: number;
+  dailyProteinsGoal?: number;
+  
+  // Weight tracking
+  weightHistory?: Array<{
+    weight: number;
+    date: string;
+  }>;
 }
 
 export interface Product {
@@ -37,9 +59,8 @@ export interface Product {
     };
     salt?: number;
   };
-  // Replaced with tags system
-  tags: string[]; // ['vegan', 'vegetarian', 'lactose-free', 'gluten-free', 'organic', 'bio', etc.]
-  // Keep original fields for backward compatibility during migration
+
+  tags: string[];
   isVegan: boolean;
   isVegetarian: boolean;
   hasLactose: boolean;
@@ -48,8 +69,6 @@ export interface Product {
   createdBy: 'admin' | 'api' | string;
   createdAt: string;
   updatedAt: string;
-  averageRating?: number;
-  ratingCount?: number;
 }
 
 export interface Comment {
@@ -65,27 +84,11 @@ export interface Comment {
   isDeleted?: boolean;
 }
 
-export interface AdminAction {
-  actionId: string;
-  adminId: string;
-  actionType: 'create_product' | 'update_product' | 'delete_product' | 'block_user' | 'unblock_user' | 'toggle_comment_permission' | 'moderate_comment';
-  targetId: string;
-  details: string;
-  timestamp: string;
-}
-
 export interface Favorite {
   favoriteId: string;
   userId: string;
   productId: string;
   addedAt: string;
-}
-
-export interface ViewHistory {
-  historyId: string;
-  userId: string;
-  productId: string;
-  viewedAt: string;
 }
 
 export type NutriScoreGrade = 'A' | 'B' | 'C' | 'D' | 'E';
@@ -101,7 +104,6 @@ export const getNutriScoreColor = (grade: NutriScoreGrade): NutriScoreColor => {
   }
 }; 
 
-// Product submission types
 export interface ProductSubmission {
   submissionId: string;
   userId: string;
@@ -111,13 +113,12 @@ export interface ProductSubmission {
   reviewedAt?: string;
   reviewedBy?: string;
   rejectionReason?: string;
-  // Product data
   productData: {
     name: string;
     description?: string;
     brand?: string;
     imageUrl?: string;
-    additionalImages?: string[]; // Multiple images support
+    additionalImages?: string[]; 
     nutriscoreGrade: 'A' | 'B' | 'C' | 'D' | 'E';
     nutriscoreScore?: number; 
     categories: string[];
@@ -144,9 +145,8 @@ export interface ProductSubmission {
     hasLactose: boolean;
     hasGluten: boolean;
     weight?: number;
-    // Verification fields
     barcode?: string;
-    source?: string; // Where user found this product
+    source?: string; 
     manufacturer?: string;
     countryOfOrigin?: string;
   };

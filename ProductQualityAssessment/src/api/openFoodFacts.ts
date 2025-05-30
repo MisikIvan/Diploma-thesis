@@ -53,7 +53,7 @@ const transformProduct = (offProduct: OpenFoodFactsProduct): Product => {
   const isVegan = offProduct.ingredients_analysis_tags?.includes('en:vegan') || false;
   const isVegetarian = offProduct.ingredients_analysis_tags?.includes('en:vegetarian') || false;
   
-  // Check for lactose/gluten
+
   const hasLactose = offProduct.allergens_tags?.some(tag => 
     tag.includes('milk') || tag.includes('lactose')
   ) || false;
@@ -62,12 +62,12 @@ const transformProduct = (offProduct: OpenFoodFactsProduct): Product => {
     tag.includes('gluten') || tag.includes('wheat')
   ) || false;
 
-  // Map categories
+
   const categories = offProduct.categories_tags?.map(cat => 
     cat.replace('en:', '').replace(/-/g, ' ')
   ) || [];
 
-  // Get Nutri-Score grade
+
   let nutriscoreGrade: NutriScoreGrade;
   if (offProduct.nutriscore_grade && 
       ['A', 'B', 'C', 'D', 'E'].includes(offProduct.nutriscore_grade.toUpperCase())) {

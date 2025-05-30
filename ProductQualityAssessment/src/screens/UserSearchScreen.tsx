@@ -18,6 +18,7 @@ import { RootStackParamList } from '../types/navigation';
 import { User } from '../types/index';
 import { getAllUsers, blockUser, unblockUser, auth } from '../api/firebase';
 import { updateUserRole, updateUserBlockStatus } from '../api/userManagement';
+import { t } from '../utils/translations';
 
 type UserSearchScreenNavigationProp = StackNavigationProp<RootStackParamList, 'UserSearch'>;
 
@@ -28,7 +29,7 @@ const UserSearchScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Live search - фільтруємо користувачів в реальному часі
+ 
   const filteredUsers = useMemo(() => {
     if (!searchQuery.trim()) return users;
     
@@ -47,7 +48,7 @@ const UserSearchScreen: React.FC = () => {
       setUsers(allUsers);
     } catch (error) {
       console.error('Error loading users:', error);
-      Alert.alert('Помилка', 'Не вдалося завантажити користувачів');
+      Alert.alert(t('error'), t('loadingUsers'));
     } finally {
       setLoading(false);
     }
@@ -59,24 +60,32 @@ const UserSearchScreen: React.FC = () => {
     setRefreshing(false);
   };
 
+  const handleGoBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate('Main');
+    }
+  };
+
   const handleToggleUserRole = async (user: User) => {
     const newRole = user.role === 'admin' ? 'user' : 'admin';
     
     Alert.alert(
-      'Змінити роль користувача',
-      `Змінити роль "${user.displayName}" з "${user.role}" на "${newRole}"?`,
+      t('changeUserRole'),
+      `${t('changeUserRole')} "${user.displayName}"?`,
       [
-        { text: 'Скасувати', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Змінити',
+          text: t('save'),
           onPress: async () => {
             try {
               await updateUserRole(user.userId, newRole);
-              Alert.alert('Успіх', `Роль користувача змінено на "${newRole}"`);
-              await loadUsers(); // Оновлюємо список
+              Alert.alert(t('success'), t('userRoleChanged'));
+              await loadUsers();
             } catch (error) {
               console.error('Error updating user role:', error);
-              Alert.alert('Помилка', 'Не вдалося змінити роль користувача');
+              Alert.alert(t('error'), t('userRoleChangeError'));
             }
           },
         },
@@ -85,25 +94,24 @@ const UserSearchScreen: React.FC = () => {
   };
 
   const handleToggleUserBlock = async (user: User) => {
-    const action = user.isBlocked ? 'розблокувати' : 'заблокувати';
-    const actionPast = user.isBlocked ? 'розблоковано' : 'заблоковано';
+    const action = user.isBlocked ? t('unblockUser') : t('blockUser');
     
     Alert.alert(
-      `${action.charAt(0).toUpperCase() + action.slice(1)} користувача`,
-      `Ви впевнені, що хочете ${action} "${user.displayName}"?`,
+      action,
+      `${action} "${user.displayName}"?`,
       [
-        { text: 'Скасувати', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: action.charAt(0).toUpperCase() + action.slice(1),
+          text: action,
           style: user.isBlocked ? 'default' : 'destructive',
           onPress: async () => {
             try {
               await updateUserBlockStatus(user.userId, !user.isBlocked);
-              Alert.alert('Успіх', `Користувача ${actionPast}`);
-              await loadUsers(); // Оновлюємо список
+              Alert.alert(t('success'), user.isBlocked ? t('userUnblocked') : t('userBlocked'));
+              await loadUsers();
             } catch (error) {
               console.error('Error updating user block status:', error);
-              Alert.alert('Помилка', `Не вдалося ${action} користувача`);
+              Alert.alert(t('error'), t('userBlockError'));
             }
           },
         },
@@ -114,13 +122,13 @@ const UserSearchScreen: React.FC = () => {
   const renderUserItem = ({ item }: { item: User }) => (
     <View style={styles.userCard}>
       <Image
-        source={{ uri: item.avatarUrl || require('../assets/profile1.png') }}
+        source={item.avatarUrl ? { uri: item.avatarUrl } : require('../assets/profile1.png')}
         style={styles.userAvatar}
       />
       
       <View style={styles.userInfo}>
         <Text style={styles.userName} numberOfLines={1}>
-          {item.displayName || 'Невідоме ім\'я'}
+          {item.displayName || t('unknownName')}
         </Text>
         <Text style={styles.userEmail} numberOfLines={1}>
           {item.email}
@@ -138,7 +146,7 @@ const UserSearchScreen: React.FC = () => {
           
           <View style={[styles.statusTag, item.isBlocked && styles.blockedTag]}>
             <Text style={[styles.statusText, item.isBlocked && styles.blockedText]}>
-              {item.isBlocked ? 'ЗАБЛОКОВАНИЙ' : 'АКТИВНИЙ'}
+              {item.isBlocked ? t('blocked').toUpperCase() : t('userState').toUpperCase()}
             </Text>
           </View>
         </View>
@@ -174,12 +182,12 @@ const UserSearchScreen: React.FC = () => {
     <View style={styles.emptyState}>
       <Ionicons name="people" size={64} color="#ccc" />
       <Text style={styles.emptyTitle}>
-        {searchQuery ? 'Користувачі не знайдені' : 'Завантаження користувачів...'}
+        {searchQuery ? t('usersNotFound') : t('loadingUsers')}
       </Text>
       <Text style={styles.emptySubtitle}>
         {searchQuery 
-          ? `Спробуйте інший пошуковий запит замість "${searchQuery}"`
-          : 'Зачекайте, поки завантажаться всі користувачі'
+          ? t('tryAnotherSearch')
+          : t('waitForLoading')
         }
       </Text>
     </View>
@@ -195,12 +203,12 @@ const UserSearchScreen: React.FC = () => {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.goBack()}
+          onPress={handleGoBack}
         >
           <Ionicons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         
-        <Text style={styles.headerTitle}>Пошук користувачів</Text>
+        <Text style={styles.headerTitle}>{t('searchUsers')}</Text>
         
         <TouchableOpacity
           style={styles.refreshButton}
@@ -216,7 +224,7 @@ const UserSearchScreen: React.FC = () => {
           <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Введіть ім'я, email або ID користувача..."
+            placeholder={t('enterUserDetails')}
             value={searchQuery}
             onChangeText={setSearchQuery}
             placeholderTextColor="#999"
@@ -233,7 +241,7 @@ const UserSearchScreen: React.FC = () => {
         </View>
         
         <Text style={styles.resultsCount}>
-          {loading ? 'Завантаження...' : `Знайдено: ${filteredUsers.length} користувачів`}
+          {loading ? t('loading') : `${t('foundUsers')}: ${filteredUsers.length}`}
         </Text>
       </View>
 
@@ -241,7 +249,7 @@ const UserSearchScreen: React.FC = () => {
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#34572a" />
-          <Text style={styles.loadingText}>Завантаження користувачів...</Text>
+          <Text style={styles.loadingText}>{t('loadingUsers')}</Text>
         </View>
       ) : (
         <FlatList
@@ -274,7 +282,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#34572a',
-    paddingTop: 50,
+    paddingTop: 20,
     paddingBottom: 16,
     paddingHorizontal: 16,
     shadowColor: '#000',

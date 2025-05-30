@@ -22,7 +22,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { 
     products = [], 
     recentProducts = [], 
-    searchQuery = '', 
     selectedCategory = null, 
     loading: isLoading = false, 
     error = null,
@@ -34,8 +33,45 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  
+  
+  const [localSearchQuery, setLocalSearchQuery] = useState('');
 
-  // 🔄 ОПТИМІЗОВАНА ІНІЦІАЛІЗАЦІЯ
+  
+  const searchFilteredProducts = useMemo(() => {
+    if (!localSearchQuery.trim()) return products;
+    
+    const searchTerm = localSearchQuery.toLowerCase().trim();
+    return products.filter((product: Product) => {
+      // Search in product name
+      if (product.name.toLowerCase().includes(searchTerm)) return true;
+      
+      // Search in brand
+      if (product.brand?.toLowerCase().includes(searchTerm)) return true;
+      
+      // Search in product ID/barcode
+      if (product.productId.toLowerCase().includes(searchTerm)) return true;
+      
+      // Search in categories
+      if (product.categories?.some((cat: string) => cat.toLowerCase().includes(searchTerm))) return true;
+      
+      // Search in ingredients
+      if (product.ingredients?.toLowerCase().includes(searchTerm)) return true;
+      
+      // Search in description
+      if (product.description?.toLowerCase().includes(searchTerm)) return true;
+      
+      // Search in allergens
+      if (product.allergens?.some((allergen: string) => allergen.toLowerCase().includes(searchTerm))) return true;
+      
+      // Search in tags
+      if (product.tags?.some((tag: string) => tag.toLowerCase().includes(searchTerm))) return true;
+      
+      return false;
+    });
+  }, [products, localSearchQuery]);
+
+
   useEffect(() => {
     if (!hasInitialLoad) {
       loadProducts();
@@ -46,7 +82,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   }, [hasInitialLoad, currentUser?.userId]);
 
-  // 🔄 ОПТИМІЗОВАНИЙ FOCUS EFFECT - без складних операцій
+  // Reload data when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       loadProducts();
@@ -55,13 +91,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const loadProducts = async () => {
     try {
+      
       await dispatch(searchProducts({ query: '', page: 1, pageSize: 100 }));
     } catch (error) {
       console.error('Error loading products:', error);
     }
   };
 
-  // 🔄 ОПТИМІЗОВАНИЙ REFRESH
+  
+  const handleSearch = useCallback((query: string) => {
+    (global as any).lastInteractionTime = Date.now();
+    setLocalSearchQuery(query); 
+  }, []);
+
+  
   const handleRefresh = async () => {
     setRefreshing(true);
     (global as any).lastInteractionTime = Date.now();
@@ -78,7 +121,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   };
 
-  // 🔄 ОПТИМІЗОВАНИЙ PRODUCT PRESS - мінімальна логіка
+ 
   const handleProductPress = (product: Product) => {
     navigation.navigate('ProductDetail', { productId: product.productId });
   };
@@ -108,37 +151,66 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   };
 
-  // 🔄 МЕМОІЗОВАНИЙ RENDER ITEM
   const renderProductItem = React.useCallback(({ item }: { item: Product }) => (
     <ProductCard product={item} onPress={handleProductPress} />
   ), []);
 
-  // 🔄 СТАБІЛЬНИЙ KEY EXTRACTOR
   const keyExtractor = React.useCallback((item: Product) => item.productId, []);
 
-  // 🔄 МЕМОІЗОВАНИЙ HEADER
+  
+  const displayProducts = useMemo(() => {
+    let baseProducts = searchFilteredProducts;
+    
+    if (selectedCategory && filteredProducts.length > 0) {
+      return filteredProducts.filter(p => 
+        !localSearchQuery.trim() || 
+        searchFilteredProducts.some(sp => sp.productId === p.productId)
+      );
+    }
+    
+    return baseProducts;
+  }, [searchFilteredProducts, filteredProducts, selectedCategory, localSearchQuery]);
+
+  
   const listHeader = useMemo(() => (
     <View>
+      <SearchBar 
+        initialQuery={localSearchQuery}
+        onSearch={handleSearch}
+        loading={false} 
+      />
+      
+      {localSearchQuery.trim() && (
+        <View style={styles.searchResultsContainer}>
+          <Text style={styles.searchResultsText}>
+            {displayProducts.length > 0 
+              ? `${t('searchResults')}: ${displayProducts.length}`
+              : t('noResults')
+            }
+          </Text>
+          <Text style={styles.searchQueryText}>
+            "{localSearchQuery.trim()}"
+          </Text>
+        </View>
+      )}
+      
       <CategoryList 
         selectedCategory={selectedCategory}
         onSelectCategory={handleCategorySelect}
       />
 
-      {recentProducts.length > 0 && (
+      {recentProducts.length > 0 && !localSearchQuery.trim() && (
         <RecentProducts 
           products={recentProducts}
           onProductPress={handleProductPress}
         />
       )}
 
-      <SuggestProductBanner onPress={handleSuggestProduct} />
+      {!localSearchQuery.trim() && (
+        <SuggestProductBanner onPress={handleSuggestProduct} />
+      )}
     </View>
-  ), [selectedCategory, recentProducts]);
-
-  // 🔄 МЕМОІЗОВАНІ ДАНІ ДЛЯ FLATLIST
-  const displayProducts = useMemo(() => {
-    return filteredProducts.length > 0 ? filteredProducts : products;
-  }, [filteredProducts, products]);
+  ), [selectedCategory, recentProducts, localSearchQuery, handleSearch, displayProducts]);
 
   if (isLoading && products.length === 0) {
     return (
@@ -184,7 +256,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         }
       />
 
-      {/* Error indicator for partial errors */}
       {error && products.length > 0 && (
         <View style={styles.bottomErrorIndicator}>
           <Text style={styles.bottomErrorText}>
@@ -193,7 +264,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         </View>
       )}
 
-      {/* Product Submission Form */}
       <ProductSubmissionForm
         visible={showSubmissionForm}
         onClose={() => setShowSubmissionForm(false)}
@@ -309,6 +379,31 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     padding: 8,
     fontWeight: '500',
+  },
+  searchResultsContainer: {
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginVertical: 8,
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  searchResultsText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#34572a',
+    marginBottom: 4,
+  },
+  searchQueryText: {
+    fontSize: 14,
+    color: '#666',
+    fontStyle: 'italic',
   },
 });
 

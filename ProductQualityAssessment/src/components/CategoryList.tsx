@@ -1,5 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { MaterialIcons, MaterialCommunityIcons, FontAwesome, FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { PRODUCT_CATEGORIES } from '../utils/config';
 import { t } from '../utils/translations';
 
@@ -10,12 +12,46 @@ interface CategoryListProps {
 
 const CategoryList: React.FC<CategoryListProps> = ({ selectedCategory, onSelectCategory }) => {
 
+  const categoryIcons: { [key: string]: { name: string, type: 'material' | 'materialcommunity' | 'fontawesome' | 'fontawesome5' | 'ionicons' | 'feather' } } = {
+    all: { name: 'apps', type: 'material' },
+    beverages: { name: 'tint', type: 'fontawesome' },
+    bread: { name: 'food-croissant', type: 'materialcommunity' },
+    dairy: { name: 'coffee', type: 'fontawesome' },
+    meat: { name: 'food-steak', type: 'materialcommunity' },
+    fish: { name: 'fish', type: 'fontawesome5' },
+    produce: { name: 'food-apple-outline', type: 'materialcommunity' },
+    snacks: { name: 'fastfood', type: 'material' },
+    eggs: { name: 'egg-outline', type: 'ionicons' },
+    meals: { name: 'restaurant-menu', type: 'material' },
+  };
+
   const allCategories = [
-    { id: 'all', nameKey: 'categories' as const, icon: '🔎' },
+    { id: 'all', nameKey: 'categories' as const },
     ...PRODUCT_CATEGORIES
   ];
 
-  const renderCategoryItem = ({ item }: { item: typeof PRODUCT_CATEGORIES[0] | { id: string, nameKey: 'categories', icon: string } }) => {
+  const renderIcon = (categoryId: string, isSelected: boolean) => {
+    const iconConfig = categoryIcons[categoryId] || { name: 'category', type: 'material' };
+    const iconColor = isSelected ? '#fff' : '#34572a';
+    const iconSize = 24;
+
+    switch (iconConfig.type) {
+      case 'materialcommunity':
+        return <MaterialCommunityIcons name={iconConfig.name as any} size={iconSize} color={iconColor} />;
+      case 'fontawesome':
+        return <FontAwesome name={iconConfig.name as any} size={iconSize} color={iconColor} />;
+      case 'fontawesome5':
+        return <FontAwesome5 name={iconConfig.name as any} size={iconSize} color={iconColor} />;
+      case 'ionicons':
+        return <Ionicons name={iconConfig.name as any} size={iconSize} color={iconColor} />;
+      case 'feather':
+        return <Feather name={iconConfig.name as any} size={iconSize} color={iconColor} />;
+      default:
+        return <MaterialIcons name={iconConfig.name as any} size={iconSize} color={iconColor} />;
+    }
+  };
+
+  const renderCategoryItem = ({ item }: { item: typeof PRODUCT_CATEGORIES[0] | { id: string, nameKey: 'categories' } }) => {
     const isSelected = selectedCategory === item.id || (selectedCategory === null && item.id === 'all');
     
     return (
@@ -23,7 +59,9 @@ const CategoryList: React.FC<CategoryListProps> = ({ selectedCategory, onSelectC
         style={[styles.categoryItem, isSelected && styles.selectedCategory]}
         onPress={() => onSelectCategory(item.id === 'all' ? null : item.id)}
       >
-        <Text style={styles.categoryIcon}>{item.icon}</Text>
+        <View style={styles.categoryIcon}>
+          {renderIcon(item.id, isSelected)}
+        </View>
         <Text style={[styles.categoryName, isSelected && styles.selectedCategoryText]}>
           {t(item.nameKey)}
         </Text>
@@ -33,7 +71,10 @@ const CategoryList: React.FC<CategoryListProps> = ({ selectedCategory, onSelectC
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{t('categories')}</Text>
+      <View style={styles.titleContainer}>
+        <MaterialIcons name="apps" size={20} color="#34572a" />
+        <Text style={styles.title}>{t('categories')}</Text>
+      </View>
       <FlatList
         data={allCategories}
         renderItem={renderCategoryItem}
@@ -51,11 +92,16 @@ const styles = StyleSheet.create({
     marginVertical: 16,
     backgroundColor: '#f8f9fa',
   },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 16,
+    marginBottom: 12,
+  },
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 16,
-    marginBottom: 12,
+    marginLeft: 8,
     color: '#34572a',
   },
   listContent: {
@@ -86,7 +132,6 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   categoryIcon: {
-    fontSize: 24,
     marginBottom: 6,
   },
   categoryName: {

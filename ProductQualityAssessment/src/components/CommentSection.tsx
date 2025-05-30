@@ -21,13 +21,13 @@ const CommentSection: React.FC<CommentSectionProps> = ({ productId }) => {
   const [rating, setRating] = useState(0);
   
   useEffect(() => {
-    dispatch(fetchProductComments(productId))
-      .then((action) => {
-        if (action.payload && typeof action.payload === 'object' && 'comments' in action.payload) {
-          console.log('Fetched comments:', action.payload.comments);
+    if (productId) {
+      dispatch(fetchProductComments(productId)).then((action) => {
+        if (fetchProductComments.fulfilled.match(action)) {
         }
       });
-  }, [dispatch, productId]);
+    }
+  }, [productId, dispatch]);
   
   const comments = productComments[productId] || [];
   
@@ -37,7 +37,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ productId }) => {
       return;
     }
     
-    console.log('Стан користувача:', {
+    console.log('User state:', {
       userId: currentUser.userId,
       canComment: currentUser.canComment,
       isBlocked: currentUser.isBlocked,

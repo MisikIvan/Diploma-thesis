@@ -126,12 +126,12 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
     );
   };
 
-  // Handlers for product submissions
+
   const handleSubmissionApproved = async (submission: ProductSubmission, productData: Product) => {
     if (!currentUser) return;
 
     try {
-      // Create the product in Firebase
+  
       const savedProduct = await addProduct(
         {
           name: productData.name,
@@ -161,10 +161,10 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
         currentUser.userId
       );
 
-      // Add the approved product to the local products list
+     
       setProducts(prev => [...prev, savedProduct]);
       
-      // Refresh the main products list in Redux store so it appears on HomeScreen
+      
       dispatch(searchProducts({ query: '', page: 1, pageSize: 100 }));
       
       Alert.alert(
@@ -172,7 +172,7 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
         'Продукт успішно затверджено та додано до бази даних!'
       );
       
-      // Reload products to ensure consistency
+    
       loadData();
       
     } catch (error) {
@@ -182,7 +182,7 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
   };
 
   const handleSubmissionRejected = (submissionId: string, reason: string) => {
-    // Rejection handled by ProductSubmissionsScreen
+    
   };
 
   if (!currentUser || currentUser.role !== 'admin') {
@@ -236,7 +236,7 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
             onPress={() => navigation.navigate('UserSearch')}
           >
             <Ionicons name="people" size={20} color="#34572a" />
-            <Text style={styles.searchButtonText}>Пошук користувачів</Text>
+            <Text style={styles.searchButtonText}>{t('searchUsers')}</Text>
             <Ionicons name="chevron-forward" size={20} color="#34572a" />
           </TouchableOpacity>
 
@@ -277,7 +277,7 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
               onPress={() => navigation.navigate('ProductSearch')}
             >
               <Ionicons name="search" size={20} color="#34572a" />
-              <Text style={styles.searchButtonText}>Пошук продуктів</Text>
+              <Text style={styles.searchButtonText}>{t('searchProducts')}</Text>
               <Ionicons name="chevron-forward" size={20} color="#34572a" />
             </TouchableOpacity>
             

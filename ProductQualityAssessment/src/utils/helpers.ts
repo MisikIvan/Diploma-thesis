@@ -130,14 +130,14 @@ export const getTagsFromProduct = (product: Product): string[] => {
   return tags.filter(tag => tag && tag.trim());
 };
 
-// 🔄 ВИПРАВЛЕНА ФУНКЦІЯ - завжди повертає валідний рядок
+
 export const getTagDisplayName = (tag: string): string => {
-  // Return safe fallback for empty or invalid tags
+
   if (!tag || typeof tag !== 'string' || tag.trim() === '') {
     return '';
   }
   
-  // Map tags to translation keys with safe fallbacks
+ 
   const tagMap: Record<string, string> = {
     'vegan': 'Веганський',
     'vegetarian': 'Вегетаріанський', 
@@ -153,7 +153,7 @@ export const getTagDisplayName = (tag: string): string => {
     'local': 'Місцевий'
   };
   
-  // Return mapped value or original tag, ensuring it's always a string
+  
   const result = tagMap[tag.toLowerCase()] || tag;
   return typeof result === 'string' ? result : String(result);
 };
