@@ -18,6 +18,8 @@ import { ProductSubmission } from '../types';
 import { t } from '../utils/translations';
 import { useAppSelector } from '../redux/hooks';
 import { PREDEFINED_TAGS, getTagDisplayName } from '../utils/helpers';
+import BarcodeScanner from './BarcodeScanner';
+import { OpenFoodFactsAPI } from '../api/openFoodFacts';
 
 interface ProductSubmissionFormProps {
   visible: boolean;
@@ -68,6 +70,8 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
   const [selectedAdditive, setSelectedAdditive] = useState('');
   const [selectedTag, setSelectedTag] = useState('');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [isFetchingProductData, setIsFetchingProductData] = useState(false);
 
   const categories = [
     'beverages', 'bread', 'dairy', 'meat', 'fish', 'produce', 'snacks', 'eggs', 'meals'
@@ -325,6 +329,85 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
     }));
   };
 
+
+  const handleOpenBarcodeScanner = () => {
+    setShowBarcodeScanner(true);
+  };
+
+  const handleBarcodeScanned = async (barcode: string) => {
+    setIsFetchingProductData(true);
+    
+    try {
+      console.log('Scanned barcode:', barcode);
+      
+     
+      const productData = await OpenFoodFactsAPI.getProductByBarcode(barcode);
+      
+      if (productData) {
+      
+        setFormData(prev => ({
+          ...prev,
+          name: productData.name || prev.name,
+          description: productData.description || prev.description,
+          imageUrl: productData.imageUrl || prev.imageUrl,
+          barcode: barcode,
+          ingredients: productData.ingredients || prev.ingredients,
+          nutriscoreGrade: productData.nutriscoreGrade || prev.nutriscoreGrade,
+          categories: productData.categories?.length > 0 ? productData.categories : prev.categories,
+          allergens: productData.allergens?.length > 0 ? productData.allergens : prev.allergens,
+          additives: productData.additives?.length > 0 ? productData.additives : prev.additives,
+          tags: productData.tags?.length > 0 ? productData.tags : prev.tags,
+          nutriments: {
+            calories: productData.nutriments?.calories || prev.nutriments.calories,
+            proteins: productData.nutriments?.proteins || prev.nutriments.proteins,
+            fats: {
+              total: productData.nutriments?.fats?.total || prev.nutriments.fats.total,
+              saturated: productData.nutriments?.fats?.saturated || prev.nutriments.fats.saturated,
+            },
+            carbohydrates: {
+              total: productData.nutriments?.carbohydrates?.total || prev.nutriments.carbohydrates.total,
+              sugar: productData.nutriments?.carbohydrates?.sugar || prev.nutriments.carbohydrates.sugar,
+            },
+            salt: productData.nutriments?.salt || prev.nutriments.salt,
+          },
+          isVegan: productData.isVegan ?? prev.isVegan,
+          isVegetarian: productData.isVegetarian ?? prev.isVegetarian,
+          hasLactose: productData.hasLactose ?? prev.hasLactose,
+          hasGluten: productData.hasGluten ?? prev.hasGluten,
+          weight: productData.weight || prev.weight,
+        }));
+        
+        Alert.alert(
+          t('successExclamation'), 
+          `Дані продукту "${productData.name}" були автоматично заповнені. Перевірте та відредагуйте їх за потреби.`,
+          [{ text: 'OK' }]
+        );
+      } else {
+        setFormData(prev => ({ ...prev, barcode: barcode }));
+        Alert.alert(
+          t('productNotFound'),
+          `Штрих-код ${barcode} було збережено, але дані продукту не знайдено в базі. Будь ласка, заповніть форму вручну.`,
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching product data:', error);
+      setFormData(prev => ({ ...prev, barcode: barcode }));
+      Alert.alert(
+        t('networkError'),
+        `Штрих-код ${barcode} було збережено, але не вдалося завантажити дані продукту. Перевірте підключення до Інтернету.`,
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsFetchingProductData(false);
+      setShowBarcodeScanner(false);
+    }
+  };
+
+  const handleCloseBarcodeScanner = () => {
+    setShowBarcodeScanner(false);
+  };
+
   const handleSubmit = () => {
     if (!currentUser) {
       Alert.alert('Error', 'You must be logged in to submit a product');
@@ -370,7 +453,6 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Basic Information */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Feather name="info" size={20} color="#34572a" />
@@ -386,7 +468,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                 style={styles.input}
                 value={formData.name}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
-                placeholder="Назва продукту"
+                placeholder={t('productNamePlaceholder')}
               />
             </View>
 
@@ -399,7 +481,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                 style={styles.input}
                 value={formData.brand}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, brand: text }))}
-                placeholder="Бренд виробника"
+                placeholder={t('brandPlaceholder')}
               />
             </View>
 
@@ -412,21 +494,103 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                 style={[styles.input, styles.textArea]}
                 value={formData.description}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, description: text }))}
-                placeholder="Опис продукту"
+                placeholder={t('productDescriptionPlaceholder')}
                 multiline
                 numberOfLines={3}
               />
             </View>
           </View>
 
-          {/* Images */}
+       
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialIcons name="qr-code-scanner" size={20} color="#34572a" />
+              <Text style={styles.sectionTitle}>{t('barcodeSection')}</Text>
+            </View>
+            
+            <View style={styles.barcodeContainer}>
+              <TouchableOpacity 
+                style={[styles.barcodeScanButton, isFetchingProductData && styles.barcodeScanButtonDisabled]}
+                onPress={handleOpenBarcodeScanner}
+                disabled={isFetchingProductData}
+              >
+                {isFetchingProductData ? (
+                  <View style={styles.loadingContent}>
+                    <MaterialIcons name="hourglass-empty" size={20} color="#999" />
+                    <Text style={[styles.barcodeScanButtonText, styles.barcodeScanButtonTextDisabled]}>
+                      {t('fetchingProductData')}...
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.scanButtonContent}>
+                    <View style={styles.scanIconContainer}>
+                      <MaterialIcons name="qr-code-scanner" size={28} color="#fff" />
+                    </View>
+                    <View style={styles.scanTextContainer}>
+                      <Text style={styles.barcodeScanButtonText}>
+                        {t('scanBarcode')}
+                      </Text>
+                      <Text style={styles.scanButtonSubtext}>
+                        Швидке автозаповнення
+                      </Text>
+                    </View>
+                    <MaterialIcons name="arrow-forward" size={20} color="rgba(255,255,255,0.8)" />
+                  </View>
+                )}
+              </TouchableOpacity>
+              
+              <View style={styles.dividerContainer}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.orText}>{t('orText')}</Text>
+                <View style={styles.dividerLine} />
+              </View>
+              
+              <View style={styles.manualInputContainer}>
+                <View style={styles.labelContainer}>
+                  <MaterialIcons name="keyboard" size={16} color="#666" />
+                  <Text style={styles.label}>{t('enterBarcodeManually')}</Text>
+                </View>
+                <TextInput
+                  style={styles.barcodeInput}
+                  value={formData.barcode}
+                  onChangeText={(text) => setFormData(prev => ({ ...prev, barcode: text }))}
+                  placeholder="1234567890123"
+                  keyboardType="numeric"
+                  maxLength={13}
+                  placeholderTextColor="#999"
+                />
+              </View>
+              
+              {formData.barcode && (
+                <View style={styles.barcodeInfoCard}>
+                  <View style={styles.barcodeInfoHeader}>
+                    <MaterialIcons name="check-circle" size={20} color="#28a745" />
+                    <Text style={styles.barcodeInfoTitle}>
+                      {t('barcode')} збережено
+                    </Text>
+                  </View>
+                  <Text style={styles.barcodeNumber}>
+                    {formData.barcode}
+                  </Text>
+                </View>
+              )}
+              
+              <View style={styles.helpContainer}>
+                <MaterialIcons name="info" size={16} color="#34572a" />
+                <Text style={styles.barcodeHelp}>
+                  {t('barcodeAutoFillHelp')}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+        
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="photo-library" size={20} color="#34572a" />
-              <Text style={styles.sectionTitle}>Зображення</Text>
+              <Text style={styles.sectionTitle}>{t('images')}</Text>
             </View>
             
-            {/* Image Upload Buttons */}
             <View style={styles.imageButtonsContainer}>
               <TouchableOpacity 
                 style={[styles.imagePickerButton, isUploadingImage && styles.imagePickerButtonDisabled]} 
@@ -440,11 +604,10 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
               </TouchableOpacity>
             </View>
             
-            {/* Current Images Display */}
             {formData.imageUrl && (
               <View style={styles.imageContainer}>
                 <Image source={{ uri: formData.imageUrl }} style={styles.productImage} />
-                <Text style={styles.imageLabel}>Основне зображення</Text>
+                <Text style={styles.imageLabel}>{t('mainImage')}</Text>
                 <TouchableOpacity 
                   style={styles.removeMainImageButton}
                   onPress={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
@@ -457,7 +620,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
             {formData.additionalImages.map((url, index) => (
               <View key={index} style={styles.imageContainer}>
                 <Image source={{ uri: url }} style={styles.productImage} />
-                <Text style={styles.imageLabel}>Додаткове зображення {index + 1}</Text>
+                <Text style={styles.imageLabel}>{t('additionalImage')} {index + 1}</Text>
                 <TouchableOpacity 
                   style={styles.removeImageButton}
                   onPress={() => removeImage(index)}
@@ -467,9 +630,8 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
               </View>
             ))}
 
-            {/* URL Input Section */}
             <View style={styles.urlInputSection}>
-              <Text style={styles.urlInputLabel}>Або додайте URL зображення:</Text>
+              <Text style={styles.urlInputLabel}>{t('addImageUrl')}</Text>
               <View style={styles.addImageContainer}>
                 <TextInput
                   style={styles.input}
@@ -488,7 +650,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
             </View>
           </View>
 
-          {/* Nutriscore */}
+     
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <FontAwesome5 name="medal" size={20} color="#34572a" />
@@ -515,20 +677,19 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
             </View>
           </View>
 
-          {/* Categories */}
+        
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="category" size={20} color="#34572a" />
-              <Text style={styles.sectionTitle}>Категорії</Text>
+              <Text style={styles.sectionTitle}>{t('categories')}</Text>
             </View>
             <View style={styles.addItemContainer}>
               <View style={styles.pickerContainer}>
-                {/* Simplified category selection */}
                 <TextInput
                   style={styles.input}
                   value={selectedCategory}
                   onChangeText={setSelectedCategory}
-                  placeholder="Введіть категорію"
+                  placeholder={t('enterCategory')}
                 />
               </View>
               <TouchableOpacity style={styles.addButton} onPress={addCategory}>
@@ -549,7 +710,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
             </View>
           </View>
 
-          {/* Ingredients */}
+     
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <MaterialIcons name="list-alt" size={20} color="#34572a" />
@@ -559,13 +720,13 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
               style={[styles.input, styles.textArea]}
               value={formData.ingredients}
               onChangeText={(text) => setFormData(prev => ({ ...prev, ingredients: text }))}
-              placeholder="Список інгредієнтів"
+              placeholder={t('ingredientsPlaceholder')}
               multiline
               numberOfLines={4}
             />
           </View>
 
-          {/* Nutrition */}
+     
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <FontAwesome5 name="chart-pie" size={20} color="#34572a" />
@@ -604,7 +765,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
 
             <View style={styles.nutritionGrid}>
               <View style={styles.nutritionItem}>
-                <Text style={styles.label}>Жири загалом</Text>
+                <Text style={styles.label}>{t('totalFats')}</Text>
                 <TextInput
                   style={styles.input}
                   value={formData.nutriments.fats.total.toString()}
@@ -621,7 +782,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
               </View>
 
               <View style={styles.nutritionItem}>
-                <Text style={styles.label}>Насичені жири</Text>
+                <Text style={styles.label}>{t('saturatedFats')}</Text>
                 <TextInput
                   style={styles.input}
                   value={formData.nutriments.fats.saturated?.toString() || ''}
@@ -640,7 +801,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
 
             <View style={styles.nutritionGrid}>
               <View style={styles.nutritionItem}>
-                <Text style={styles.label}>Вуглеводи загалом</Text>
+                <Text style={styles.label}>{t('totalCarbs')}</Text>
                 <TextInput
                   style={styles.input}
                   value={formData.nutriments.carbohydrates.total.toString()}
@@ -657,7 +818,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
               </View>
 
               <View style={styles.nutritionItem}>
-                <Text style={styles.label}>Цукор</Text>
+                <Text style={styles.label}>{t('sugar')}</Text>
                 <TextInput
                   style={styles.input}
                   value={formData.nutriments.carbohydrates.sugar?.toString() || ''}
@@ -675,7 +836,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Сіль (г)</Text>
+              <Text style={styles.label}>{t('saltGrams')}</Text>
               <TextInput
                 style={styles.input}
                 value={formData.nutriments.salt?.toString() || ''}
@@ -689,7 +850,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Вага продукту (г)</Text>
+              <Text style={styles.label}>{t('productWeightGrams')}</Text>
               <TextInput
                 style={styles.input}
                 value={formData.weight?.toString() || ''}
@@ -700,7 +861,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
             </View>
           </View>
 
-          {/* Tags */}
+       
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('tags')}</Text>
             <View style={styles.addItemContainer}>
@@ -709,7 +870,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                   style={styles.input}
                   value={selectedTag}
                   onChangeText={setSelectedTag}
-                  placeholder="Введіть тег"
+                  placeholder={t('enterTag')}
                 />
               </View>
               <TouchableOpacity style={styles.addButton} onPress={addTag}>
@@ -730,7 +891,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
             </View>
           </View>
 
-          {/* Allergens */}
+         
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('allergens')}</Text>
             <View style={styles.addItemContainer}>
@@ -739,7 +900,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                   style={styles.input}
                   value={selectedAllergen}
                   onChangeText={setSelectedAllergen}
-                  placeholder="Введіть алерген"
+                  placeholder={t('enterAllergen')}
                 />
               </View>
               <TouchableOpacity style={styles.addButton} onPress={addAllergen}>
@@ -760,27 +921,17 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
             </View>
           </View>
 
-          {/* Verification Info */}
+      
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>{t('verificationInfo')}</Text>
             
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t('barcode')}</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.barcode}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, barcode: text }))}
-                placeholder="Штрих-код продукту"
-              />
-            </View>
-
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t('manufacturer')}</Text>
               <TextInput
                 style={styles.input}
                 value={formData.manufacturer}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, manufacturer: text }))}
-                placeholder="Виробник"
+                placeholder={t('manufacturerPlaceholder')}
               />
             </View>
 
@@ -790,7 +941,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                 style={styles.input}
                 value={formData.countryOfOrigin}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, countryOfOrigin: text }))}
-                placeholder="Країна походження"
+                placeholder={t('countryOfOriginPlaceholder')}
               />
             </View>
 
@@ -800,7 +951,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                 style={[styles.input, styles.textArea]}
                 value={formData.source}
                 onChangeText={(text) => setFormData(prev => ({ ...prev, source: text }))}
-                placeholder="Де ви знайшли цей продукт?"
+                placeholder={t('sourcePlaceholder')}
                 multiline
                 numberOfLines={2}
               />
@@ -808,6 +959,13 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
           </View>
         </ScrollView>
       </View>
+      
+    
+      <BarcodeScanner
+        visible={showBarcodeScanner}
+        onClose={handleCloseBarcodeScanner}
+        onBarcodeScanned={handleBarcodeScanned}
+      />
     </Modal>
   );
 };
@@ -1047,6 +1205,133 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#666',
     marginBottom: 8,
+  },
+  barcodeContainer: {
+    gap: 16,
+  },
+  barcodeScanButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#34572a',
+    borderRadius: 8,
+  },
+  barcodeScanButtonDisabled: {
+    backgroundColor: '#999',
+  },
+  barcodeScanButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+    marginLeft: 8,
+  },
+  barcodeScanButtonTextDisabled: {
+    color: '#999',
+  },
+  orText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666',
+    textAlign: 'center',
+    marginVertical: 8,
+  },
+  barcodeInputContainer: {
+    marginBottom: 12,
+  },
+  barcodeInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f8f0',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  barcodeInfoText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#28a745',
+    marginLeft: 8,
+  },
+  barcodeHelp: {
+    fontSize: 12,
+    color: '#666',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  loadingContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scanButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  scanIconContainer: {
+    padding: 8,
+    borderWidth: 2,
+    borderColor: '#fff',
+    borderRadius: 8,
+  },
+  scanTextContainer: {
+    flex: 1,
+  },
+  scanButtonSubtext: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#fff',
+    marginBottom: 4,
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#fff',
+  },
+  manualInputContainer: {
+    marginBottom: 12,
+  },
+  barcodeInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#fff',
+  },
+  barcodeInfoCard: {
+    backgroundColor: '#f0f8f0',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  barcodeInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  barcodeInfoTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#28a745',
+    marginLeft: 8,
+  },
+  barcodeNumber: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+  },
+  helpContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
 });
 

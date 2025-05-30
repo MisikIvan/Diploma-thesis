@@ -43,10 +43,35 @@ export const searchProducts = createAsyncThunk(
         return allProducts;
       }
 
-      const filteredProducts = allProducts.filter((product: Product) => 
-        product.name.toLowerCase().includes(query.toLowerCase()) ||
-        product.categories?.some((cat: string) => cat.toLowerCase().includes(query.toLowerCase()))
-      );
+      const searchTerm = query.toLowerCase().trim();
+      
+      const filteredProducts = allProducts.filter((product: Product) => {
+        // Search in product name
+        if (product.name.toLowerCase().includes(searchTerm)) return true;
+        
+        // Search in brand
+        if (product.brand?.toLowerCase().includes(searchTerm)) return true;
+        
+        // Search in product ID/barcode
+        if (product.productId.toLowerCase().includes(searchTerm)) return true;
+        
+        // Search in categories
+        if (product.categories?.some((cat: string) => cat.toLowerCase().includes(searchTerm))) return true;
+        
+        // Search in ingredients
+        if (product.ingredients?.toLowerCase().includes(searchTerm)) return true;
+        
+        // Search in description
+        if (product.description?.toLowerCase().includes(searchTerm)) return true;
+        
+        // Search in allergens
+        if (product.allergens?.some((allergen: string) => allergen.toLowerCase().includes(searchTerm))) return true;
+        
+        // Search in tags
+        if (product.tags?.some((tag: string) => tag.toLowerCase().includes(searchTerm))) return true;
+        
+        return false;
+      });
 
       return filteredProducts;
     } catch (error) {

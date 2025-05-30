@@ -9,7 +9,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import { addNewProduct } from '../redux/slices/productsSlice';
 import { addProduct } from '../api/firebase';
@@ -17,6 +17,8 @@ import { Product, NutriScoreGrade } from '../types/index';
 import { t } from '../utils/translations';
 import { PREDEFINED_TAGS, getTagDisplayName } from '../utils/helpers';
 import ImageUploader from './ImageUploader';
+import BarcodeScanner from './BarcodeScanner';
+import { OpenFoodFactsAPI } from '../api/openFoodFacts';
 
 interface AddProductModalProps {
   visible: boolean;
@@ -61,6 +63,11 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     hasGluten: false,
     weight: 0
   });
+
+
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [isFetchingProductData, setIsFetchingProductData] = useState(false);
+  const [barcode, setBarcode] = useState('');
 
   const getNutriScoreColor = (grade: string) => {
     switch (grade) {
