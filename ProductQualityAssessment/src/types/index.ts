@@ -41,7 +41,6 @@ export interface Product {
   imageUrl?: string;
   nutriscoreGrade: 'A' | 'B' | 'C' | 'D' | 'E';
   nutriscoreScore?: number; 
-  categories: string[];
   ingredients: string;
   allergens: string[];
   additives: string[];
@@ -58,14 +57,12 @@ export interface Product {
       sugar?: number;
     };
     salt?: number;
+    fiber?: number;
   };
 
   tags: string[];
-  isVegan: boolean;
-  isVegetarian: boolean;
-  hasLactose: boolean;
-  hasGluten: boolean;
   weight?: number; 
+  barcode?: string;
   createdBy: 'admin' | 'api' | string;
   createdAt: string;
   updatedAt: string;
@@ -91,6 +88,13 @@ export interface Favorite {
   addedAt: string;
 }
 
+export interface ViewHistory {
+  historyId: string;
+  userId: string;
+  productId: string;
+  viewedAt: string;
+}
+
 export type NutriScoreGrade = 'A' | 'B' | 'C' | 'D' | 'E';
 export type NutriScoreColor = '🟢' | '🟡' | '🟠' | '🔴' | '⛔️';
 
@@ -102,7 +106,7 @@ export const getNutriScoreColor = (grade: NutriScoreGrade): NutriScoreColor => {
     case 'D': return '🔴';
     case 'E': return '⛔️';
   }
-}; 
+};
 
 export interface ProductSubmission {
   submissionId: string;
@@ -121,7 +125,6 @@ export interface ProductSubmission {
     additionalImages?: string[]; 
     nutriscoreGrade: 'A' | 'B' | 'C' | 'D' | 'E';
     nutriscoreScore?: number; 
-    categories: string[];
     ingredients: string;
     allergens: string[];
     additives: string[];
@@ -138,16 +141,22 @@ export interface ProductSubmission {
         sugar?: number;
       };
       salt?: number;
+      fiber?: number;
     };
     tags: string[];
-    isVegan: boolean;
-    isVegetarian: boolean;
-    hasLactose: boolean;
-    hasGluten: boolean;
     weight?: number;
     barcode?: string;
     source?: string; 
     manufacturer?: string;
     countryOfOrigin?: string;
   };
+}
+
+export interface AdminAction {
+  actionId: string;
+  adminId: string;
+  actionType: 'user_blocked' | 'user_unblocked' | 'comment_deleted' | 'product_added' | 'product_deleted';
+  targetId: string;
+  timestamp: string;
+  details?: string;
 } 

@@ -10,9 +10,10 @@ import {
   Image,
   Modal,
   Platform,
+  ActivityIndicator,
+  ImageBackground,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { MaterialIcons, FontAwesome5, Feather } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons, FontAwesome5, Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { ProductSubmission } from '../types';
 import { t } from '../utils/translations';
@@ -20,12 +21,22 @@ import { useAppSelector } from '../redux/hooks';
 import { PREDEFINED_TAGS, getTagDisplayName } from '../utils/helpers';
 import BarcodeScanner from './BarcodeScanner';
 import { OpenFoodFactsAPI } from '../api/openFoodFacts';
+import AutoNutriScore from './AutoNutriScore';
+import { Colors, Spacing, BorderRadius, Typography, ComponentStyles, Shadows } from '../utils/theme';
+import { 
+  analyzeProductImage, 
+  AnalyzedProductData, 
+  autoFillFormFromAnalysis,
+  fallbackProductAnalysis
+} from '../api/smartProductAnalysis';
 
 interface ProductSubmissionFormProps {
   visible: boolean;
   onClose: () => void;
   onSubmit: (submission: Omit<ProductSubmission, 'submissionId' | 'submittedAt'>) => void;
 }
+
+type FormStep = 'ai-scan' | 'barcode' | 'manual' | 'review';
 
 const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
   visible,
@@ -34,6 +45,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
 }) => {
   const currentUser = useAppSelector(state => state.user.currentUser);
   
+  const [currentStep, setCurrentStep] = useState<FormStep>('ai-scan');
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -41,7 +53,6 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
     imageUrl: '',
     additionalImages: [] as string[],
     nutriscoreGrade: 'A' as 'A' | 'B' | 'C' | 'D' | 'E',
-    categories: [] as string[],
     ingredients: '',
     allergens: [] as string[],
     additives: [] as string[],
@@ -51,12 +62,9 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
       fats: { total: 0, saturated: 0 },
       carbohydrates: { total: 0, sugar: 0 },
       salt: 0,
+      fiber: 0,
     },
     tags: [] as string[],
-    isVegan: false,
-    isVegetarian: false,
-    hasLactose: false,
-    hasGluten: false,
     weight: 0,
     barcode: '',
     source: '',
@@ -64,26 +72,18 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
     countryOfOrigin: '',
   });
 
-  const [newImageUrl, setNewImageUrl] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedAllergen, setSelectedAllergen] = useState('');
-  const [selectedAdditive, setSelectedAdditive] = useState('');
-  const [selectedTag, setSelectedTag] = useState('');
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  // AI Analysis states
+  const [aiScanImages, setAiScanImages] = useState<string[]>([]);
+  const [productImages, setProductImages] = useState<string[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisStep, setAnalysisStep] = useState('');
+  const [analysisResult, setAnalysisResult] = useState<AnalyzedProductData | null>(null);
+  const [showAnalysisDetails, setShowAnalysisDetails] = useState(false);
+  
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [isFetchingProductData, setIsFetchingProductData] = useState(false);
-
-  const categories = [
-    'beverages', 'bread', 'dairy', 'meat', 'fish', 'produce', 'snacks', 'eggs', 'meals'
-  ];
-
-  const commonAllergens = [
-    'Milk', 'Eggs', 'Fish', 'Shellfish', 'Tree nuts', 'Peanuts', 'Wheat', 'Soybeans'
-  ];
-
-  const commonAdditives = [
-    'E100', 'E102', 'E104', 'E110', 'E122', 'E124', 'E129', 'E132', 'E133', 'E142'
-  ];
+  const [fruitsVegetablesNuts, setFruitsVegetablesNuts] = useState(0);
+  const [manualBarcodeInput, setManualBarcodeInput] = useState('');
 
   const resetForm = () => {
     setFormData({
@@ -93,7 +93,6 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
       imageUrl: '',
       additionalImages: [],
       nutriscoreGrade: 'A',
-      categories: [],
       ingredients: '',
       allergens: [],
       additives: [],
@@ -103,23 +102,19 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
         fats: { total: 0, saturated: 0 },
         carbohydrates: { total: 0, sugar: 0 },
         salt: 0,
+        fiber: 0,
       },
       tags: [],
-      isVegan: false,
-      isVegetarian: false,
-      hasLactose: false,
-      hasGluten: false,
       weight: 0,
       barcode: '',
       source: '',
       manufacturer: '',
       countryOfOrigin: '',
     });
-    setNewImageUrl('');
-    setSelectedCategory('');
-    setSelectedAllergen('');
-    setSelectedAdditive('');
-    setSelectedTag('');
+    setAiScanImages([]);
+    setProductImages([]);
+    setAnalysisResult(null);
+    setCurrentStep('ai-scan');
   };
 
   const handleClose = () => {
@@ -127,236 +122,272 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
     onClose();
   };
 
-
-  const requestPermissions = async () => {
-    if (Platform.OS !== 'web') {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(
-          t('permissionRequired'),
-          'Потрібен дозвіл для доступу до галереї зображень'
-        );
-        return false;
-      }
+  // AI Scan Functions
+  const takeScanPhoto = async () => {
+    if (aiScanImages.length >= 3) {
+      Alert.alert('⚠️ Ліміт фото', 'Максимум 3 фото для аналізу');
+      return;
     }
-    return true;
-  };
-
-  // Pick image from device
-  const pickImageFromDevice = async () => {
-    const hasPermission = await requestPermissions();
-    if (!hasPermission) return;
 
     try {
-      setIsUploadingImage(true);
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(t('permissionRequired'), t('cameraPermissionNeeded'));
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: false,
+        quality: 0.8,
+        exif: false,
+        base64: false,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const imageUri = result.assets[0].uri;
+        setAiScanImages(prev => [...prev, imageUri]);
+      }
+    } catch (error) {
+      Alert.alert(t('error'), t('imageSelectionErrorOccurred'));
+    }
+  };
+
+  const pickScanImage = async () => {
+    if (aiScanImages.length >= 3) {
+      Alert.alert('⚠️ Ліміт фото', 'Максимум 3 фото для аналізу');
+      return;
+    }
+
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(t('permissionRequired'), t('galleryPermissionNeeded'));
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.8,
+        exif: false,
+        base64: false,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const imageUri = result.assets[0].uri;
+        setAiScanImages(prev => [...prev, imageUri]);
+      }
+    } catch (error) {
+      Alert.alert(t('error'), t('imageSelectionErrorOccurred'));
+    }
+  };
+
+  const removeScanImage = (index: number) => {
+    setAiScanImages(prev => {
+      const newImages = [...prev];
+      newImages.splice(index, 1);
+      return newImages;
+    });
+  };
+
+  // Product Image Functions
+  const addProductImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(t('permissionRequired'), t('galleryPermissionNeeded'));
+        return;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
+        aspect: [1, 1],
+        quality: 0.9,
+        exif: false,
         base64: false,
       });
 
       if (!result.canceled && result.assets[0]) {
         const imageUri = result.assets[0].uri;
         
-      
         if (!formData.imageUrl) {
           setFormData(prev => ({ ...prev, imageUrl: imageUri }));
         } else {
-          setFormData(prev => ({
-            ...prev,
-            additionalImages: [...prev.additionalImages, imageUri]
-          }));
+          setProductImages(prev => [...prev, imageUri]);
         }
-        
-        Alert.alert(t('success'), 'Зображення успішно додано!');
       }
     } catch (error) {
-      console.error('Error picking image:', error);
-      Alert.alert(t('error'), 'Помилка при виборі зображення');
-    } finally {
-      setIsUploadingImage(false);
+      Alert.alert(t('error'), t('imageSelectionErrorOccurred'));
     }
   };
 
-  // Take photo with camera
-  const takePhotoWithCamera = async () => {
-    const hasPermission = await requestPermissions();
-    if (!hasPermission) return;
+  const removeProductImage = (index: number) => {
+    if (index === -1) {
+     
+      setFormData(prev => ({ ...prev, imageUrl: '' }));
+    } else {
+      setProductImages(prev => {
+        const newImages = [...prev];
+        newImages.splice(index, 1);
+        return newImages;
+      });
+    }
+  };
+
+  // AI Analysis
+  const startAiAnalysis = async () => {
+    if (aiScanImages.length === 0) {
+      Alert.alert('⚠️ Увага', 'Будь ласка, додайте принаймні одне фото складу продукту');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setAnalysisStep('🔍 Аналіз зображень...');
 
     try {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert(
-          t('permissionRequired'),
-          'Потрібен дозвіл для доступу до камери'
-        );
-        return;
-      }
+   
+      const analysisPromises = aiScanImages.map(imageUri => 
+        analyzeProductImage(imageUri, {
+          name: formData.name,
+          barcode: formData.barcode,
+        })
+      );
 
-      setIsUploadingImage(true);
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
+      const results = await Promise.all(analysisPromises);
+      
+      // Combine results
+      const combinedResult: AnalyzedProductData = {
+        name: '',
+        brand: '',
+        ingredients: '',
+        nutrition: undefined,
+        allergens: [],
+        additives: [],
+        weight: undefined,
+        confidence: 0,
+      };
 
-      if (!result.canceled && result.assets[0]) {
-        const imageUri = result.assets[0].uri;
-        
-       
-        if (!formData.imageUrl) {
-          setFormData(prev => ({ ...prev, imageUrl: imageUri }));
-        } else {
-          setFormData(prev => ({
-            ...prev,
-            additionalImages: [...prev.additionalImages, imageUri]
-          }));
+      let bestConfidence = 0;
+      results.forEach(result => {
+        if (result.confidence > bestConfidence) {
+          bestConfidence = result.confidence;
         }
         
-        Alert.alert(t('success'), 'Фото успішно додано!');
-      }
-    } catch (error) {
-      console.error('Error taking photo:', error);
-      Alert.alert(t('error'), 'Помилка при зйомці фото');
-    } finally {
-      setIsUploadingImage(false);
-    }
-  };
+        if (result.name && !combinedResult.name) combinedResult.name = result.name;
+        if (result.brand && !combinedResult.brand) combinedResult.brand = result.brand;
+        if (result.ingredients && !combinedResult.ingredients) combinedResult.ingredients = result.ingredients;
+        if (result.nutrition && !combinedResult.nutrition) combinedResult.nutrition = result.nutrition;
+        if (result.allergens?.length && !combinedResult.allergens?.length) combinedResult.allergens = result.allergens;
+        if (result.weight && !combinedResult.weight) combinedResult.weight = result.weight;
+      });
 
+      combinedResult.confidence = bestConfidence;
+      setAnalysisResult(combinedResult);
 
-  const showImagePickerOptions = () => {
-    Alert.alert(
-      'Додати зображення',
-      'Виберіть спосіб додавання зображення',
-      [
-        { text: t('cancel'), style: 'cancel' },
-        { text: '📷 Зробити фото', onPress: takePhotoWithCamera },
-        { text: '🖼️ Вибрати з галереї', onPress: pickImageFromDevice },
-      ]
-    );
-  };
-
-
-  const addImageFromUrl = () => {
-    if (newImageUrl.trim()) {
-      if (!formData.imageUrl) {
-        setFormData(prev => ({ ...prev, imageUrl: newImageUrl.trim() }));
+      if (combinedResult.confidence > 0.3) {
+        setAnalysisStep('📝 Заповнення форми...');
+        const autoFilledData = autoFillFormFromAnalysis(combinedResult, formData);
+        applyAnalysisResults(autoFilledData);
       } else {
-        setFormData(prev => ({
-          ...prev,
-          additionalImages: [...prev.additionalImages, newImageUrl.trim()]
-        }));
+        Alert.alert(
+          'Низька точність аналізу',
+          'Не вдалося впевнено розпізнати дані. Спробуйте зробити більш чітке фото етикетки.'
+        );
       }
-      setNewImageUrl('');
+
+    } catch (error) {
+      console.error('Analysis error:', error);
+      
+     
+      setAnalysisStep('Спроба базового аналізу...');
+      try {
+        const fallbackResult = fallbackProductAnalysis('');
+        if (fallbackResult.confidence > 0) {
+          setAnalysisResult(fallbackResult);
+          const autoFilledData = autoFillFormFromAnalysis(fallbackResult, formData);
+          applyAnalysisResults(autoFilledData);
+        } else {
+          throw new Error('Fallback also failed');
+        }
+      } catch (fallbackError) {
+        Alert.alert(
+          'Помилка аналізу',
+          'Не вдалося проаналізувати продукт. Перевірте підключення до інтернету.'
+        );
+      }
+    } finally {
+      setIsAnalyzing(false);
+      setAnalysisStep('');
     }
   };
 
- 
-  const removeImage = (index: number) => {
+  const applyAnalysisResults = (autoFilledData: any) => {
+    const validGrade = ['A', 'B', 'C', 'D', 'E'].includes(autoFilledData.nutriscoreGrade) 
+      ? autoFilledData.nutriscoreGrade as 'A' | 'B' | 'C' | 'D' | 'E'
+      : formData.nutriscoreGrade;
+    
     setFormData(prev => ({
       ...prev,
-      additionalImages: prev.additionalImages.filter((_, i) => i !== index)
+      name: autoFilledData.name || prev.name,
+      brand: autoFilledData.brand || prev.brand,
+      ingredients: autoFilledData.ingredients || prev.ingredients,
+      description: autoFilledData.description || prev.description,
+      allergens: autoFilledData.allergens || prev.allergens,
+      additives: autoFilledData.additives || prev.additives,
+      tags: autoFilledData.tags || prev.tags,
+      nutriscoreGrade: validGrade,
+      nutriments: autoFilledData.nutriments ? {
+        calories: autoFilledData.nutriments.calories || prev.nutriments.calories,
+        proteins: autoFilledData.nutriments.proteins || prev.nutriments.proteins,
+        fats: {
+          total: autoFilledData.nutriments.fats?.total || prev.nutriments.fats.total,
+          saturated: autoFilledData.nutriments.fats?.saturated || prev.nutriments.fats.saturated,
+        },
+        carbohydrates: {
+          total: autoFilledData.nutriments.carbohydrates?.total || prev.nutriments.carbohydrates.total,
+          sugar: autoFilledData.nutriments.carbohydrates?.sugar || prev.nutriments.carbohydrates.sugar,
+        },
+        salt: autoFilledData.nutriments.salt || prev.nutriments.salt,
+        fiber: autoFilledData.nutriments.fiber || prev.nutriments.fiber,
+      } : prev.nutriments,
+      weight: autoFilledData.weight || prev.weight,
     }));
+    
+    setCurrentStep('manual');
+    Alert.alert('🎉 Аналіз завершено!', 'Дані автоматично заповнені. Перевірте та відредагуйте за потреби.');
   };
 
-  const addCategory = () => {
-    if (selectedCategory && !formData.categories.includes(selectedCategory)) {
-      setFormData(prev => ({
-        ...prev,
-        categories: [...prev.categories, selectedCategory]
-      }));
-      setSelectedCategory('');
+  // Auto-save barcode input
+  const handleManualBarcodeChange = async (text: string) => {
+    setManualBarcodeInput(text);
+    
+    // Auto-save when the barcode is complete 
+    if (text.length === 13 && /^\d{13}$/.test(text)) {
+      await handleBarcodeScanned(text);
     }
-  };
-
-  const removeCategory = (category: string) => {
-    setFormData(prev => ({
-      ...prev,
-      categories: prev.categories.filter(c => c !== category)
-    }));
-  };
-
-  const addAllergen = () => {
-    if (selectedAllergen && !formData.allergens.includes(selectedAllergen)) {
-      setFormData(prev => ({
-        ...prev,
-        allergens: [...prev.allergens, selectedAllergen]
-      }));
-      setSelectedAllergen('');
-    }
-  };
-
-  const removeAllergen = (allergen: string) => {
-    setFormData(prev => ({
-      ...prev,
-      allergens: prev.allergens.filter(a => a !== allergen)
-    }));
-  };
-
-  const addAdditive = () => {
-    if (selectedAdditive && !formData.additives.includes(selectedAdditive)) {
-      setFormData(prev => ({
-        ...prev,
-        additives: [...prev.additives, selectedAdditive]
-      }));
-      setSelectedAdditive('');
-    }
-  };
-
-  const removeAdditive = (additive: string) => {
-    setFormData(prev => ({
-      ...prev,
-      additives: prev.additives.filter(a => a !== additive)
-    }));
-  };
-
-  const addTag = () => {
-    if (selectedTag && !formData.tags.includes(selectedTag)) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, selectedTag]
-      }));
-      setSelectedTag('');
-    }
-  };
-
-  const removeTag = (tag: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(t => t !== tag)
-    }));
-  };
-
-
-  const handleOpenBarcodeScanner = () => {
-    setShowBarcodeScanner(true);
   };
 
   const handleBarcodeScanned = async (barcode: string) => {
+    setShowBarcodeScanner(false);
+    
+    if (!barcode || barcode.trim() === '') {
+      Alert.alert('Помилка', 'Неправильний формат штрих-коду');
+      return;
+    }
+
     setIsFetchingProductData(true);
     
     try {
-      console.log('Scanned barcode:', barcode);
-      
-     
       const productData = await OpenFoodFactsAPI.getProductByBarcode(barcode);
       
       if (productData) {
-      
         setFormData(prev => ({
           ...prev,
           name: productData.name || prev.name,
-          description: productData.description || prev.description,
-          imageUrl: productData.imageUrl || prev.imageUrl,
-          barcode: barcode,
+          brand: productData.brand || prev.brand,
           ingredients: productData.ingredients || prev.ingredients,
-          nutriscoreGrade: productData.nutriscoreGrade || prev.nutriscoreGrade,
-          categories: productData.categories?.length > 0 ? productData.categories : prev.categories,
-          allergens: productData.allergens?.length > 0 ? productData.allergens : prev.allergens,
-          additives: productData.additives?.length > 0 ? productData.additives : prev.additives,
-          tags: productData.tags?.length > 0 ? productData.tags : prev.tags,
+          imageUrl: productData.imageUrl || prev.imageUrl,
           nutriments: {
             calories: productData.nutriments?.calories || prev.nutriments.calories,
             proteins: productData.nutriments?.proteins || prev.nutriments.proteins,
@@ -369,603 +400,848 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
               sugar: productData.nutriments?.carbohydrates?.sugar || prev.nutriments.carbohydrates.sugar,
             },
             salt: productData.nutriments?.salt || prev.nutriments.salt,
+            fiber: productData.nutriments?.fiber || prev.nutriments.fiber,
           },
-          isVegan: productData.isVegan ?? prev.isVegan,
-          isVegetarian: productData.isVegetarian ?? prev.isVegetarian,
-          hasLactose: productData.hasLactose ?? prev.hasLactose,
-          hasGluten: productData.hasGluten ?? prev.hasGluten,
-          weight: productData.weight || prev.weight,
         }));
-        
-        Alert.alert(
-          t('successExclamation'), 
-          `Дані продукту "${productData.name}" були автоматично заповнені. Перевірте та відредагуйте їх за потреби.`,
-          [{ text: 'OK' }]
-        );
+        Alert.alert('Успіх', 'Дані продукту завантажено');
       } else {
-        setFormData(prev => ({ ...prev, barcode: barcode }));
-        Alert.alert(
-          t('productNotFound'),
-          `Штрих-код ${barcode} було збережено, але дані продукту не знайдено в базі. Будь ласка, заповніть форму вручну.`,
-          [{ text: 'OK' }]
-        );
+        Alert.alert('Інформація', 'Продукт не знайдено в базі OpenFoodFacts');
       }
+      
+      setFormData(prev => ({ ...prev, barcode }));
+      setManualBarcodeInput(barcode);
     } catch (error) {
       console.error('Error fetching product data:', error);
-      setFormData(prev => ({ ...prev, barcode: barcode }));
-      Alert.alert(
-        t('networkError'),
-        `Штрих-код ${barcode} було збережено, але не вдалося завантажити дані продукту. Перевірте підключення до Інтернету.`,
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Помилка', 'Помилка завантаження даних продукту');
+      setFormData(prev => ({ ...prev, barcode }));
+      setManualBarcodeInput(barcode);
     } finally {
       setIsFetchingProductData(false);
-      setShowBarcodeScanner(false);
     }
-  };
-
-  const handleCloseBarcodeScanner = () => {
-    setShowBarcodeScanner(false);
   };
 
   const handleSubmit = () => {
-    if (!currentUser) {
-      Alert.alert('Error', 'You must be logged in to submit a product');
-      return;
-    }
-
     if (!formData.name.trim()) {
-      Alert.alert('Error', t('productNameRequired'));
+      Alert.alert(t('error'), t('productNameRequired'));
       return;
     }
 
-    if (!formData.ingredients.trim()) {
-      Alert.alert('Error', 'Ingredients are required');
+    if (!currentUser) {
+      Alert.alert(t('error'), t('authenticationError'));
       return;
     }
 
-    const submission: Omit<ProductSubmission, 'submissionId' | 'submittedAt'> = {
+    const submission = {
       userId: currentUser.userId,
       userDisplayName: currentUser.displayName,
-      status: 'pending',
-      productData: { ...formData },
+      productData: { 
+        ...formData,
+        additionalImages: productImages,
+      },
+      submissionType: 'ADD_NEW' as const,
+      status: 'pending' as const,
+      adminComments: '',
     };
 
     onSubmit(submission);
-    handleClose();
+    resetForm();
+    Alert.alert('Успіх', 'Продукт успішно відправлено на модерацію!');
   };
 
-  return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet">
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <Feather name="x" size={24} color="#666" />
-          </TouchableOpacity>
-          <View style={styles.headerTitleContainer}>
-            <FontAwesome5 name="plus-circle" size={20} color="#34572a" style={styles.headerIcon} />
-            <Text style={styles.headerTitle}>{t('submitProduct')}</Text>
-          </View>
-          <TouchableOpacity onPress={handleSubmit} style={styles.submitButton}>
-            <FontAwesome5 name="paper-plane" size={16} color="#fff" style={styles.submitIcon} />
-            <Text style={styles.submitButtonText}>Надіслати</Text>
+  
+  const renderStepIndicator = () => {
+    const steps = [
+      { 
+        key: 'ai-scan', 
+        icon: 'camera', 
+        title: 'AI Сканування', 
+        completed: analysisResult !== null 
+      },
+      { 
+        key: 'barcode', 
+        icon: 'barcode-outline', 
+        title: 'Штрих-код', 
+        completed: !!formData.barcode 
+      },
+      { 
+        key: 'manual', 
+        icon: 'create-outline', 
+        title: 'Редагування', 
+        completed: formData.name.trim().length > 0 
+      },
+      { 
+        key: 'review', 
+        icon: 'checkmark-circle-outline', 
+        title: 'Перевірка', 
+        completed: false 
+      },
+    ];
+
+    const currentIndex = steps.findIndex(step => step.key === currentStep);
+
+    return (
+      <View style={styles.stepIndicator}>
+        {steps.map((step, index) => {
+          const isActive = currentStep === step.key;
+          const isCompleted = step.completed;
+          const isPast = index < currentIndex;
+          const isAccessible = index <= currentIndex + 1; 
+
+          return (
+            <TouchableOpacity
+              key={step.key}
+              style={[
+                styles.stepItem,
+                isActive && styles.stepItemActive,
+                isCompleted && styles.stepItemCompleted,
+              ]}
+              onPress={() => isAccessible ? setCurrentStep(step.key as FormStep) : null}
+              disabled={!isAccessible}
+            >
+              <View style={[
+                styles.stepIcon,
+                isActive && styles.stepIconActive,
+                isCompleted && styles.stepIconCompleted,
+                isPast && styles.stepIconPast,
+              ]}>
+                <Ionicons 
+                  name={isCompleted ? 'checkmark' : step.icon as any} 
+                  size={20} 
+                  color={
+                    isCompleted || isActive ? Colors.text.onPrimary : 
+                    isAccessible ? Colors.primary : Colors.text.disabled
+                  } 
+                />
+              </View>
+              <Text style={[
+                styles.stepTitle,
+                isActive && styles.stepTitleActive,
+                isCompleted && styles.stepTitleCompleted,
+                !isAccessible && styles.stepTitleDisabled,
+              ]}>
+                {step.title}
+              </Text>
+              
+              {index < steps.length - 1 && (
+                <View style={[
+                  styles.stepLine,
+                  (isCompleted || isPast) && styles.stepLineCompleted
+                ]} />
+              )}
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    );
+  };
+
+  
+  const renderAnalysisDetails = () => {
+    if (!analysisResult) return null;
+
+    return (
+      <View style={styles.analysisDetails}>
+        <View style={styles.analysisHeader}>
+          <Text style={styles.analysisTitle}>Результати аналізу</Text>
+          <TouchableOpacity onPress={() => setShowAnalysisDetails(!showAnalysisDetails)}>
+            <Ionicons 
+              name={showAnalysisDetails ? "chevron-up" : "chevron-down"} 
+              size={20} 
+              color={Colors.primary} 
+            />
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Feather name="info" size={20} color="#34572a" />
-              <Text style={styles.sectionTitle}>{t('basicInformation')}</Text>
-            </View>
-            
-            <View style={styles.inputGroup}>
-              <View style={styles.labelContainer}>
-                <FontAwesome5 name="tag" size={14} color="#666" />
-                <Text style={styles.label}>{t('productName')} *</Text>
+        {showAnalysisDetails && (
+          <View style={styles.analysisContent}>
+         
+            <View style={styles.confidenceSection}>
+              <Text style={styles.confidenceLabel}>Точність розпізнавання</Text>
+              <View style={styles.confidenceBar}>
+                <View style={[
+                  styles.confidenceFill, 
+                  { width: `${analysisResult.confidence * 100}%` }
+                ]} />
               </View>
-              <TextInput
-                style={styles.input}
-                value={formData.name}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
-                placeholder={t('productNamePlaceholder')}
-              />
+              <Text style={styles.confidenceText}>
+                {Math.round(analysisResult.confidence * 100)}% - {
+                  analysisResult.confidence > 0.8 ? 'Відмінно' :
+                  analysisResult.confidence > 0.6 ? 'Добре' :
+                  analysisResult.confidence > 0.4 ? 'Задовільно' : 'Погано'
+                }
+              </Text>
             </View>
-
-            <View style={styles.inputGroup}>
-              <View style={styles.labelContainer}>
-                <MaterialIcons name="business" size={14} color="#666" />
-                <Text style={styles.label}>Бренд</Text>
-              </View>
-              <TextInput
-                style={styles.input}
-                value={formData.brand}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, brand: text }))}
-                placeholder={t('brandPlaceholder')}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <View style={styles.labelContainer}>
-                <Feather name="file-text" size={14} color="#666" />
-                <Text style={styles.label}>{t('description')}</Text>
-              </View>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={formData.description}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, description: text }))}
-                placeholder={t('productDescriptionPlaceholder')}
-                multiline
-                numberOfLines={3}
-              />
-            </View>
-          </View>
 
        
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <MaterialIcons name="qr-code-scanner" size={20} color="#34572a" />
-              <Text style={styles.sectionTitle}>{t('barcodeSection')}</Text>
-            </View>
-            
-            <View style={styles.barcodeContainer}>
-              <TouchableOpacity 
-                style={[styles.barcodeScanButton, isFetchingProductData && styles.barcodeScanButtonDisabled]}
-                onPress={handleOpenBarcodeScanner}
-                disabled={isFetchingProductData}
-              >
-                {isFetchingProductData ? (
-                  <View style={styles.loadingContent}>
-                    <MaterialIcons name="hourglass-empty" size={20} color="#999" />
-                    <Text style={[styles.barcodeScanButtonText, styles.barcodeScanButtonTextDisabled]}>
-                      {t('fetchingProductData')}...
-                    </Text>
-                  </View>
-                ) : (
-                  <View style={styles.scanButtonContent}>
-                    <View style={styles.scanIconContainer}>
-                      <MaterialIcons name="qr-code-scanner" size={28} color="#fff" />
-                    </View>
-                    <View style={styles.scanTextContainer}>
-                      <Text style={styles.barcodeScanButtonText}>
-                        {t('scanBarcode')}
-                      </Text>
-                      <Text style={styles.scanButtonSubtext}>
-                        Швидке автозаповнення
-                      </Text>
-                    </View>
-                    <MaterialIcons name="arrow-forward" size={20} color="rgba(255,255,255,0.8)" />
-                  </View>
-                )}
-              </TouchableOpacity>
-              
-              <View style={styles.dividerContainer}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.orText}>{t('orText')}</Text>
-                <View style={styles.dividerLine} />
-              </View>
-              
-              <View style={styles.manualInputContainer}>
-                <View style={styles.labelContainer}>
-                  <MaterialIcons name="keyboard" size={16} color="#666" />
-                  <Text style={styles.label}>{t('enterBarcodeManually')}</Text>
-                </View>
-                <TextInput
-                  style={styles.barcodeInput}
-                  value={formData.barcode}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, barcode: text }))}
-                  placeholder="1234567890123"
-                  keyboardType="numeric"
-                  maxLength={13}
-                  placeholderTextColor="#999"
-                />
-              </View>
-              
-              {formData.barcode && (
-                <View style={styles.barcodeInfoCard}>
-                  <View style={styles.barcodeInfoHeader}>
-                    <MaterialIcons name="check-circle" size={20} color="#28a745" />
-                    <Text style={styles.barcodeInfoTitle}>
-                      {t('barcode')} збережено
-                    </Text>
-                  </View>
-                  <Text style={styles.barcodeNumber}>
-                    {formData.barcode}
-                  </Text>
-                </View>
-              )}
-              
-              <View style={styles.helpContainer}>
-                <MaterialIcons name="info" size={16} color="#34572a" />
-                <Text style={styles.barcodeHelp}>
-                  {t('barcodeAutoFillHelp')}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-        
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <MaterialIcons name="photo-library" size={20} color="#34572a" />
-              <Text style={styles.sectionTitle}>{t('images')}</Text>
-            </View>
-            
-            <View style={styles.imageButtonsContainer}>
-              <TouchableOpacity 
-                style={[styles.imagePickerButton, isUploadingImage && styles.imagePickerButtonDisabled]} 
-                onPress={showImagePickerOptions}
-                disabled={isUploadingImage}
-              >
-                <MaterialIcons name="add-a-photo" size={20} color={isUploadingImage ? "#999" : "#34572a"} />
-                <Text style={[styles.imagePickerButtonText, isUploadingImage && styles.imagePickerButtonTextDisabled]}>
-                  {isUploadingImage ? t('uploading') : t('addFromDevice')}
-                </Text>
-              </TouchableOpacity>
-            </View>
-            
-            {formData.imageUrl && (
-              <View style={styles.imageContainer}>
-                <Image source={{ uri: formData.imageUrl }} style={styles.productImage} />
-                <Text style={styles.imageLabel}>{t('mainImage')}</Text>
-                <TouchableOpacity 
-                  style={styles.removeMainImageButton}
-                  onPress={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
-                >
-                  <Ionicons name="close-circle" size={24} color="#dc3545" />
-                </TouchableOpacity>
+            {analysisResult.name && (
+              <View style={styles.foundItem}>
+                <Text style={styles.foundLabel}>🏷️ Назва:</Text>
+                <Text style={styles.foundValue}>{analysisResult.name}</Text>
               </View>
             )}
 
-            {formData.additionalImages.map((url, index) => (
-              <View key={index} style={styles.imageContainer}>
-                <Image source={{ uri: url }} style={styles.productImage} />
-                <Text style={styles.imageLabel}>{t('additionalImage')} {index + 1}</Text>
-                <TouchableOpacity 
+            {analysisResult.brand && (
+              <View style={styles.foundItem}>
+                <Text style={styles.foundLabel}>🏭 Бренд:</Text>
+                <Text style={styles.foundValue}>{analysisResult.brand}</Text>
+              </View>
+            )}
+
+            {analysisResult.nutrition && (
+              <View style={styles.foundItem}>
+                <Text style={styles.foundLabel}>🍎 Харчова цінність:</Text>
+                <Text style={styles.foundValue}>
+                  {analysisResult.nutrition.calories && `${analysisResult.nutrition.calories} ккал, `}
+                  {analysisResult.nutrition.proteins && `${analysisResult.nutrition.proteins}г білків`}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  // Render AI Scan Step
+  const renderAiScanStep = () => (
+    <ScrollView style={styles.stepContainer} showsVerticalScrollIndicator={false}>
+      {/* AI Banner */}
+      <View style={styles.aiBanner}>
+        <ImageBackground 
+          source={require('../assets/AI-banner.png')} 
+          style={styles.bannerBackground}
+          imageStyle={styles.bannerImageStyle}
+        >
+          <View style={styles.bannerOverlay} />
+          <View style={styles.bannerContent}>
+            <View style={styles.bannerTextContainer}>
+              <View style={styles.bannerTitleRow}>
+                <MaterialIcons 
+                  name="auto-awesome" 
+                  size={20} 
+                  color="#fff" 
+                  style={styles.bannerTitleIcon}
+                />
+                <Text style={styles.bannerTitle}>Розумний аналіз продукту</Text>
+              </View>
+              <Text style={styles.bannerSubtitle}>
+                Додайте до 3 фото складу та етикетки для автоматичного розпізнавання
+              </Text>
+              <View style={styles.bannerFeatureRow}>
+                <MaterialIcons name="speed" size={12} color="rgba(255, 255, 255, 0.8)" />
+                <Text style={styles.bannerFeatureText}>Швидко</Text>
+                <MaterialIcons name="high-quality" size={12} color="rgba(255, 255, 255, 0.8)" />
+                <Text style={styles.bannerFeatureText}>Точно</Text>
+                <MaterialIcons name="psychology" size={12} color="rgba(255, 255, 255, 0.8)" />
+                <Text style={styles.bannerFeatureText}>Розумно</Text>
+              </View>
+            </View>
+          </View>
+        </ImageBackground>
+      </View>
+
+      <View style={styles.scanSection}>
+        <Text style={styles.sectionTitle}>
+          <MaterialIcons name="photo-camera" size={18} color={Colors.primary} />
+          {' Фото для аналізу'}
+        </Text>
+        
+        {aiScanImages.length === 0 ? (
+          <View style={styles.emptyImageContainer}>
+            <Ionicons name="scan" size={48} color={Colors.primary} />
+            <Text style={styles.emptyImageText}>Додайте фото для аналізу</Text>
+            <Text style={styles.emptyImageSubtext}>
+              Рекомендуємо: склад, поживна цінність, загальний вигляд
+            </Text>
+          </View>
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
+            {aiScanImages.map((uri, index) => (
+              <View key={index} style={styles.scanImageContainer}>
+                <Image source={{ uri }} style={styles.scanImage} />
+                <TouchableOpacity
                   style={styles.removeImageButton}
-                  onPress={() => removeImage(index)}
+                  onPress={() => removeScanImage(index)}
                 >
-                  <Ionicons name="close-circle" size={24} color="#dc3545" />
+                  <Ionicons name="close-circle" size={24} color={Colors.error} />
+                </TouchableOpacity>
+                <Text style={styles.imageNumber}>{index + 1}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        )}
+
+        <View style={styles.scanActions}>
+          <TouchableOpacity 
+            style={[styles.scanButton, aiScanImages.length >= 3 && styles.scanButtonDisabled]} 
+            onPress={takeScanPhoto}
+            disabled={aiScanImages.length >= 3}
+          >
+            <Ionicons name="camera" size={24} color={Colors.text.onPrimary} />
+            <Text style={styles.scanButtonText}>Зробити фото</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.scanButton, styles.scanButtonSecondary, aiScanImages.length >= 3 && styles.scanButtonDisabled]} 
+            onPress={pickScanImage}
+            disabled={aiScanImages.length >= 3}
+          >
+            <Ionicons name="images" size={24} color={Colors.primary} />
+            <Text style={[styles.scanButtonText, styles.scanButtonSecondaryText]}>З галереї</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      
+      {aiScanImages.length > 0 && (
+        <View style={styles.analysisSection}>
+          {isAnalyzing ? (
+            <View style={styles.analyzingContainer}>
+              <ActivityIndicator size="large" color={Colors.primary} />
+              <Text style={styles.analyzingText}>{analysisStep}</Text>
+              <Text style={styles.analyzingSubtext}>
+                Аналізуємо {aiScanImages.length} {aiScanImages.length === 1 ? 'зображення' : 'зображення'}...
+              </Text>
+            </View>
+          ) : analysisResult ? (
+            <View>
+              {renderAnalysisDetails()}
+              <TouchableOpacity style={styles.reAnalyzeButton} onPress={startAiAnalysis}>
+                <Ionicons name="refresh" size={20} color={Colors.primary} />
+                <Text style={styles.reAnalyzeButtonText}>Повторити аналіз</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.analyzeButton} onPress={startAiAnalysis}>
+              <Ionicons name="flash" size={24} color={Colors.text.onPrimary} />
+              <Text style={styles.analyzeButtonText}>
+                <MaterialIcons name="science" size={18} color={Colors.text.onPrimary} />
+                {' Розпочати аналіз'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+   
+      <View style={styles.productImagesSection}>
+        <Text style={styles.sectionTitle}>
+          <MaterialIcons name="image" size={18} color={Colors.primary} />
+          {' Зображення для публікації'}
+        </Text>
+        <Text style={styles.sectionSubtitle}>
+          Оберіть красиві фото продукту для показу користувачам
+        </Text>
+
+        <View style={styles.productImagesContainer}>
+          {formData.imageUrl && (
+            <View style={styles.mainImageContainer}>
+              <Image source={{ uri: formData.imageUrl }} style={styles.mainImage} />
+              <TouchableOpacity
+                style={styles.removeImageButton}
+                onPress={() => removeProductImage(-1)}
+              >
+                <Ionicons name="close-circle" size={24} color={Colors.error} />
+              </TouchableOpacity>
+              <Text style={styles.mainImageLabel}>Головне фото</Text>
+            </View>
+          )}
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.additionalImagesScroll}>
+            {productImages.map((uri, index) => (
+              <View key={index} style={styles.additionalImageContainer}>
+                <Image source={{ uri }} style={styles.additionalImage} />
+                <TouchableOpacity
+                  style={styles.removeImageButton}
+                  onPress={() => removeProductImage(index)}
+                >
+                  <Ionicons name="close-circle" size={24} color={Colors.error} />
                 </TouchableOpacity>
               </View>
             ))}
+          </ScrollView>
+        </View>
 
-            <View style={styles.urlInputSection}>
-              <Text style={styles.urlInputLabel}>{t('addImageUrl')}</Text>
-              <View style={styles.addImageContainer}>
-                <TextInput
-                  style={styles.input}
-                  value={newImageUrl}
-                  onChangeText={setNewImageUrl}
-                  placeholder="https://example.com/image.jpg"
-                />
-                <TouchableOpacity 
-                  style={styles.addButton} 
-                  onPress={addImageFromUrl}
-                  disabled={!newImageUrl.trim()}
-                >
-                  <Ionicons name="add" size={20} color={newImageUrl.trim() ? "#34572a" : "#999"} />
-                </TouchableOpacity>
-              </View>
+        <View style={styles.scanActions}>
+          <TouchableOpacity 
+            style={styles.scanButton} 
+            onPress={async () => {
+              try {
+                const { status } = await ImagePicker.requestCameraPermissionsAsync();
+                if (status !== 'granted') {
+                  Alert.alert(t('permissionRequired'), t('cameraPermissionNeeded'));
+                  return;
+                }
+
+                const result = await ImagePicker.launchCameraAsync({
+                  allowsEditing: true,
+                  aspect: [1, 1],
+                  quality: 0.9,
+                  exif: false,
+                  base64: false,
+                });
+
+                if (!result.canceled && result.assets[0]) {
+                  const imageUri = result.assets[0].uri;
+                  if (!formData.imageUrl) {
+                    setFormData(prev => ({ ...prev, imageUrl: imageUri }));
+                  } else {
+                    setProductImages(prev => [...prev, imageUri]);
+                  }
+                }
+              } catch (error) {
+                Alert.alert(t('error'), t('imageSelectionErrorOccurred'));
+              }
+            }}
+          >
+            <Ionicons name="camera" size={24} color={Colors.text.onPrimary} />
+            <Text style={styles.scanButtonText}>Зробити фото</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.scanButton, styles.scanButtonSecondary]} 
+            onPress={addProductImage}
+          >
+            <Ionicons name="images" size={24} color={Colors.primary} />
+            <Text style={[styles.scanButtonText, styles.scanButtonSecondaryText]}>З галереї</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ScrollView>
+  );
+
+  // Render Barcode Step
+  const renderBarcodeStep = () => (
+    <View style={styles.stepContainer}>
+      <View style={styles.stepHeader}>
+        <Ionicons name="barcode-outline" size={32} color={Colors.primary} />
+        <Text style={styles.stepHeaderTitle}>
+          <MaterialIcons name="qr-code" size={18} color={Colors.primary} />
+          {' Штрих-код (обов\'язково)'}
+        </Text>
+        <Text style={styles.stepHeaderSubtitle}>
+          Сканування або ручний ввід для перевірки в базі OpenFoodFacts
+        </Text>
+      </View>
+
+      <View style={styles.barcodeContainer}>
+        {formData.barcode ? (
+          <View style={styles.barcodeResult}>
+            <View style={styles.barcodeResultHeader}>
+              <Ionicons name="checkmark-circle" size={24} color={Colors.success} />
+              <Text style={styles.barcodeResultTitle}>Штрих-код введено</Text>
             </View>
+            <Text style={styles.barcodeValue}>{formData.barcode}</Text>
+            <TouchableOpacity 
+              style={styles.rescanButton}
+              onPress={() => {
+                setFormData(prev => ({ ...prev, barcode: '' }));
+                setManualBarcodeInput('');
+              }}
+            >
+              <Text style={styles.rescanButtonText}>Змінити штрих-код</Text>
+            </TouchableOpacity>
           </View>
+        ) : (
+          <View style={styles.barcodeEmpty}>
+            <Ionicons name="barcode-outline" size={48} color={Colors.primary} />
+            <Text style={styles.barcodeEmptyTitle}>Введіть штрих-код</Text>
+            <Text style={styles.barcodeEmptySubtitle}>
+              Для автозаповнення деяких полів з OpenFoodFacts
+            </Text>
+            
+            {/* Manual Input */}
+            <View style={styles.manualBarcodeSection}>
+              <Text style={styles.inputLabel}>Ручний ввід штрих-коду *</Text>
+              <TextInput
+                style={styles.barcodeInput}
+                value={manualBarcodeInput}
+                onChangeText={handleManualBarcodeChange}
+                placeholder="Введіть 13-значний штрих-код"
+                placeholderTextColor={Colors.text.disabled}
+                keyboardType="numeric"
+                maxLength={13}
+              />
+              {isFetchingProductData && (
+                <View style={styles.loadingIndicator}>
+                  <ActivityIndicator size="small" color={Colors.primary} />
+                  <Text style={styles.loadingText}>Перевіряємо в базі...</Text>
+                </View>
+              )}
+            </View>
 
-     
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <FontAwesome5 name="medal" size={20} color="#34572a" />
-              <Text style={styles.sectionTitle}>Nutriscore</Text>
-            </View>
-            <View style={styles.gradeContainer}>
-              {(['A', 'B', 'C', 'D', 'E'] as const).map(grade => (
-                <TouchableOpacity
-                  key={grade}
-                  style={[
-                    styles.gradeButton,
-                    formData.nutriscoreGrade === grade && styles.gradeButtonSelected
-                  ]}
-                  onPress={() => setFormData(prev => ({ ...prev, nutriscoreGrade: grade }))}
-                >
-                  <Text style={[
-                    styles.gradeText,
-                    formData.nutriscoreGrade === grade && styles.gradeTextSelected
-                  ]}>
-                    {grade}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-        
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <MaterialIcons name="category" size={20} color="#34572a" />
-              <Text style={styles.sectionTitle}>{t('categories')}</Text>
-            </View>
-            <View style={styles.addItemContainer}>
-              <View style={styles.pickerContainer}>
-                <TextInput
-                  style={styles.input}
-                  value={selectedCategory}
-                  onChangeText={setSelectedCategory}
-                  placeholder={t('enterCategory')}
-                />
-              </View>
-              <TouchableOpacity style={styles.addButton} onPress={addCategory}>
-                <FontAwesome5 name="plus" size={16} color="#34572a" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.tagContainer}>
-              {formData.categories.map(category => (
-                <TouchableOpacity
-                  key={category}
-                  style={styles.tag}
-                  onPress={() => removeCategory(category)}
-                >
-                  <Text style={styles.tagText}>{category}</Text>
-                  <Feather name="x" size={14} color="#34572a" />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-     
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <MaterialIcons name="list-alt" size={20} color="#34572a" />
-              <Text style={styles.sectionTitle}>{t('ingredients')} *</Text>
-            </View>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={formData.ingredients}
-              onChangeText={(text) => setFormData(prev => ({ ...prev, ingredients: text }))}
-              placeholder={t('ingredientsPlaceholder')}
-              multiline
-              numberOfLines={4}
-            />
-          </View>
-
-     
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <FontAwesome5 name="chart-pie" size={20} color="#34572a" />
-              <Text style={styles.sectionTitle}>{t('nutritionalValuePer100g')}</Text>
+            <View style={styles.orDivider}>
+              <View style={styles.orLine} />
+              <Text style={styles.orText}>або</Text>
+              <View style={styles.orLine} />
             </View>
             
-            <View style={styles.nutritionGrid}>
-              <View style={styles.nutritionItem}>
-                <Text style={styles.label}>{t('calories')}</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.nutriments.calories.toString()}
-                  onChangeText={(text) => setFormData(prev => ({
-                    ...prev,
-                    nutriments: { ...prev.nutriments, calories: Number(text) || 0 }
-                  }))}
-                  placeholder="0"
-                  keyboardType="numeric"
-                />
-              </View>
+            <TouchableOpacity 
+              style={styles.scanBarcodeButton}
+              onPress={() => setShowBarcodeScanner(true)}
+            >
+              <Ionicons name="scan" size={20} color={Colors.text.onPrimary} />
+              <Text style={styles.scanBarcodeButtonText}>Сканувати камерою</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    </View>
+  );
 
-              <View style={styles.nutritionItem}>
-                <Text style={styles.label}>{t('proteins')}</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.nutriments.proteins.toString()}
-                  onChangeText={(text) => setFormData(prev => ({
-                    ...prev,
-                    nutriments: { ...prev.nutriments, proteins: Number(text) || 0 }
-                  }))}
-                  placeholder="0"
-                  keyboardType="numeric"
-                />
-              </View>
-            </View>
+  // Render Manual Step
+  const renderManualStep = () => (
+    <ScrollView style={styles.stepContainer} showsVerticalScrollIndicator={false}>
+      <View style={styles.stepHeader}>
+        <Ionicons name="create-outline" size={32} color={Colors.primary} />
+        <Text style={styles.stepHeaderTitle}>
+          <MaterialIcons name="edit" size={18} color={Colors.primary} />
+          {' Ручне редагування'}
+        </Text>
+        <Text style={styles.stepHeaderSubtitle}>
+          Перевірте та доповніть інформацію про продукт
+        </Text>
+      </View>
 
-            <View style={styles.nutritionGrid}>
-              <View style={styles.nutritionItem}>
-                <Text style={styles.label}>{t('totalFats')}</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.nutriments.fats.total.toString()}
-                  onChangeText={(text) => setFormData(prev => ({
-                    ...prev,
-                    nutriments: {
-                      ...prev.nutriments,
-                      fats: { ...prev.nutriments.fats, total: Number(text) || 0 }
-                    }
-                  }))}
-                  placeholder="0"
-                  keyboardType="numeric"
-                />
-              </View>
+      <View style={styles.formSection}>
+        <Text style={styles.sectionTitle}>Основна інформація</Text>
+        
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Назва продукту *</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.name}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
+            placeholder="Введіть назву продукту"
+          />
+        </View>
 
-              <View style={styles.nutritionItem}>
-                <Text style={styles.label}>{t('saturatedFats')}</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.nutriments.fats.saturated?.toString() || ''}
-                  onChangeText={(text) => setFormData(prev => ({
-                    ...prev,
-                    nutriments: {
-                      ...prev.nutriments,
-                      fats: { ...prev.nutriments.fats, saturated: Number(text) || 0 }
-                    }
-                  }))}
-                  placeholder="0"
-                  keyboardType="numeric"
-                />
-              </View>
-            </View>
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Бренд</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.brand}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, brand: text }))}
+            placeholder="Назва бренду"
+          />
+        </View>
 
-            <View style={styles.nutritionGrid}>
-              <View style={styles.nutritionItem}>
-                <Text style={styles.label}>{t('totalCarbs')}</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.nutriments.carbohydrates.total.toString()}
-                  onChangeText={(text) => setFormData(prev => ({
-                    ...prev,
-                    nutriments: {
-                      ...prev.nutriments,
-                      carbohydrates: { ...prev.nutriments.carbohydrates, total: Number(text) || 0 }
-                    }
-                  }))}
-                  placeholder="0"
-                  keyboardType="numeric"
-                />
-              </View>
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Вага (г)</Text>
+          <TextInput
+            style={styles.input}
+            value={formData.weight.toString()}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, weight: parseFloat(text) || 0 }))}
+            placeholder="Вага продукту в грамах"
+            keyboardType="numeric"
+          />
+        </View>
 
-              <View style={styles.nutritionItem}>
-                <Text style={styles.label}>{t('sugar')}</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.nutriments.carbohydrates.sugar?.toString() || ''}
-                  onChangeText={(text) => setFormData(prev => ({
-                    ...prev,
-                    nutriments: {
-                      ...prev.nutriments,
-                      carbohydrates: { ...prev.nutriments.carbohydrates, sugar: Number(text) || 0 }
-                    }
-                  }))}
-                  placeholder="0"
-                  keyboardType="numeric"
-                />
-              </View>
-            </View>
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Опис</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={formData.description}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, description: text }))}
+            placeholder="Опис продукту"
+            multiline
+            numberOfLines={3}
+          />
+        </View>
+      </View>
 
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t('saltGrams')}</Text>
+      <View style={styles.formSection}>
+        <Text style={styles.sectionTitle}>Склад та інгредієнти</Text>
+        
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Склад</Text>
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={formData.ingredients}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, ingredients: text }))}
+            placeholder="Список інгредієнтів"
+            multiline
+            numberOfLines={4}
+          />
+        </View>
+      </View>
+
+      <View style={styles.formSection}>
+        <Text style={styles.sectionTitle}>
+          <MaterialIcons name="restaurant" size={18} color={Colors.primary} />
+          {' Харчова цінність (на 100г)'}
+        </Text>
+        <Text style={styles.sectionSubtitle}>
+          Заповніть дані для автоматичного розрахунку Nutri-Score
+        </Text>
+        
+        <View style={styles.nutritionGrid}>
+          <View style={styles.nutritionRow}>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.inputLabel}>Калорії (ккал)</Text>
               <TextInput
                 style={styles.input}
-                value={formData.nutriments.salt?.toString() || ''}
-                onChangeText={(text) => setFormData(prev => ({
-                  ...prev,
-                  nutriments: { ...prev.nutriments, salt: Number(text) || 0 }
+                value={formData.nutriments.calories.toString()}
+                onChangeText={(text) => setFormData(prev => ({ 
+                  ...prev, 
+                  nutriments: { ...prev.nutriments, calories: parseFloat(text) || 0 }
                 }))}
                 placeholder="0"
                 keyboardType="numeric"
               />
             </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t('productWeightGrams')}</Text>
+            
+            <View style={styles.nutritionItem}>
+              <Text style={styles.inputLabel}>Білки (г)</Text>
               <TextInput
                 style={styles.input}
-                value={formData.weight?.toString() || ''}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, weight: Number(text) || 0 }))}
+                value={formData.nutriments.proteins.toString()}
+                onChangeText={(text) => setFormData(prev => ({ 
+                  ...prev, 
+                  nutriments: { ...prev.nutriments, proteins: parseFloat(text) || 0 }
+                }))}
                 placeholder="0"
                 keyboardType="numeric"
               />
             </View>
           </View>
 
-       
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('tags')}</Text>
-            <View style={styles.addItemContainer}>
-              <View style={styles.pickerContainer}>
-                <TextInput
-                  style={styles.input}
-                  value={selectedTag}
-                  onChangeText={setSelectedTag}
-                  placeholder={t('enterTag')}
-                />
-              </View>
-              <TouchableOpacity style={styles.addButton} onPress={addTag}>
-                <Ionicons name="add" size={20} color="#34572a" />
-              </TouchableOpacity>
+          <View style={styles.nutritionRow}>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.inputLabel}>Жири (г)</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.nutriments.fats.total.toString()}
+                onChangeText={(text) => setFormData(prev => ({ 
+                  ...prev, 
+                  nutriments: { 
+                    ...prev.nutriments, 
+                    fats: { ...prev.nutriments.fats, total: parseFloat(text) || 0 }
+                  }
+                }))}
+                placeholder="0"
+                keyboardType="numeric"
+              />
             </View>
-            <View style={styles.tagContainer}>
-              {formData.tags.map(tag => (
-                <TouchableOpacity
-                  key={tag}
-                  style={styles.tag}
-                  onPress={() => removeTag(tag)}
-                >
-                  <Text style={styles.tagText}>{tag}</Text>
-                  <Ionicons name="close" size={16} color="#34572a" />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-         
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('allergens')}</Text>
-            <View style={styles.addItemContainer}>
-              <View style={styles.pickerContainer}>
-                <TextInput
-                  style={styles.input}
-                  value={selectedAllergen}
-                  onChangeText={setSelectedAllergen}
-                  placeholder={t('enterAllergen')}
-                />
-              </View>
-              <TouchableOpacity style={styles.addButton} onPress={addAllergen}>
-                <Ionicons name="add" size={20} color="#34572a" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.tagContainer}>
-              {formData.allergens.map(allergen => (
-                <TouchableOpacity
-                  key={allergen}
-                  style={styles.tag}
-                  onPress={() => removeAllergen(allergen)}
-                >
-                  <Text style={styles.tagText}>{allergen}</Text>
-                  <Ionicons name="close" size={16} color="#34572a" />
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-      
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('verificationInfo')}</Text>
             
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t('manufacturer')}</Text>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.inputLabel}>Насичені жири (г)</Text>
               <TextInput
                 style={styles.input}
-                value={formData.manufacturer}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, manufacturer: text }))}
-                placeholder={t('manufacturerPlaceholder')}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t('countryOfOrigin')}</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.countryOfOrigin}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, countryOfOrigin: text }))}
-                placeholder={t('countryOfOriginPlaceholder')}
-              />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t('whereFoundProduct')}</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={formData.source}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, source: text }))}
-                placeholder={t('sourcePlaceholder')}
-                multiline
-                numberOfLines={2}
+                value={formData.nutriments.fats.saturated.toString()}
+                onChangeText={(text) => setFormData(prev => ({ 
+                  ...prev, 
+                  nutriments: { 
+                    ...prev.nutriments, 
+                    fats: { ...prev.nutriments.fats, saturated: parseFloat(text) || 0 }
+                  }
+                }))}
+                placeholder="0"
+                keyboardType="numeric"
               />
             </View>
           </View>
-        </ScrollView>
+
+          <View style={styles.nutritionRow}>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.inputLabel}>Вуглеводи (г)</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.nutriments.carbohydrates.total.toString()}
+                onChangeText={(text) => setFormData(prev => ({ 
+                  ...prev, 
+                  nutriments: { 
+                    ...prev.nutriments, 
+                    carbohydrates: { ...prev.nutriments.carbohydrates, total: parseFloat(text) || 0 }
+                  }
+                }))}
+                placeholder="0"
+                keyboardType="numeric"
+              />
+            </View>
+            
+            <View style={styles.nutritionItem}>
+              <Text style={styles.inputLabel}>Цукор (г)</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.nutriments.carbohydrates.sugar.toString()}
+                onChangeText={(text) => setFormData(prev => ({ 
+                  ...prev, 
+                  nutriments: { 
+                    ...prev.nutriments, 
+                    carbohydrates: { ...prev.nutriments.carbohydrates, sugar: parseFloat(text) || 0 }
+                  }
+                }))}
+                placeholder="0"
+                keyboardType="numeric"
+              />
+            </View>
+          </View>
+
+          <View style={styles.nutritionRow}>
+            <View style={styles.nutritionItem}>
+              <Text style={styles.inputLabel}>Сіль (г)</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.nutriments.salt.toString()}
+                onChangeText={(text) => setFormData(prev => ({ 
+                  ...prev, 
+                  nutriments: { ...prev.nutriments, salt: parseFloat(text) || 0 }
+                }))}
+                placeholder="0"
+                keyboardType="numeric"
+              />
+            </View>
+            
+            <View style={styles.nutritionItem}>
+              <Text style={styles.inputLabel}>Клітковина (г)</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.nutriments.fiber.toString()}
+                onChangeText={(text) => setFormData(prev => ({ 
+                  ...prev, 
+                  nutriments: { ...prev.nutriments, fiber: parseFloat(text) || 0 }
+                }))}
+                placeholder="0"
+                keyboardType="numeric"
+              />
+            </View>
+          </View>
+        </View>
       </View>
+
+      <View style={styles.formSection}>
+        <Text style={styles.sectionTitle}>📊 Nutri-Score</Text>
+        <Text style={styles.sectionSubtitle}>
+          Автоматично розраховується на основі харчових даних
+        </Text>
+        
+        {/* Nutri-Score Display */}
+        <View style={styles.nutriScoreContainer}>
+          <AutoNutriScore
+            nutriments={formData.nutriments}
+            onScoreChange={(grade: 'A' | 'B' | 'C' | 'D' | 'E', score: number) => {
+              setFormData(prev => ({ ...prev, nutriscoreGrade: grade }));
+            }}
+            fruitsVegetablesNuts={fruitsVegetablesNuts}
+            showDetails={true}
+          />
+        </View>
+      </View>
+    </ScrollView>
+  );
+
+  // Render Review Step
+  const renderReviewStep = () => (
+    <ScrollView style={styles.stepContainer} showsVerticalScrollIndicator={false}>
+      <View style={styles.stepHeader}>
+        <Ionicons name="checkmark-circle-outline" size={32} color={Colors.primary} />
+        <Text style={styles.stepHeaderTitle}>✅ Перевірка та відправка</Text>
+        <Text style={styles.stepHeaderSubtitle}>
+          Перевірте всі дані перед відправкою на модерацію
+        </Text>
+      </View>
+
+      <View style={styles.reviewSection}>
+        <Text style={styles.reviewSectionTitle}>Назва продукту</Text>
+        <Text style={styles.reviewSectionValue}>{formData.name || 'Не вказано'}</Text>
+      </View>
+
+      <View style={styles.reviewSection}>
+        <Text style={styles.reviewSectionTitle}>Бренд</Text>
+        <Text style={styles.reviewSectionValue}>{formData.brand || 'Не вказано'}</Text>
+      </View>
+
+      <View style={styles.reviewSection}>
+        <Text style={styles.reviewSectionTitle}>Nutri-Score</Text>
+        <View style={styles.nutriScoreDisplay}>
+          <View style={[styles.nutriScoreBadge, { backgroundColor: Colors.nutriScore[formData.nutriscoreGrade] }]}>
+            <Text style={styles.nutriScoreBadgeText}>{formData.nutriscoreGrade}</Text>
+          </View>
+        </View>
+      </View>
+
+      {formData.ingredients && (
+        <View style={styles.reviewSection}>
+          <Text style={styles.reviewSectionTitle}>Склад</Text>
+          <Text style={styles.reviewSectionValue}>{formData.ingredients}</Text>
+        </View>
+      )}
+
+      <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+        <MaterialIcons name="send" size={24} color={Colors.text.onPrimary} />
+        <Text style={styles.submitButtonText}>Відправити на модерацію</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+
+  const renderCurrentStep = () => {
+    switch (currentStep) {
+      case 'ai-scan': return renderAiScanStep();
+      case 'barcode': return renderBarcodeStep();
+      case 'manual': return renderManualStep();
+      case 'review': return renderReviewStep();
+      default: return renderAiScanStep();
+    }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" onRequestClose={handleClose}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+            <Ionicons name="close" size={24} color={Colors.text.onPrimary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('addProduct')}</Text>
+          <TouchableOpacity 
+            onPress={() => {/* Help action */}} 
+            style={styles.helpButton}
+          >
+            <Ionicons name="help-circle-outline" size={24} color={Colors.text.onPrimary} />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {renderStepIndicator()}
+          {renderCurrentStep()}
+        </ScrollView>
+
+     
+        {currentStep !== 'review' && (
+          <View style={styles.navigationContainer}>
+            <TouchableOpacity 
+              style={[styles.navButton, styles.navButtonSecondary]}
+              onPress={() => {
+                if (currentStep === 'manual') setCurrentStep('barcode');
+                else if (currentStep === 'barcode') setCurrentStep('ai-scan');
+              }}
+              disabled={currentStep === 'ai-scan'}
+            >
+              <Ionicons name="chevron-back" size={20} color={Colors.text.secondary} />
+              <Text style={styles.navButtonSecondaryText}>Назад</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.navButton, styles.navButtonPrimary]}
+              onPress={() => {
+                if (currentStep === 'ai-scan') setCurrentStep('barcode');
+                else if (currentStep === 'barcode') setCurrentStep('manual');
+                else if (currentStep === 'manual') setCurrentStep('review');
+              }}
+            >
+              <Text style={styles.navButtonPrimaryText}>Далі</Text>
+              <Ionicons name="chevron-forward" size={20} color={Colors.text.onPrimary} />
+            </TouchableOpacity>
+          </View>
+        )}
+
       
-    
-      <BarcodeScanner
-        visible={showBarcodeScanner}
-        onClose={handleCloseBarcodeScanner}
-        onBarcodeScanned={handleBarcodeScanned}
-      />
+        <BarcodeScanner
+          visible={showBarcodeScanner}
+          onClose={() => setShowBarcodeScanner(false)}
+          onBarcodeScanned={handleBarcodeScanned}
+        />
+      </View>
     </Modal>
   );
 };
@@ -973,365 +1249,741 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: Colors.background,
   },
   header: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    backgroundColor: Colors.primary,
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  closeButton: {
-    padding: 8,
-  },
-  headerTitleContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
-  },
-  headerIcon: {
-    marginRight: 8,
+    paddingHorizontal: Spacing.md,
+    paddingTop: Platform.OS === 'ios' ? 50 : 20,
+    paddingBottom: Spacing.md,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    ...Typography.h2,
+    color: Colors.text.onPrimary,
   },
-  submitButton: {
+  closeButton: {
+    padding: Spacing.sm,
+  },
+  helpButton: {
+    padding: Spacing.sm,
+  },
+  stepIndicator: {
     flexDirection: 'row',
+    backgroundColor: Colors.surface,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border.default,
+  },
+  stepItem: {
+    flex: 1,
     alignItems: 'center',
-    backgroundColor: '#34572a',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingHorizontal: Spacing.xs,
   },
-  submitIcon: {
-    marginRight: 8,
+  stepItemActive: {
+    transform: [{ scale: 1.05 }],
   },
-  submitButtonText: {
-    color: '#fff',
+  stepItemCompleted: {
+    opacity: 0.7,
+  },
+  stepIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.surfaceVariant,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
+  },
+  stepIconActive: {
+    backgroundColor: Colors.primary,
+  },
+  stepIconCompleted: {
+    backgroundColor: Colors.success,
+  },
+  stepIconPast: {
+    backgroundColor: Colors.primary,
+    opacity: 0.5,
+  },
+  stepTitle: {
+    ...Typography.caption,
+    textAlign: 'center',
+    fontSize: 11,
     fontWeight: '600',
+    lineHeight: 14,
+    marginTop: 4,
+  },
+  stepTitleActive: {
+    color: Colors.primary,
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  stepTitleCompleted: {
+    color: Colors.success,
+    fontWeight: '600',
+  },
+  stepTitleDisabled: {
+    color: Colors.text.disabled,
+  },
+  stepLine: {
+    position: 'absolute',
+    top: 20,
+    left: '50%',
+    width: '100%',
+    height: 2,
+    backgroundColor: Colors.border.default,
+    zIndex: -1,
+  },
+  stepLineCompleted: {
+    backgroundColor: Colors.success,
   },
   content: {
     flex: 1,
+    paddingBottom: 30,
   },
-  section: {
-    backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginVertical: 8,
-    padding: 16,
+  stepContainer: {
+    flex: 1,
+    padding: Spacing.md,
+  },
+  stepHeader: {
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+    padding: Spacing.md,
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.large,
+    ...Shadows.small,
+  },
+  stepHeaderTitle: {
+    ...Typography.h3,
+    marginTop: Spacing.sm,
+    marginBottom: Spacing.xs,
+    textAlign: 'center',
+  },
+  stepHeaderSubtitle: {
+    ...Typography.caption,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  // AI Scan Styles
+  aiScanContainer: {
+    flex: 1,
+  },
+  scanSection: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.large,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    ...Shadows.small,
+  },
+  emptyImageContainer: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.large,
+    padding: Spacing.xl,
+    alignItems: 'center',
+    marginBottom: Spacing.lg,
+    borderWidth: 2,
+    borderColor: Colors.border.default,
+    borderStyle: 'dashed',
+  },
+  emptyImageText: {
+    ...Typography.h3,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.sm,
+  },
+  emptyImageSubtext: {
+    ...Typography.caption,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  imageScroll: {
+    marginBottom: Spacing.lg,
+  },
+  scanImageContainer: {
+    position: 'relative',
+    marginRight: Spacing.md,
+  },
+  scanImage: {
+    width: 140,
+    height: 140,
+    borderRadius: BorderRadius.medium,
+    backgroundColor: Colors.surfaceVariant,
+    resizeMode: 'cover',
+    borderWidth: 2,
+    borderColor: Colors.border.default,
+  },
+  imageNumber: {
+    position: 'absolute',
+    bottom: 4,
+    left: 4,
+    backgroundColor: Colors.primary,
+    color: Colors.text.onPrimary,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 12,
+    fontSize: 12,
+    fontWeight: 'bold',
   },
-  sectionHeader: {
+  removeImageButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    ...Shadows.small,
+  },
+  scanActions: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    marginBottom: Spacing.lg,
+  },
+  scanButton: {
+    ...ComponentStyles.button.primary,
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  scanButtonSecondary: {
+    ...ComponentStyles.button.secondary,
+  },
+  scanButtonDisabled: {
+    backgroundColor: Colors.text.disabled,
+    opacity: 0.6,
+  },
+  scanButtonText: {
+    ...Typography.body,
+    color: Colors.text.onPrimary,
+    fontWeight: 'bold',
+  },
+  scanButtonSecondaryText: {
+    color: Colors.primary,
+  },
+  analyzeButton: {
+    backgroundColor: Colors.success,
+    borderRadius: BorderRadius.medium,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    ...Shadows.medium,
+  },
+  analyzeButtonText: {
+    ...Typography.body,
+    color: Colors.text.onPrimary,
+  },
+  // Barcode Styles
+  barcodeContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  barcodeResult: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.large,
+    padding: Spacing.lg,
+    alignItems: 'center',
+    ...Shadows.small,
+  },
+  barcodeResultHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  barcodeResultTitle: {
+    ...Typography.h3,
+  },
+  barcodeValue: {
+    ...Typography.body,
+    fontFamily: 'monospace',
+    backgroundColor: Colors.surfaceVariant,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.small,
+    marginBottom: Spacing.md,
+  },
+  rescanButton: {
+    ...ComponentStyles.button.secondary,
+  },
+  rescanButtonText: {
+    ...Typography.body,
+    color: Colors.primary,
+    fontWeight: 'bold',
+  },
+  barcodeEmpty: {
+    backgroundColor: Colors.surfaceVariant,
+    borderRadius: BorderRadius.large,
+    padding: Spacing.xl,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.border.default,
+    borderStyle: 'dashed',
+    minHeight: 200,
+    justifyContent: 'center',
+  },
+  barcodeEmptyTitle: {
+    ...Typography.h3,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.sm,
+    color: Colors.text.primary,
+  },
+  barcodeEmptySubtitle: {
+    ...Typography.caption,
+    textAlign: 'center',
+    marginBottom: Spacing.lg,
+    lineHeight: 20,
+    color: Colors.text.secondary,
+    paddingHorizontal: Spacing.md,
+  },
+  scanBarcodeButton: {
+    ...ComponentStyles.button.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  scanBarcodeButtonText: {
+    ...Typography.body,
+    color: Colors.text.onPrimary,
+    fontWeight: 'bold',
+  },
+  scanBarcodeButtonDisabled: {
+    backgroundColor: Colors.text.disabled,
+    opacity: 0.6,
+  },
+ 
+  formSection: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.large,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    ...Shadows.small,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#34572a',
-    marginLeft: 8,
+    ...Typography.h3,
+    marginBottom: Spacing.md,
+    color: Colors.primary,
   },
   inputGroup: {
-    marginBottom: 16,
+    marginBottom: Spacing.md,
   },
-  labelContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-    marginRight: 8,
+  inputLabel: {
+    ...Typography.caption,
+    fontWeight: 'bold',
+    marginBottom: Spacing.xs,
+    color: Colors.text.primary,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#fff',
+    ...ComponentStyles.input,
   },
   textArea: {
     height: 80,
     textAlignVertical: 'top',
   },
-  imageContainer: {
-    position: 'relative',
-    marginBottom: 12,
+  
+  reviewSection: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.medium,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    ...Shadows.small,
   },
-  productImage: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    backgroundColor: '#f0f0f0',
+  reviewSectionTitle: {
+    ...Typography.caption,
+    fontWeight: 'bold',
+    marginBottom: Spacing.xs,
+    color: Colors.primary,
   },
-  imageLabel: {
-    textAlign: 'center',
-    marginTop: 4,
-    fontSize: 12,
-    color: '#666',
+  reviewSectionValue: {
+    ...Typography.body,
   },
-  removeImageButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 12,
+  nutriScoreDisplay: {
+    alignItems: 'flex-start',
   },
-  addImageContainer: {
+  nutriScoreBadge: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  nutriScoreBadgeText: {
+    ...Typography.h2,
+    color: Colors.text.onPrimary,
+  },
+  submitButton: {
+    ...ComponentStyles.button.primary,
+    backgroundColor: Colors.success,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.xl,
+  },
+  submitButtonText: {
+    ...Typography.body,
+    color: Colors.text.onPrimary,
+  },
+  // Analysis Styles
+  analysisDetails: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.large,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    ...Shadows.small,
+  },
+  analysisHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-  },
-  addButton: {
-    backgroundColor: '#f0f8f0',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#34572a',
-  },
-  gradeContainer: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: Spacing.md,
   },
-  gradeButton: {
+  analysisTitle: {
+    ...Typography.h3,
+  },
+  analysisContent: {
+    padding: Spacing.md,
+  },
+  confidenceSection: {
+    marginBottom: Spacing.md,
+  },
+  confidenceLabel: {
+    ...Typography.caption,
+    fontWeight: 'bold',
+    marginBottom: Spacing.xs,
+  },
+  confidenceBar: {
+    height: 20,
+    backgroundColor: Colors.surfaceVariant,
+    borderRadius: 10,
+    marginBottom: Spacing.xs,
+  },
+  confidenceFill: {
+    height: '100%',
+    backgroundColor: Colors.primary,
+    borderRadius: 10,
+  },
+  confidenceText: {
+    ...Typography.body,
+  },
+  foundItem: {
+    marginBottom: Spacing.md,
+  },
+  foundLabel: {
+    ...Typography.caption,
+    fontWeight: 'bold',
+    marginBottom: Spacing.xs,
+  },
+  foundValue: {
+    ...Typography.body,
+  },
+  // Analysis Section Styles
+  analysisSection: {
+    marginBottom: Spacing.md,
+  },
+  analyzingContainer: {
     flex: 1,
-    padding: 12,
-    marginHorizontal: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  analyzingText: {
+    ...Typography.body,
+    marginBottom: Spacing.md,
+  },
+  analyzingSubtext: {
+    ...Typography.caption,
+  },
+  reAnalyzeButton: {
+    ...ComponentStyles.button.secondary,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  reAnalyzeButtonText: {
+    ...Typography.body,
+    color: Colors.primary,
+    fontWeight: 'bold',
+  },
+  
+  productImagesSection: {
+    marginBottom: Spacing.md,
+  },
+  sectionSubtitle: {
+    ...Typography.caption,
+    marginBottom: Spacing.md,
+    color: Colors.text.secondary,
+    lineHeight: 18,
+  },
+  productImagesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  mainImageContainer: {
+    position: 'relative',
+    marginRight: Spacing.md,
+  },
+  mainImage: {
+    width: 140,
+    height: 140,
+    borderRadius: BorderRadius.medium,
+    backgroundColor: Colors.surfaceVariant,
+    resizeMode: 'cover',
     borderWidth: 2,
-    borderColor: '#ddd',
-    borderRadius: 8,
+    borderColor: Colors.border.default,
+  },
+  mainImageLabel: {
+    ...Typography.caption,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: Spacing.xs,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    color: Colors.text.onPrimary,
+    textAlign: 'center',
+    borderBottomLeftRadius: BorderRadius.medium,
+    borderBottomRightRadius: BorderRadius.medium,
+  },
+  addMainImageButton: {
+    backgroundColor: Colors.surfaceVariant,
+    borderRadius: BorderRadius.medium,
+    padding: Spacing.md,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    borderStyle: 'dashed',
+    marginRight: Spacing.md,
+    width: 120,
+  },
+  addImageIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: BorderRadius.medium,
+    backgroundColor: Colors.surface,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  gradeButtonSelected: {
-    borderColor: '#34572a',
-    backgroundColor: '#f0f8f0',
+  addImageText: {
+    ...Typography.caption,
+    color: Colors.primary,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: Spacing.xs,
   },
-  gradeText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
+  additionalImagesScroll: {
+    marginBottom: Spacing.md,
   },
-  gradeTextSelected: {
-    color: '#34572a',
+  additionalImageContainer: {
+    position: 'relative',
+    marginRight: Spacing.md,
   },
-  addItemContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
-  },
-  pickerContainer: {
-    flex: 1,
-  },
-  tagContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f0f8f0',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 4,
+  additionalImage: {
+    width: 100,
+    height: 100,
+    borderRadius: BorderRadius.medium,
+    backgroundColor: Colors.surfaceVariant,
+    resizeMode: 'cover',
     borderWidth: 1,
-    borderColor: '#34572a20',
+    borderColor: Colors.border.default,
   },
-  tagText: {
-    fontSize: 14,
-    color: '#34572a',
+  addAdditionalImageButton: {
+    width: 80,
+    height: 80,
+    borderRadius: BorderRadius.medium,
+    backgroundColor: Colors.surface,
+    borderWidth: 2,
+    borderColor: Colors.primary,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: Spacing.md,
   },
   nutritionGrid: {
+    gap: Spacing.md,
+  },
+  nutritionRow: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
+    gap: Spacing.md,
   },
   nutritionItem: {
     flex: 1,
   },
-  imageButtonsContainer: {
+  // Navigation Styles
+  navigationContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  imagePickerButton: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 12,
-    borderWidth: 2,
-    borderColor: '#34572a',
-    borderRadius: 8,
-    backgroundColor: '#f0f8f0',
-  },
-  imagePickerButtonDisabled: {
-    borderColor: '#999',
-    backgroundColor: '#f5f5f5',
-  },
-  imagePickerButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#34572a',
-    marginLeft: 8,
-  },
-  imagePickerButtonTextDisabled: {
-    color: '#999',
-  },
-  removeMainImageButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 12,
-  },
-  urlInputSection: {
-    marginTop: 16,
-    paddingTop: 16,
+    padding: Spacing.lg,
+    backgroundColor: Colors.surface,
     borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
+    borderTopColor: Colors.border.default,
+    gap: Spacing.md,
   },
-  urlInputLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#666',
-    marginBottom: 8,
-  },
-  barcodeContainer: {
-    gap: 16,
-  },
-  barcodeScanButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#34572a',
-    borderRadius: 8,
-  },
-  barcodeScanButtonDisabled: {
-    backgroundColor: '#999',
-  },
-  barcodeScanButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-    marginLeft: 8,
-  },
-  barcodeScanButtonTextDisabled: {
-    color: '#999',
-  },
-  orText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
-    textAlign: 'center',
-    marginVertical: 8,
-  },
-  barcodeInputContainer: {
-    marginBottom: 12,
-  },
-  barcodeInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f0f8f0',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  barcodeInfoText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#28a745',
-    marginLeft: 8,
-  },
-  barcodeHelp: {
-    fontSize: 12,
-    color: '#666',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    lineHeight: 16,
-  },
-  loadingContent: {
+  navButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.lg,
+    borderRadius: BorderRadius.medium,
+    gap: Spacing.xs,
+    minHeight: 48,
   },
-  scanButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  navButtonPrimary: {
+    backgroundColor: Colors.primary,
+    ...Shadows.small,
   },
-  scanIconContainer: {
-    padding: 8,
-    borderWidth: 2,
-    borderColor: '#fff',
-    borderRadius: 8,
+  navButtonSecondary: {
+    backgroundColor: Colors.surfaceVariant,
+    borderWidth: 1,
+    borderColor: Colors.border.default,
   },
-  scanTextContainer: {
-    flex: 1,
-  },
-  scanButtonSubtext: {
-    fontSize: 12,
+  navButtonPrimaryText: {
+    ...Typography.body,
+    color: Colors.text.onPrimary,
     fontWeight: '600',
-    color: '#fff',
-    marginBottom: 4,
   },
-  dividerContainer: {
+  navButtonSecondaryText: {
+    ...Typography.body,
+    color: Colors.text.secondary,
+    fontWeight: '500',
+  },
+  
+  nutriScoreContainer: {
+    marginBottom: Spacing.md,
+  },
+  aiBanner: {
+    height: 150,
+    marginBottom: Spacing.md,
+  },
+  bannerBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bannerImageStyle: {
+    borderRadius: BorderRadius.large,
+  },
+  bannerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: BorderRadius.large,
+  },
+  bannerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bannerTextContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bannerTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    marginBottom: Spacing.sm,
   },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#fff',
+  bannerTitleIcon: {
+    marginRight: Spacing.sm,
   },
-  manualInputContainer: {
-    marginBottom: 12,
+  bannerTitle: {
+    ...Typography.h3,
+    color: Colors.text.onPrimary,
+  },
+  bannerSubtitle: {
+    ...Typography.caption,
+    color: Colors.text.onPrimary,
+    textAlign: 'center',
+  },
+  bannerFeatureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: Spacing.sm,
+  },
+  bannerFeatureText: {
+    ...Typography.caption,
+    color: Colors.text.onPrimary,
+    marginHorizontal: Spacing.xs,
+  },
+  bannerIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: BorderRadius.medium,
+    backgroundColor: Colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bannerIconBackground: {
+    width: 80,
+    height: 80,
+    borderRadius: BorderRadius.medium,
+    backgroundColor: Colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  manualBarcodeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
   },
   barcodeInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#fff',
+    ...ComponentStyles.input,
+    flex: 1,
   },
-  barcodeInfoCard: {
-    backgroundColor: '#f0f8f0',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  barcodeInfoHeader: {
+  orDivider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginVertical: Spacing.md,
   },
-  barcodeInfoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#28a745',
-    marginLeft: 8,
+  orLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: Colors.border.default,
   },
-  barcodeNumber: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#666',
+  orText: {
+    ...Typography.caption,
+    marginHorizontal: Spacing.md,
   },
-  helpContainer: {
+  productImageAddButton: {
+    width: 140,
+    height: 60,
+    marginRight: Spacing.md,
+    marginBottom: Spacing.md,
+  },
+  additionalImageAddButton: {
+    width: 100,
+    height: 60,
+    marginRight: Spacing.md,
+  },
+  manualBarcodeSection: {
+    width: '100%',
+    marginBottom: Spacing.md,
+  },
+  loadingIndicator: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    marginTop: Spacing.sm,
+    gap: Spacing.sm,
+  },
+  loadingText: {
+    ...Typography.caption,
+    color: Colors.text.secondary,
   },
 });
 

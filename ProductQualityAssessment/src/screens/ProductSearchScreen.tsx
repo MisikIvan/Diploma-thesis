@@ -35,8 +35,7 @@ const ProductSearchScreen: React.FC = () => {
     return products.filter(product => 
       product.name.toLowerCase().includes(query) ||
       product.brand?.toLowerCase().includes(query) ||
-      product.productId.toLowerCase().includes(query) ||
-      product.categories?.some(cat => cat.toLowerCase().includes(query))
+      product.productId.toLowerCase().includes(query)
     );
   }, [products, searchQuery]);
 
@@ -47,7 +46,7 @@ const ProductSearchScreen: React.FC = () => {
       setProducts(allProducts);
     } catch (error) {
       console.error('Error loading products:', error);
-      Alert.alert('Помилка', 'Не вдалося завантажити продукти');
+      Alert.alert(t('error'), t('errorLoadingData'));
     } finally {
       setLoading(false);
     }
@@ -70,12 +69,12 @@ const ProductSearchScreen: React.FC = () => {
 
   const handleEditProduct = (product: Product) => {
     Alert.alert(
-      'Редагувати продукт',
-      `Редагувати "${product.name}"?`,
+      t('editProductAction'),
+      `${t('editProductAction')} "${product.name}"?`,
       [
-        { text: 'Скасувати', style: 'cancel' },
+        { text: t('cancelAction'), style: 'cancel' },
         {
-          text: 'Редагувати',
+          text: t('editAction'),
           onPress: () => {
           
             navigation.navigate('ProductDetail', { productId: product.productId });
@@ -87,27 +86,27 @@ const ProductSearchScreen: React.FC = () => {
 
   const handleDeleteProduct = (product: Product) => {
     Alert.alert(
-      'Видалити продукт',
-      `Ви впевнені, що хочете видалити "${product.name}"? Цю дію неможливо скасувати.`,
+      t('deleteProductAction'),
+      `${t('deleteProductConfirm')} "${product.name}"? ${t('actionCannotBeUndone')}`,
       [
-        { text: 'Скасувати', style: 'cancel' },
+        { text: t('cancelAction'), style: 'cancel' },
         {
-          text: 'Видалити',
+          text: t('deleteAction'),
           style: 'destructive',
           onPress: async () => {
             try {
               const currentUser = auth.currentUser;
               if (!currentUser) {
-                Alert.alert('Помилка', 'Потрібна авторизація для видалення продукту');
+                Alert.alert(t('error'), t('deleteProductRequiresAuth'));
                 return;
               }
               
               await deleteProduct(product.productId, currentUser.uid);
-              Alert.alert('Успіх', 'Продукт успішно видалено');
+              Alert.alert(t('success'), t('productDeleteSuccess'));
               await loadProducts(); 
             } catch (error) {
               console.error('Error deleting product:', error);
-              Alert.alert('Помилка', 'Не вдалося видалити продукт');
+              Alert.alert(t('error'), t('productDeleteError'));
             }
           },
         },
@@ -153,7 +152,7 @@ const ProductSearchScreen: React.FC = () => {
           </View>
           
           <Text style={styles.calories}>
-            {item.nutriments?.calories || 0} ккал
+            {item.nutriments?.calories || 0} {t('kcalUnit')}
           </Text>
         </View>
       </View>

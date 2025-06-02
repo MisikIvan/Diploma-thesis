@@ -1,20 +1,28 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { View, FlatList, ActivityIndicator, StyleSheet, Text, Alert, TouchableOpacity, ToastAndroid } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
-import { searchProducts, setCurrentProduct, setSelectedCategory, loadRecentProducts, addToViewHistory } from '../redux/slices/productsSlice';
+import { searchProducts, setCurrentProduct, loadRecentProducts, addToViewHistory } from '../redux/slices/productsSlice';
 import { useFocusEffect } from '@react-navigation/native';
-import CategoryList from '../components/CategoryList';
 import SearchBar from '../components/SearchBar';
 import RecentProducts from '../components/RecentProducts';
 import ProductCard from '../components/ui/ProductCard';
 import SuggestProductBanner from '../components/SuggestProductBanner';
 import ProductSubmissionForm from '../components/ProductSubmissionForm';
+import BarcodeScanner from '../components/BarcodeScanner';
 import { Product, ProductSubmission } from '../types/index';
 import { t } from '../utils/translations';
 import { createSubmission } from '../api/firebase';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../types/navigation';
+import { getAllProducts } from '../api/firebase';
+import { StorageService } from '../utils/storage';
+import { showSuccess, showError, showSubmitSuccess, showNetworkError } from '../utils/alerts';
+import { Colors, Spacing, Typography, ComponentStyles, Shadows } from '../utils/theme';
+
+type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
 
 interface HomeScreenProps {
-  navigation: any;
+  navigation: HomeScreenNavigationProp;
 }
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
@@ -22,16 +30,19 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const { 
     products = [], 
     recentProducts = [], 
-    selectedCategory = null, 
-    loading: isLoading = false, 
-    error = null,
-    filteredProducts = [],
+    loading: reduxLoading = false, 
+    error: reduxError = null,
   } = useAppSelector(state => state.products);
   
   const { currentUser } = useAppSelector(state => state.user);
 
+  // Local state for loading and error handling
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [hasInitialLoad, setHasInitialLoad] = useState(false);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   
   
@@ -39,10 +50,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   
   const searchFilteredProducts = useMemo(() => {
-    if (!localSearchQuery.trim()) return products;
+    if (!localSearchQuery.trim()) return allProducts;
     
     const searchTerm = localSearchQuery.toLowerCase().trim();
-    return products.filter((product: Product) => {
+    
+    // Check if search term is a barcode 
+    const isBarcode = /^\d{8,13}$/.test(searchTerm);
+    
+    return allProducts.filter((product: Product) => {
+      // If searching by barcode, prioritize barcode field
+      if (isBarcode) {
+        if (product.barcode && product.barcode.includes(searchTerm)) return true;
+        if (product.productId.toLowerCase().includes(searchTerm)) return true;
+      }
+      
       // Search in product name
       if (product.name.toLowerCase().includes(searchTerm)) return true;
       
@@ -51,9 +72,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       
       // Search in product ID/barcode
       if (product.productId.toLowerCase().includes(searchTerm)) return true;
-      
-      // Search in categories
-      if (product.categories?.some((cat: string) => cat.toLowerCase().includes(searchTerm))) return true;
+      if (product.barcode?.toLowerCase().includes(searchTerm)) return true;
       
       // Search in ingredients
       if (product.ingredients?.toLowerCase().includes(searchTerm)) return true;
@@ -69,7 +88,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       
       return false;
     });
-  }, [products, localSearchQuery]);
+  }, [allProducts, localSearchQuery]);
 
 
   useEffect(() => {
@@ -89,12 +108,28 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }, [])
   );
 
-  const loadProducts = async () => {
+  const loadProducts = async (showLoader = true) => {
     try {
+      if (showLoader) setIsLoading(true);
+      setError(null);
       
-      await dispatch(searchProducts({ query: '', page: 1, pageSize: 100 }));
-    } catch (error) {
-      console.error('Error loading products:', error);
+      const fetchedProducts = await getAllProducts();
+      setAllProducts(fetchedProducts);
+      
+    
+      const recent = await StorageService.viewHistory.getViewHistory();
+    
+      if (currentUser?.userId) {
+        const userRecent = recent
+          .filter(h => h.userId === currentUser.userId)
+          .slice(0, 5);
+        
+      }
+    } catch (err: any) {
+      console.error('Error loading products:', err);
+      setError(err.message || 'Failed to load products');
+    } finally {
+      if (showLoader) setIsLoading(false);
     }
   };
 
@@ -103,6 +138,55 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     (global as any).lastInteractionTime = Date.now();
     setLocalSearchQuery(query); 
   }, []);
+
+  // Handle barcode scanning
+  const handleBarcodePress = () => {
+    setShowBarcodeScanner(true);
+  };
+
+  const handleBarcodeScanned = (barcode: string) => {
+    setShowBarcodeScanner(false);
+    
+    // Set the barcode as search query
+    setLocalSearchQuery(barcode);
+    
+    // Find products with this barcode
+    const foundProducts = allProducts.filter(product => 
+      product.barcode === barcode || product.productId === barcode
+    );
+    
+    if (foundProducts.length > 0) {
+     
+      if (foundProducts.length === 1) {
+        handleProductPress(foundProducts[0]);
+      } else {
+        // Multiple products found, show search results
+        ToastAndroid.show(
+          t('productsFoundByBarcode'),
+          ToastAndroid.LONG
+        );
+        
+        Alert.alert(
+          t('productsFoundByBarcode'),
+          `${t('barcodeSearchResult')} ${barcode} ${t('foundProductsLabel')} ${foundProducts.length} ${t('products')}`
+        );
+      }
+    } else {
+      // No products found with this barcode
+      Alert.alert(
+        'Продукт не знайдено',
+        `За штрих-кодом ${barcode} не знайдено жодного продукту в базі даних. Можете додати новий продукт.`,
+        [
+          { text: 'OK', style: 'default' },
+          { 
+            text: 'Додати продукт', 
+            style: 'default',
+            onPress: () => handleSuggestProduct()
+          }
+        ]
+      );
+    }
+  };
 
   
   const handleRefresh = async () => {
@@ -122,14 +206,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
  
-  const handleProductPress = (product: Product) => {
-    navigation.navigate('ProductDetail', { productId: product.productId });
-  };
-
-  const handleCategorySelect = (categoryId: string | null) => {
-    (global as any).lastInteractionTime = Date.now();
-    dispatch(setSelectedCategory(categoryId));
-  };
+  const handleProductPress = useCallback(async (product: Product) => {
+    try {
+      // Add to view history
+      if (currentUser?.userId) {
+        await StorageService.viewHistory.addToViewHistory(currentUser.userId, product);
+      }
+      navigation.navigate('ProductDetail', { productId: product.productId });
+    } catch (error) {
+      console.error('Error saving recent product:', error);
+      navigation.navigate('ProductDetail', { productId: product.productId });
+    }
+  }, [navigation, currentUser?.userId]);
 
   const handleSuggestProduct = () => {
     if (!currentUser) {
@@ -142,13 +230,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const handleSubmitProduct = async (submission: Omit<ProductSubmission, 'submissionId' | 'submittedAt'>) => {
     try {
       await createSubmission(submission);
-      Alert.alert(t('submissionSuccess'), t('submissionUnderReview'));
+      showSubmitSuccess(t('productSubmissionRequest'));
     } catch (error) {
       console.error('Error submitting product:', error);
-      Alert.alert(t('error'), 'Помилка при надсиланні продукту. Спробуйте пізніше.');
+      showError(t('productSubmissionError'));
     } finally {
       setShowSubmissionForm(false);
     }
+  };
+
+ 
+  const handleRetry = () => {
+    loadProducts(true);
   };
 
   const renderProductItem = React.useCallback(({ item }: { item: Product }) => (
@@ -161,15 +254,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const displayProducts = useMemo(() => {
     let baseProducts = searchFilteredProducts;
     
-    if (selectedCategory && filteredProducts.length > 0) {
-      return filteredProducts.filter(p => 
-        !localSearchQuery.trim() || 
-        searchFilteredProducts.some(sp => sp.productId === p.productId)
-      );
-    }
-    
     return baseProducts;
-  }, [searchFilteredProducts, filteredProducts, selectedCategory, localSearchQuery]);
+  }, [searchFilteredProducts, localSearchQuery]);
+
+  // Check if current search is a barcode
+  const isSearchingByBarcode = useMemo(() => {
+    return /^\d{8,13}$/.test(localSearchQuery.trim());
+  }, [localSearchQuery]);
 
   
   const listHeader = useMemo(() => (
@@ -177,6 +268,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       <SearchBar 
         initialQuery={localSearchQuery}
         onSearch={handleSearch}
+        onBarcodePress={handleBarcodePress}
         loading={false} 
       />
       
@@ -184,21 +276,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         <View style={styles.searchResultsContainer}>
           <Text style={styles.searchResultsText}>
             {displayProducts.length > 0 
-              ? `${t('searchResults')}: ${displayProducts.length}`
-              : t('noResults')
+              ? `${isSearchingByBarcode ? 'За штрих-кодом' : t('searchResults')}: ${displayProducts.length}`
+              : isSearchingByBarcode ? 'За штрих-кодом не знайдено' : t('noResults')
             }
           </Text>
           <Text style={styles.searchQueryText}>
-            "{localSearchQuery.trim()}"
+            {isSearchingByBarcode ? `Штрих-код: "${localSearchQuery.trim()}"` : `"${localSearchQuery.trim()}"`}
           </Text>
         </View>
       )}
       
-      <CategoryList 
-        selectedCategory={selectedCategory}
-        onSelectCategory={handleCategorySelect}
-      />
-
       {recentProducts.length > 0 && !localSearchQuery.trim() && (
         <RecentProducts 
           products={recentProducts}
@@ -210,26 +297,26 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         <SuggestProductBanner onPress={handleSuggestProduct} />
       )}
     </View>
-  ), [selectedCategory, recentProducts, localSearchQuery, handleSearch, displayProducts]);
+  ), [recentProducts, localSearchQuery, handleSearch, displayProducts, isSearchingByBarcode]);
 
-  if (isLoading && products.length === 0) {
+  if ((isLoading || reduxLoading) && allProducts.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color={Colors.primary} />
         <Text style={styles.loadingText}>{t('loading')}</Text>
       </View>
     );
   }
 
-  if (error && products.length === 0) {
+  if ((error || reduxError) && allProducts.length === 0) {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>{t('networkError')}</Text>
         <Text style={styles.errorSubText}>
-          Не вдалося підключитися до сервера. Спробуйте перезавантажити додаток.
+          {t('connectionErrorDetails')}
         </Text>
-        <TouchableOpacity style={styles.retryButton} onPress={loadProducts}>
-          <Text style={styles.retryText}>Спробувати знову</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
+          <Text style={styles.retryText}>{t('tryAgainButton')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -251,15 +338,20 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         windowSize={10}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>{t('noResults')}</Text>
+            <Text style={styles.emptyText}>
+              {isSearchingByBarcode ? 
+                'Продукт з таким штрих-кодом не знайдено. Спробуйте додати новий продукт.' : 
+                t('noResults')
+              }
+            </Text>
           </View>
         }
       />
 
-      {error && products.length > 0 && (
+      {(error || reduxError) && allProducts.length > 0 && (
         <View style={styles.bottomErrorIndicator}>
           <Text style={styles.bottomErrorText}>
-            ⚠️ Проблеми з підключенням, показано кешовані дані
+            {t('connectionProblemsShowing')}
           </Text>
         </View>
       )}
@@ -269,6 +361,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         onClose={() => setShowSubmissionForm(false)}
         onSubmit={handleSubmitProduct}
       />
+
+      <BarcodeScanner
+        visible={showBarcodeScanner}
+        onClose={() => setShowBarcodeScanner(false)}
+        onBarcodeScanned={handleBarcodeScanned}
+      />
     </View>
   );
 };
@@ -276,133 +374,107 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: Colors.background,
   },
   listContent: {
     paddingBottom: 120,
-    paddingHorizontal: 8,
+    paddingHorizontal: Spacing.sm,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: Colors.background,
   },
   loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#666',
+    marginTop: Spacing.sm,
+    ...Typography.body,
+    color: Colors.text.secondary,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f8f9fa',
+    padding: Spacing.lg,
+    backgroundColor: Colors.background,
   },
   errorText: {
-    fontSize: 16,
-    color: '#dc3545',
+    ...Typography.h3,
+    color: Colors.error,
     textAlign: 'center',
-    backgroundColor: '#fff',
-    padding: 20,
+    backgroundColor: Colors.surface,
+    padding: Spacing.lg,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#f8d7da',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    marginBottom: 10,
+    borderColor: Colors.border.error,
+    ...Shadows.medium,
+    marginBottom: Spacing.sm,
   },
   errorSubText: {
-    fontSize: 14,
-    color: '#6c757d',
+    ...Typography.caption,
+    color: Colors.text.secondary,
     textAlign: 'center',
-    backgroundColor: '#fff',
-    padding: 20,
+    backgroundColor: Colors.surface,
+    padding: Spacing.lg,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#f8d7da',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    marginBottom: 20,
+    borderColor: Colors.border.error,
+    ...Shadows.medium,
+    marginBottom: Spacing.lg,
   },
   retryButton: {
-    backgroundColor: '#007AFF',
-    padding: 12,
-    borderRadius: 8,
+    ...ComponentStyles.button.primary,
   },
   retryText: {
-    color: '#fff',
-    fontSize: 16,
+    ...Typography.body,
+    color: Colors.text.onPrimary,
     fontWeight: 'bold',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: Spacing.lg,
     marginTop: 50,
   },
   emptyText: {
-    fontSize: 16,
-    color: '#6c757d',
+    ...Typography.body,
+    color: Colors.text.secondary,
     textAlign: 'center',
-    backgroundColor: '#fff',
-    padding: 24,
+    backgroundColor: Colors.surface,
+    padding: Spacing.lg,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#e9ecef',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderColor: Colors.border.default,
+    ...Shadows.medium,
   },
   bottomErrorIndicator: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#f8d7da',
+    backgroundColor: Colors.border.error,
     borderTopWidth: 1,
-    borderTopColor: '#dc3545',
+    borderTopColor: Colors.error,
   },
   bottomErrorText: {
-    fontSize: 12,
-    color: '#dc3545',
+    ...Typography.small,
+    color: Colors.error,
     textAlign: 'center',
-    padding: 8,
+    padding: Spacing.sm,
     fontWeight: '500',
   },
   searchResultsContainer: {
-    backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginVertical: 8,
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    ...ComponentStyles.section,
   },
   searchResultsText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#34572a',
-    marginBottom: 4,
+    ...Typography.h3,
+    color: Colors.primary,
+    marginBottom: Spacing.xs,
   },
   searchQueryText: {
-    fontSize: 14,
-    color: '#666',
+    ...Typography.caption,
+    color: Colors.text.secondary,
     fontStyle: 'italic',
   },
 });

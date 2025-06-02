@@ -3,7 +3,7 @@ import {   getAuth,  initializeAuth,  Auth,  createUserWithEmailAndPassword,   s
 import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, query, where, getDocs, deleteDoc, addDoc, Timestamp } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { FIREBASE_CONFIG } from '../utils/config';
-import { User, Product, Comment, AdminAction, ProductSubmission } from '../types/index';
+import { User, Product, Comment, ProductSubmission } from '../types/index';
 import { Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
@@ -265,7 +265,6 @@ export const blockUser = async (userId: string, adminId: string): Promise<void> 
     });
     
    
-    await addAdminAction(adminId, 'block_user', userId, 'Blocked user');
   } catch (error) {
     console.error('Error blocking user:', error);
     throw error;
@@ -280,7 +279,7 @@ export const unblockUser = async (userId: string, adminId: string): Promise<void
     });
     
     
-    await addAdminAction(adminId, 'unblock_user', userId, 'Unblocked user');
+   
   } catch (error) {
     console.error('Error unblocking user:', error);
     throw error;
@@ -295,12 +294,6 @@ export const toggleCommentPermission = async (userId: string, canComment: boolea
     });
     
    
-    await addAdminAction(
-      adminId, 
-      canComment ? 'unblock_user' : 'block_user', 
-      userId, 
-      canComment ? 'Enabled comments for user' : 'Disabled comments for user'
-    );
   } catch (error) {
     console.error('Error updating comment permission:', error);
     throw error;
@@ -317,9 +310,7 @@ export const addProduct = async (product: Omit<Product, 'productId' | 'createdAt
       ...product,
       createdBy: 'admin' as const,
       createdAt: timestamp,
-      updatedAt: timestamp,
-      averageRating: 0,
-      ratingCount: 0
+      updatedAt: timestamp
     };
     
     const docRef = await addDoc(productsCollection, newProduct);
@@ -331,9 +322,6 @@ export const addProduct = async (product: Omit<Product, 'productId' | 'createdAt
     };
     
     await updateDoc(docRef, { productId: docRef.id });
-    
-
-    await addAdminAction(adminId, 'create_product', docRef.id, `Created product: ${product.name}`);
     
     return productWithId;
   } catch (error) {
@@ -352,7 +340,7 @@ export const updateProduct = async (productId: string, updates: Partial<Product>
     });
     
   
-    await addAdminAction(adminId, 'update_product', productId, `Updated product: ${updates.name || 'Unnamed product'}`);
+   
   } catch (error) {
     console.error('Error updating product:', error);
     throw error;
@@ -372,7 +360,7 @@ export const deleteProduct = async (productId: string, adminId: string): Promise
     await Promise.all(deletePromises);
     
    
-    await addAdminAction(adminId, 'delete_product', productId, 'Deleted product and related comments');
+
   } catch (error) {
     console.error('Error deleting product:', error);
     throw error;
@@ -562,12 +550,6 @@ export const deleteComment = async (commentId: string, adminId: string): Promise
     
     try {
    
-      await addAdminAction(
-        adminId, 
-        'moderate_comment', 
-        comment.commentId || commentDoc.id, 
-        `Removed comment by user: ${comment.userName || 'unknown'} on product: ${comment.productId || 'unknown'}`
-      );
     } catch (logError) {
       console.error('Error logging admin action:', logError);
   
@@ -604,7 +586,6 @@ const updateProductRating = async (productId: string): Promise<void> => {
     if (comments.length === 0) {
       const productRef = doc(db, 'products', productId);
       await updateDoc(productRef, {
-        averageRating: 0,
         ratingCount: 0
       });
       return;
@@ -620,48 +601,6 @@ const updateProductRating = async (productId: string): Promise<void> => {
     });
   } catch (error) {
     console.error('Error updating product rating:', error);
-    throw error;
-  }
-};
-
-
-export const addAdminAction = async (
-  adminId: string,
-  actionType: AdminAction['actionType'],
-  targetId: string,
-  details: string
-): Promise<void> => {
-  try {
-    if (!adminId || !targetId) {
-      console.error('Missing required parameters in addAdminAction:', { adminId, actionType, targetId });
-      return;
-    }
-    
-    const actionsCollection = collection(db, 'adminActions');
-    
-    const newAction: Omit<AdminAction, 'actionId'> = {
-      adminId,
-      actionType,
-      targetId,
-      details: details || '',
-      timestamp: new Date().toISOString()
-    };
-    
-    const docRef = await addDoc(actionsCollection, newAction);
-    await updateDoc(docRef, { actionId: docRef.id });
-  } catch (error) {
-    console.error('Error logging admin action:', error);
- 
-  }
-};
-
-export const getAdminActions = async (): Promise<AdminAction[]> => {
-  try {
-    const actionsCollection = collection(db, 'adminActions');
-    const actionsSnapshot = await getDocs(actionsCollection);
-    return actionsSnapshot.docs.map(doc => doc.data() as AdminAction);
-  } catch (error) {
-    console.error('Error getting admin actions:', error);
     throw error;
   }
 };
@@ -831,12 +770,7 @@ export const updateSubmissionStatus = async (
     await updateDoc(submissionRef, updateData);
     
   
-    await addAdminAction(
-      reviewedBy,
-      status === 'approved' ? 'create_product' : 'delete_product',
-      submissionId,
-      `${status === 'approved' ? 'Approved' : 'Rejected'} product submission${rejectionReason ? `: ${rejectionReason}` : ''}`
-    );
+
     
     console.log(`🔥 Submission ${submissionId} ${status} successfully`);
   } catch (error) {
@@ -850,12 +784,7 @@ export const deleteSubmission = async (submissionId: string, adminId: string): P
     await deleteDoc(doc(db, 'productSubmissions', submissionId));
     
    
-    await addAdminAction(
-      adminId,
-      'delete_product',
-      submissionId,
-      'Deleted product submission'
-    );
+
     
     console.log('Submission deleted:', submissionId);
   } catch (error) {

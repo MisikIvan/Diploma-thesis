@@ -34,85 +34,52 @@ const TermsOfServiceScreen: React.FC = () => {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
           <Text style={styles.lastUpdated}>
-            {t('lastUpdatedDate')}: 29 травня 2025 р.
+            {t('lastUpdatedDate29May')}
           </Text>
 
           <Text style={styles.sectionTitle}>{t('introduction')}</Text>
           <Text style={styles.paragraph}>
-            Ласкаво просимо до додатку "Оцінка якості продуктів" ("Додаток"). 
-            Цей додаток розроблено для надання користувачам інформації про якість 
-            харчових продуктів, їх склад та харчову цінність. Використовуючи наш 
-            додаток, ви погоджуєтеся з цими Умовами користування.
+            {t('termsIntroText')}
           </Text>
 
           <Text style={styles.sectionTitle}>{t('acceptanceOfTerms')}</Text>
           <Text style={styles.paragraph}>
-            Завантажуючи, встановлюючи або використовуючи цей додаток, ви 
-            підтверджуете, що прочитали, зрозуміли та погоджуєтеся дотримуватися 
-            цих Умов користування. Якщо ви не погоджуєтеся з будь-якою частиною 
-            цих умов, будь ласка, не користуйтеся додатком.
+            {t('termsAcceptanceFullText')}
           </Text>
 
           <Text style={styles.sectionTitle}>{t('servicesProvided')}</Text>
           <Text style={styles.paragraph}>
-            Наш додаток надає наступні послуги:
-            {'\n\n'}• Перегляд детальної інформації про склад та харчову цінність
-            {'\n'}• Збереження улюблених продуктів
-            {'\n'}• Інструменти для відстеження ваги та здоров'я
+            {t('servicesProvidedFullText')}
           </Text>
 
           <Text style={styles.sectionTitle}>{t('userResponsibilities')}</Text>
           <Text style={styles.paragraph}>
-            Використовуючи додаток, ви зобов'язуєтеся:
-            {'\n\n'}• Надавати точну особисту інформацію
-            {'\n'}• Не порушувати права інтелектуальної власності
-            {'\n'}• Не використовувати додаток для незаконних цілей
-            {'\n'}• Не передавати шкідливий контент або віруси
-            {'\n'}• Дотримуватися всіх застосовних законів та норм
+            {t('userResponsibilitiesFullText')}
           </Text>
 
           <Text style={styles.sectionTitle}>{t('privacyAndDataProtection')}</Text>
           <Text style={styles.paragraph}>
-            Ваша приватність важлива для нас. Інформація про те, як ми збираємо, 
-            використовуємо та захищаємо ваші особисті дані, детально описана в 
-            нашій Політиці конфіденційності. Використовуючи додаток, ви також 
-            погоджуєтеся з умовами нашої Політики конфіденційності.
+            {t('privacyDataProtectionFullText')}
           </Text>
 
           <Text style={styles.sectionTitle}>{t('limitationOfLiability')}</Text>
           <Text style={styles.paragraph}>
-            ДОДАТОК НАДАЄТЬСЯ "ЯК Є" БЕЗ БУДЬ-ЯКИХ ГАРАНТІЙ. МИ НЕ НЕСЕМО 
-            ВІДПОВІДАЛЬНОСТІ ЗА:
-            {'\n\n'}• Точність інформації про продукти
-            {'\n'}• Збитки від використання неточної інформації
-            {'\n'}• Технічні збої або недоступність сервісу
-            {'\n'}• Втрату даних або порушення безпеки
-            {'\n\n'}Максимальна відповідальність обмежується сумою 50 доларів США.
+            {t('limitationLiabilityFullText')}
           </Text>
 
           <Text style={styles.sectionTitle}>{t('terminationOfServices')}</Text>
           <Text style={styles.paragraph}>
-            Ми залишаємо за собою право припинити або призупинити ваш доступ до 
-            додатку в будь-який час без попереднього повідомлення, якщо ви 
-            порушуєте ці Умови користування або використовуєте додаток 
-            неналежним чином.
+            {t('terminationServicesFullText')}
           </Text>
 
           <Text style={styles.sectionTitle}>{t('modificationsToTerms')}</Text>
           <Text style={styles.paragraph}>
-            Ми можемо час від часу оновлювати ці Умови користування. Про всі 
-            зміни ми повідомимо шляхом публікації оновлених умов у додатку. 
-            Продовжуючи користуватися додатком після внесення змін, ви 
-            погоджуєтеся з новими умовами.
+            {t('modificationsTermsFullText')}
           </Text>
 
           <Text style={styles.sectionTitle}>{t('contactInformation')}</Text>
           <Text style={styles.paragraph}>
-            Якщо у вас є питання щодо цих Умов користування, будь ласка, 
-            зв'яжіться з нами:
-            {'\n\n'}Email: support@productquality.app
-            {'\n'}Телефон: +380 (44) 123-45-67
-            {'\n'}Адреса: м. Київ, вул. Хрещатик, 1
+            {t('contactInformationFullText')}
           </Text>
         </View>
       </ScrollView>

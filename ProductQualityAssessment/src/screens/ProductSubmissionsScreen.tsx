@@ -11,8 +11,9 @@ import {
   Image,
   TextInput,
   ActivityIndicator,
+  ImageBackground,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { ProductSubmission, Product } from '../types';
 import { t } from '../utils/translations';
 import { useAppSelector } from '../redux/hooks';
@@ -67,7 +68,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
       ));
     } catch (error) {
       console.error('Error loading submissions:', error);
-      Alert.alert('Помилка', 'Не вдалося завантажити заявки');
+      Alert.alert(t('error'), t('errorLoadingSubmissions'));
     } finally {
       setLoading(false);
     }
@@ -92,13 +93,13 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
       setLoading(true);
       const currentUser = auth.currentUser;
       if (!currentUser) {
-        Alert.alert('Помилка', 'Потрібна авторизація');
+        Alert.alert(t('error'), t('authRequiredForAction'));
         return;
       }
       
       await updateSubmissionStatus(selectedSubmission.submissionId, 'approved', currentUser.uid);
       
-      Alert.alert('Успіх', 'Заявку схвалено та продукт додано до бази даних');
+      Alert.alert(t('success'), t('submissionApprovedSuccess'));
       
       if (onSubmissionApproved) {
         const product: Product = {
@@ -116,7 +117,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
       await loadSubmissions();
     } catch (error) {
       console.error('Error approving submission:', error);
-      Alert.alert('Помилка', 'Не вдалося схвалити заявку');
+      Alert.alert(t('error'), t('submissionApprovalFailed'));
     } finally {
       setLoading(false);
     }
@@ -130,7 +131,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
 
   const confirmReject = async () => {
     if (!selectedSubmission || !rejectionReason.trim()) {
-      Alert.alert('Помилка', 'Будь ласка, вкажіть причину відхилення');
+      Alert.alert(t('error'), t('rejectionReasonIsRequired'));
       return;
     }
 
@@ -138,13 +139,13 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
       setLoading(true);
       const currentUser = auth.currentUser;
       if (!currentUser) {
-        Alert.alert('Помилка', 'Потрібна авторизація');
+        Alert.alert(t('error'), t('authRequiredForAction'));
         return;
       }
       
       await updateSubmissionStatus(selectedSubmission.submissionId, 'rejected', currentUser.uid, rejectionReason);
       
-      Alert.alert('Успіх', 'Заявку відхилено');
+      Alert.alert(t('success'), t('submissionRejectedSuccess'));
       
       if (onSubmissionRejected) {
         onSubmissionRejected(selectedSubmission.submissionId, rejectionReason);
@@ -156,7 +157,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
       await loadSubmissions();
     } catch (error) {
       console.error('Error rejecting submission:', error);
-      Alert.alert('Помилка', 'Не вдалося відхилити заявку');
+      Alert.alert(t('error'), t('submissionRejectionFailed'));
     } finally {
       setLoading(false);
     }
@@ -173,9 +174,9 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'pending': return 'На розгляді';
-      case 'approved': return 'Затверджено';
-      case 'rejected': return 'Відхилено';
+      case 'pending': return t('statusOnReview');
+      case 'approved': return t('statusApprovedText');
+      case 'rejected': return t('statusRejectedText');
       default: return status;
     }
   };
@@ -230,10 +231,57 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color="#666" />
+              <Ionicons name="arrow-back" size={24} color="#666" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>{t('productSubmissions')}</Text>
-            <View style={styles.placeholder} />
+            <TouchableOpacity onPress={loadSubmissions} style={styles.refreshButton}>
+              <Ionicons name="refresh" size={24} color="#666" />
+            </TouchableOpacity>
+          </View>
+
+          {/* AI Banner */}
+          <View style={styles.aiBanner}>
+            <ImageBackground 
+              source={require('../assets/AI-banner.png')} 
+              style={styles.bannerBackground}
+              imageStyle={styles.bannerImageStyle}
+            >
+              <View style={styles.bannerOverlay} />
+              <View style={styles.bannerContent}>
+                <View style={styles.bannerTextContainer}>
+                  <View style={styles.bannerTitleRow}>
+                    <MaterialIcons 
+                      name="psychology" 
+                      size={24} 
+                      color="#fff" 
+                      style={styles.bannerTitleIcon}
+                    />
+                    <Text style={styles.bannerTitle}>{t('smartProductAnalysis')}</Text>
+                  </View>
+                  <Text style={styles.bannerSubtitle}>
+                    {t('addUpToThreePhotos')}
+                  </Text>
+                  <View style={styles.bannerFeatureRow}>
+                    <MaterialIcons name="auto-awesome" size={14} color="rgba(255, 255, 255, 0.8)" />
+                    <Text style={styles.bannerFeatureText}>{t('fast')}</Text>
+                    <MaterialIcons name="verified" size={14} color="rgba(255, 255, 255, 0.8)" />
+                    <Text style={styles.bannerFeatureText}>{t('accurate')}</Text>
+                    <MaterialIcons name="android" size={14} color="rgba(255, 255, 255, 0.8)" />
+                    <Text style={styles.bannerFeatureText}>{t('smart')}</Text>
+                  </View>
+                </View>
+                
+                <View style={styles.bannerIconContainer}>
+                  <View style={styles.bannerIconBackground}>
+                    <MaterialIcons 
+                      name="photo-camera" 
+                      size={28} 
+                      color="#34572a" 
+                    />
+                  </View>
+                </View>
+              </View>
+            </ImageBackground>
           </View>
 
           {/* Tabs */}
@@ -319,10 +367,15 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
               onPress={() => setShowDetailModal(false)} 
               style={styles.closeButton}
             >
-              <Ionicons name="close" size={24} color="#666" />
+              <Ionicons name="arrow-back" size={24} color="#666" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>{t('reviewSubmission')}</Text>
-            <View style={styles.placeholder} />
+            <TouchableOpacity 
+              onPress={() => setShowDetailModal(false)} 
+              style={styles.helpButton}
+            >
+              <Ionicons name="information-circle-outline" size={24} color="#666" />
+            </TouchableOpacity>
           </View>
 
           {selectedSubmission && (
@@ -330,15 +383,15 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
               <View style={styles.detailSection}>
                 <Text style={styles.sectionTitle}>{t('submissionInfo')}</Text>
                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>Подав: </Text>
+                  <Text style={styles.detailLabel}>{t('submittedByLabel')}</Text>
                   {selectedSubmission.userDisplayName}
                 </Text>
                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>Дата: </Text>
+                  <Text style={styles.detailLabel}>{t('dateLabel')}</Text>
                   {new Date(selectedSubmission.submittedAt).toLocaleString('uk-UA')}
                 </Text>
                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>Статус: </Text>
+                  <Text style={styles.detailLabel}>{t('statusLabel')}</Text>
                   <Text style={{ color: getStatusColor(selectedSubmission.status) }}>
                     {getStatusText(selectedSubmission.status)}
                   </Text>
@@ -348,15 +401,15 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
               <View style={styles.detailSection}>
                 <Text style={styles.sectionTitle}>{t('basicInformation')}</Text>
                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>Назва: </Text>
+                  <Text style={styles.detailLabel}>{t('nameLabel')}</Text>
                   {editedProductData?.name}
                 </Text>
                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>Бренд: </Text>
+                  <Text style={styles.detailLabel}>{t('brandLabel')}</Text>
                   {editedProductData?.brand || t('notSpecified')}
                 </Text>
                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>Опис: </Text>
+                  <Text style={styles.detailLabel}>{t('descriptionLabel')}</Text>
                   {editedProductData?.description || t('notSpecified')}
                 </Text>
               </View>
@@ -381,35 +434,35 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
               <View style={styles.detailSection}>
                 <Text style={styles.sectionTitle}>{t('nutritionalValue')}</Text>
                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>Калорії: </Text>
-                  {editedProductData?.nutriments.calories} ккал
+                  <Text style={styles.detailLabel}>{t('caloriesLabel')}</Text>
+                  {editedProductData?.nutriments.calories} {t('kcalUnit')}
                 </Text>
                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>Білки: </Text>
-                  {editedProductData?.nutriments.proteins} г
+                  <Text style={styles.detailLabel}>{t('proteinsLabel')}</Text>
+                  {editedProductData?.nutriments.proteins} {t('gramsUnit')}
                 </Text>
                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>Жири: </Text>
-                  {editedProductData?.nutriments.fats.total} г
+                  <Text style={styles.detailLabel}>{t('fatsLabel')}</Text>
+                  {editedProductData?.nutriments.fats.total} {t('gramsUnit')}
                 </Text>
                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>Вуглеводи: </Text>
-                  {editedProductData?.nutriments.carbohydrates.total} г
+                  <Text style={styles.detailLabel}>{t('carbohydratesLabel')}</Text>
+                  {editedProductData?.nutriments.carbohydrates.total} {t('gramsUnit')}
                 </Text>
               </View>
 
               <View style={styles.detailSection}>
                 <Text style={styles.sectionTitle}>{t('additionalInfo')}</Text>
                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>Інгредієнти: </Text>
+                  <Text style={styles.detailLabel}>{t('ingredientsLabel')}</Text>
                   {editedProductData?.ingredients}
                 </Text>
                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>Алергени: </Text>
+                  <Text style={styles.detailLabel}>{t('allergensLabel')}</Text>
                   {editedProductData?.allergens.join(', ') || t('none')}
                 </Text>
                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>Теги: </Text>
+                  <Text style={styles.detailLabel}>{t('tagsLabel')}</Text>
                   {editedProductData?.tags.join(', ') || t('none')}
                 </Text>
               </View>
@@ -417,26 +470,26 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
               <View style={styles.detailSection}>
                 <Text style={styles.sectionTitle}>{t('verificationInformation')}</Text>
                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>Штрих-код: </Text>
+                  <Text style={styles.detailLabel}>{t('barcodeLabel')}</Text>
                   {editedProductData?.barcode || t('notSpecified')}
                 </Text>
                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>Виробник: </Text>
+                  <Text style={styles.detailLabel}>{t('manufacturerLabel')}</Text>
                   {editedProductData?.manufacturer || t('notSpecified')}
                 </Text>
                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>Країна: </Text>
+                  <Text style={styles.detailLabel}>{t('countryLabel')}</Text>
                   {editedProductData?.countryOfOrigin || t('notSpecified')}
                 </Text>
                 <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>Джерело: </Text>
+                  <Text style={styles.detailLabel}>{t('sourceLabel')}</Text>
                   {editedProductData?.source || t('notSpecified')}
                 </Text>
               </View>
 
               {selectedSubmission.status === 'rejected' && selectedSubmission.rejectionReason && (
                 <View style={styles.detailSection}>
-                  <Text style={styles.sectionTitle}>Причина відхилення</Text>
+                  <Text style={styles.sectionTitle}>{t('rejectionReasonSection')}</Text>
                   <Text style={styles.rejectionText}>
                     {selectedSubmission.rejectionReason}
                   </Text>
@@ -484,7 +537,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
               style={styles.rejectInput}
               value={rejectionReason}
               onChangeText={setRejectionReason}
-              placeholder="Вкажіть причину відхилення..."
+              placeholder={t('rejectionReasonPlaceholderText')}
               multiline
               numberOfLines={4}
               textAlignVertical="top"
@@ -800,6 +853,76 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#f5c6cb',
+  },
+  aiBanner: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  bannerBackground: {
+    width: '100%',
+    height: 120,
+  },
+  bannerImageStyle: {
+    borderRadius: 12,
+  },
+  bannerOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  bannerContent: {
+    flex: 1,
+    justifyContent: 'space-between',
+    padding: 16,
+  },
+  bannerTextContainer: {
+    flex: 1,
+  },
+  bannerTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  bannerTitleIcon: {
+    marginRight: 8,
+  },
+  bannerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  bannerSubtitle: {
+    fontSize: 14,
+    color: '#fff',
+    marginBottom: 16,
+  },
+  bannerFeatureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  bannerFeatureText: {
+    fontSize: 14,
+    color: '#fff',
+    marginHorizontal: 4,
+  },
+  bannerIconContainer: {
+    alignItems: 'flex-end',
+  },
+  bannerIconBackground: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  refreshButton: {
+    padding: 8,
+  },
+  helpButton: {
+    padding: 8,
   },
 });
 

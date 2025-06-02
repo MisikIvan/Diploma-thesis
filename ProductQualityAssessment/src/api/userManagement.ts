@@ -1,5 +1,5 @@
 import { doc, updateDoc } from 'firebase/firestore';
-import { db, auth, addAdminAction } from './firebase';
+import { db, auth } from './firebase';
 
 
 export const updateUserRole = async (userId: string, role: 'user' | 'admin'): Promise<void> => {

@@ -14,9 +14,7 @@ interface ProductState {
   similarProducts: Product[];
   products: Product[];
   recentProducts: Product[];
-  filteredProducts: Product[];
   searchQuery: string;
-  selectedCategory: string | null;
   loading: boolean;
   error: string | null;
 }
@@ -26,9 +24,7 @@ const initialState: ProductState = {
   similarProducts: [],
   products: [],
   recentProducts: [],
-  filteredProducts: [],
   searchQuery: '',
-  selectedCategory: null,
   loading: false,
   error: null,
 };
@@ -54,9 +50,6 @@ export const searchProducts = createAsyncThunk(
         
         // Search in product ID/barcode
         if (product.productId.toLowerCase().includes(searchTerm)) return true;
-        
-        // Search in categories
-        if (product.categories?.some((cat: string) => cat.toLowerCase().includes(searchTerm))) return true;
         
         // Search in ingredients
         if (product.ingredients?.toLowerCase().includes(searchTerm)) return true;
@@ -168,16 +161,6 @@ const productsSlice = createSlice({
         state.recentProducts = [action.payload, ...state.recentProducts].slice(0, 5);
       }
     },
-    setSelectedCategory: (state, action: PayloadAction<string | null>) => {
-      state.selectedCategory = action.payload;
-      if (action.payload) {
-        state.filteredProducts = state.products.filter((p: Product) => 
-          p.categories.includes(action.payload as string)
-        );
-      } else {
-        state.filteredProducts = [];
-      }
-    },
     updateProductFavoriteStatus: (state, action: PayloadAction<{productId: string, isFavorite: boolean}>) => {
   
       if (state.currentProduct && state.currentProduct.productId === action.payload.productId) {
@@ -251,14 +234,6 @@ const productsSlice = createSlice({
         console.log('📱 searchProducts.fulfilled - received:', action.payload.length, 'products');
         state.loading = false;
         state.products = action.payload;
-      
-        if (state.selectedCategory) {
-          state.filteredProducts = action.payload.filter((p: Product) => 
-            p.categories.includes(state.selectedCategory as string)
-          );
-        } else {
-          state.filteredProducts = [];
-        }
       })
       .addCase(searchProducts.rejected, (state, action) => {
         console.log('📱 searchProducts.rejected - error:', action.error.message);
@@ -287,5 +262,5 @@ const productsSlice = createSlice({
   },
 });
 
-export const { setCurrentProduct, setSelectedCategory, updateProductFavoriteStatus, setRecentProducts, addNewProduct } = productsSlice.actions;
+export const { setCurrentProduct, updateProductFavoriteStatus, setRecentProducts, addNewProduct } = productsSlice.actions;
 export default productsSlice.reducer; 

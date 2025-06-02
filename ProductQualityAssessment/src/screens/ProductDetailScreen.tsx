@@ -15,6 +15,7 @@ import {
 import { RouteProp, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -66,7 +67,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
       })
       .catch(err => {
         console.error('Error fetching product:', err);
-        ToastAndroid.show('Could not load product details. Trying offline mode...', ToastAndroid.SHORT);
+        ToastAndroid.show(t('couldNotLoadProductDetails'), ToastAndroid.SHORT);
       });
   }, [dispatch, productId]);
 
@@ -108,7 +109,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
 
   const toggleFavorite = async () => {
     if (!currentUser?.userId || !productId) {
-      Alert.alert(t('error'), 'Please log in to add favorites');
+      Alert.alert(t('error'), t('pleaseLogInToAddFavorites'));
       return;
     }
 
@@ -135,20 +136,19 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
       }));
 
       ToastAndroid.show(
-        newFavoriteStatus ? 'Added to favorites' : 'Removed from favorites',
+        newFavoriteStatus ? t('addedToFavorites') : t('removedFromFavorites'),
         ToastAndroid.SHORT
       );
     } catch (error) {
       console.error('Error toggling favorite:', error);
       setIsFavorite(originalFavoriteStatus);
-      Alert.alert(t('error'), 'Failed to update favorites');
+      Alert.alert(t('error'), t('failedToUpdateFavorites'));
     }
   };
 
   const renderTabContent = () => {
     if (!currentProduct) return null;
     
-  
     let productTags: string[] = [];
     try {
       productTags = getTagsFromProduct(currentProduct);
@@ -164,7 +164,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
             <Text style={styles.sectionTitle}>{t('nutritionalFacts')}</Text>
             <Text style={styles.portionText}>{t('per100g')}</Text>
             
-            {/* Основні макронутрієнти */}
+            {/* Main macronutrients */}
             <View style={styles.nutritionGrid}>
               <View style={styles.nutritionCard}>
                 <Text style={styles.nutritionNumber}>
@@ -186,7 +186,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
                 </Text>
                 <Text style={styles.nutritionLabelCompact}>{t('carbs')}</Text>
               </View>
-              
+
               <View style={styles.nutritionCard}>
                 <Text style={styles.nutritionNumber}>
                   {formatNutrient(currentProduct.nutriments?.fats?.total)}
@@ -195,65 +195,103 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
               </View>
             </View>
 
-            {/* Детальна інформація */}
+            {/* Detailed information */}
             <View style={styles.detailsSection}>
-              <Text style={styles.detailsTitle}>{t('detailedComposition')}</Text>
+              <Text style={styles.detailsTitle}>{t('nutritionalFacts')}</Text>
               
               <View style={styles.nutritionRowCompact}>
-                <Text style={styles.nutritionLabelSmall}>{t('sugar')}</Text>
+                <Text style={styles.nutritionLabelSmall}>{t('calories')}</Text>
                 <Text style={styles.nutritionValueSmall}>
-                  {formatNutrient(currentProduct.nutriments?.carbohydrates?.sugar)}
+                  {formatNutrient(currentProduct.nutriments?.calories, 'kcal')}
                 </Text>
               </View>
 
               <View style={styles.nutritionRowCompact}>
-                <Text style={styles.nutritionLabelSmall}>{t('saturatedFats')}</Text>
+                <Text style={styles.nutritionLabelSmall}>{t('proteins')}</Text>
                 <Text style={styles.nutritionValueSmall}>
-                  {formatNutrient(currentProduct.nutriments?.fats?.saturated)}
+                  {formatNutrient(currentProduct.nutriments?.proteins)}
                 </Text>
               </View>
 
               <View style={styles.nutritionRowCompact}>
-                <Text style={styles.nutritionLabelSmall}>{t('salt')}</Text>
+                <Text style={styles.nutritionLabelSmall}>{t('fats')}</Text>
                 <Text style={styles.nutritionValueSmall}>
-                  {formatNutrient(currentProduct.nutriments?.salt)}
+                  {formatNutrient(currentProduct.nutriments?.fats?.total)}
                 </Text>
               </View>
+
+              <View style={styles.nutritionRowCompact}>
+                <Text style={styles.nutritionLabelSmall}>{t('carbs')}</Text>
+                <Text style={styles.nutritionValueSmall}>
+                  {formatNutrient(currentProduct.nutriments?.carbohydrates?.total)}
+                </Text>
+              </View>
+
+              {currentProduct.nutriments?.carbohydrates?.sugar !== undefined && (
+                <View style={styles.nutritionRowCompact}>
+                  <Text style={styles.nutritionLabelSmall}>{t('sugar')}</Text>
+                  <Text style={styles.nutritionValueSmall}>
+                    {formatNutrient(currentProduct.nutriments.carbohydrates.sugar)}
+                  </Text>
+                </View>
+              )}
+
+              {currentProduct.nutriments?.fats?.saturated !== undefined && (
+                <View style={styles.nutritionRowCompact}>
+                  <Text style={styles.nutritionLabelSmall}>{t('saturatedFats')}</Text>
+                  <Text style={styles.nutritionValueSmall}>
+                    {formatNutrient(currentProduct.nutriments.fats.saturated)}
+                  </Text>
+                </View>
+              )}
+
+              {currentProduct.nutriments?.salt !== undefined && (
+                <View style={styles.nutritionRowCompact}>
+                  <Text style={styles.nutritionLabelSmall}>{t('salt')}</Text>
+                  <Text style={styles.nutritionValueSmall}>
+                    {formatNutrient(currentProduct.nutriments.salt)}
+                  </Text>
+                </View>
+              )}
+
+              {currentProduct.nutriments?.fiber !== undefined && (
+                <View style={styles.nutritionRowCompact}>
+                  <Text style={styles.nutritionLabelSmall}>Fiber</Text>
+                  <Text style={styles.nutritionValueSmall}>
+                    {formatNutrient(currentProduct.nutriments.fiber)}
+                  </Text>
+                </View>
+              )}
             </View>
 
-            {/*  */}
-            {currentProduct.weight && currentProduct.weight > 0 && (
+            {currentProduct.weight && (
               <View style={styles.wholeProductSection}>
                 <Text style={styles.wholeProductTitle}>
-                  {t('wholeProduct')} ({currentProduct.weight}г)
+                  {t('wholeProduct')} ({currentProduct.weight}{t('gramsUnit')})
                 </Text>
-                
                 <View style={styles.wholeProductGrid}>
                   <View style={styles.wholeProductItem}>
                     <Text style={styles.wholeProductLabel}>{t('calories')}</Text>
                     <Text style={styles.wholeProductValue}>
-                      {formatNutrient(
-                        calculateWholeProduct(currentProduct.nutriments?.calories, currentProduct.weight) ?? undefined,
-                        'kcal'
-                      )}
+                      {Math.round((currentProduct.nutriments?.calories || 0) * currentProduct.weight / 100)} {t('kcalUnit')}
                     </Text>
                   </View>
-                  
                   <View style={styles.wholeProductItem}>
                     <Text style={styles.wholeProductLabel}>{t('proteins')}</Text>
                     <Text style={styles.wholeProductValue}>
-                      {formatNutrient(
-                        calculateWholeProduct(currentProduct.nutriments?.proteins, currentProduct.weight) ?? undefined
-                      )}
+                      {Math.round(((currentProduct.nutriments?.proteins || 0) * currentProduct.weight / 100) * 10) / 10} {t('gramsUnit')}
                     </Text>
                   </View>
-                  
+                  <View style={styles.wholeProductItem}>
+                    <Text style={styles.wholeProductLabel}>{t('fats')}</Text>
+                    <Text style={styles.wholeProductValue}>
+                      {Math.round(((currentProduct.nutriments?.fats?.total || 0) * currentProduct.weight / 100) * 10) / 10} {t('gramsUnit')}
+                    </Text>
+                  </View>
                   <View style={styles.wholeProductItem}>
                     <Text style={styles.wholeProductLabel}>{t('carbs')}</Text>
                     <Text style={styles.wholeProductValue}>
-                      {formatNutrient(
-                        calculateWholeProduct(currentProduct.nutriments?.carbohydrates?.total, currentProduct.weight) ?? undefined
-                      )}
+                      {Math.round(((currentProduct.nutriments?.carbohydrates?.total || 0) * currentProduct.weight / 100) * 10) / 10} {t('gramsUnit')}
                     </Text>
                   </View>
                 </View>
@@ -265,102 +303,44 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
       case 'composition':
         return (
           <ScrollView style={styles.tabContainer} showsVerticalScrollIndicator={false}>
-            {/* Інгредієнти */}
+            {/* Ingredients */}
             <View style={styles.compositionSection}>
               <View style={styles.compositionHeader}>
-                <Icon name="format-list-bulleted" size={20} color="#34572a" />
-                <Text style={styles.compositionTitle}>{t('composition') || 'Composition'}</Text>
+                <Ionicons name="leaf-outline" size={20} color="#34572a" />
+                <Text style={styles.compositionTitle}>{t('composition')}</Text>
               </View>
+              
               <View style={styles.ingredientsCard}>
-                <Text style={styles.ingredientsText}>{currentProduct.ingredients || 'No ingredients listed'}</Text>
+                <Text style={styles.ingredientsText}>
+                  {currentProduct.ingredients}
+                </Text>
               </View>
             </View>
 
-            {/* E-добавки */}
-            {currentProduct.additives && Array.isArray(currentProduct.additives) && currentProduct.additives.length > 0 && (
-              <View style={styles.compositionSection}>
-                <View style={styles.compositionHeader}>
-                  <Icon name="flask-outline" size={20} color="#FF5722" />
-                  <Text style={styles.compositionTitle}>{t('additives') || 'Additives'}</Text>
-                </View>
-                <View style={styles.additivesCard}>
-                  <View style={styles.additivesList}>
-                    {currentProduct.additives.map((additive, index) => (
-                      <View key={index} style={styles.additiveTag}>
-                        <Icon name="flask" size={14} color="#FF5722" />
-                        <Text style={styles.additiveText}>{additive}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
+            {/* E-additives */}
+            {currentProduct.additives.length > 0 && (
+              <View style={styles.additivesCard}>
+                <Text style={styles.ingredientsLabel}>{t('additives')}</Text>
+                <Text style={styles.ingredientsText}>
+                  {currentProduct.additives.join(', ')}
+                </Text>
               </View>
             )}
-            
-            {/* Алергени */}
-            <View style={styles.compositionSection}>
-              <View style={styles.compositionHeader}>
-                <Icon name="alert-circle-outline" size={20} color="#FF9800" />
-                <Text style={styles.compositionTitle}>{t('allergens') || 'Allergens'}</Text>
-              </View>
-              {currentProduct.allergens && Array.isArray(currentProduct.allergens) && currentProduct.allergens.length > 0 ? (
-                <View style={styles.allergensCard}>
-                  <View style={styles.allergensList}>
-                    {currentProduct.allergens.map((allergen, index) => (
-                      <View key={index} style={styles.allergenTag}>
-                        <Icon name="alert" size={14} color="#FF9800" />
-                        <Text style={styles.allergenText}>{allergen}</Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              ) : (
-                <View style={styles.noAllergensCard}>
-                  <Icon name="check-circle" size={20} color="#4CAF50" />
-                  <Text style={styles.noAllergensText}>{t('noAllergensListed') || 'No allergens listed'}</Text>
-                </View>
-              )}
-            </View>
 
-            {/* Product Tags */}
-            {productTags.length > 0 && (
-              <View style={styles.compositionSection}>
-                <View style={styles.compositionHeader}>
-                  <Icon name="tag" size={20} color="#34572a" />
-                  <Text style={styles.compositionTitle}>{t('tags') || 'Tags'}</Text>
-                </View>
-                <View style={styles.tagsDisplayCard}>
-                  <View style={styles.tagsWrap}>
-                    {productTags.map((tag, index) => {
-                      const tagDisplayName = getTagDisplayName(tag);
-                      const tagColor = getTagColor(tag);
-                      
-                     
-                      if (!tagDisplayName || typeof tagDisplayName !== 'string' || tagDisplayName.trim() === '') {
-                        return null;
-                      }
-                      
-                      return (
-                        <View 
-                          key={`tag-${index}-${tag}`} 
-                          style={[
-                            styles.tagDisplayItem,
-                            { 
-                              backgroundColor: (tagColor || '#757575') + '20',
-                              borderColor: tagColor || '#757575'
-                            }
-                          ]}
-                        >
-                          <Text style={[
-                            styles.tagDisplayText,
-                            { color: tagColor || '#757575' }
-                          ]}>
-                            {String(tagDisplayName)}
-                          </Text>
-                        </View>
-                      );
-                    }).filter(Boolean)}
-                  </View>
-                </View>
+            {/* Allergens */}
+            {currentProduct.allergens.length > 0 ? (
+              <View style={styles.allergensCard}>
+                <Text style={styles.ingredientsLabel}>{t('allergens')}</Text>
+                <Text style={styles.ingredientsText}>
+                  {currentProduct.allergens.join(', ')}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.noAllergensCard}>
+                <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                <Text style={[styles.ingredientsText, { marginLeft: 8, color: '#4CAF50' }]}>
+                  {t('noAllergensListed')}
+                </Text>
               </View>
             )}
           </ScrollView>
@@ -369,10 +349,11 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
       case 'reviews':
         return (
           <View style={styles.reviewsContainer}>
-            <CommentSection productId={productId} />
+            <Text style={styles.sectionTitle}>{t('reviews')}</Text>
+            <Text style={styles.noCommentsText}>{t('noComments')}</Text>
           </View>
         );
-      
+        
       default:
         return null;
     }
@@ -463,16 +444,6 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
               <Text style={styles.nutriScoreEmoji}>
                 {getNutriScoreColor(currentProduct.nutriscoreGrade)}
               </Text>
-            </View>
-
-            <View style={styles.categoriesContainer}>
-              {currentProduct.categories && Array.isArray(currentProduct.categories) && (
-                currentProduct.categories.map((cat, index) => (
-                  <View key={index} style={styles.categoryTag}>
-                    <Text style={styles.categoryText}>{cat}</Text>
-                  </View>
-                ))
-              )}
             </View>
 
             {currentProduct.description && (
@@ -571,11 +542,11 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
   },
   productHeader: {
     padding: 16,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#f8f9fa',
   },
   productImage: {
     width: '100%',
@@ -594,7 +565,8 @@ const styles = StyleSheet.create({
   productName: {
     fontSize: 24,
     fontWeight: 'bold',
-    flex: 1,
+    color: '#333',
+    marginBottom: 4,
   },
   favoriteButton: {
     backgroundColor: '#34572a',
@@ -606,10 +578,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   productDescription: {
-    fontSize: 16,
-    color: '#555',
-    marginTop: 8,
-    lineHeight: 22,
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
   },
   nutriScoreContainer: {
     flexDirection: 'row',
@@ -624,39 +595,11 @@ const styles = StyleSheet.create({
   nutriScoreEmoji: {
     fontSize: 18,
   },
-  categoriesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 8,
-  },
-  categoryTag: {
-    backgroundColor: '#E0F7FA',
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  categoryText: {
-    color: '#00838F',
-    fontSize: 14,
-  },
   tabsContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#34572a',
-    width: '85%',
-    alignSelf: 'center',
-    marginVertical: 20,
-    borderRadius: 40,
-    paddingHorizontal: 8,
-    paddingVertical: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 8,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
   },
   tabButton: {
     flex: 1,
@@ -671,148 +614,23 @@ const styles = StyleSheet.create({
   },
   activeTabText: {
     color: '#34572a',
-    marginLeft: 6,
-    fontWeight: '600',
-    fontSize: 11,
-    flexShrink: 1,
+    fontWeight: 'bold',
   },
   tabContainer: {
+    flex: 1,
     padding: 16,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  nutritionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  nutritionLabel: {
-    fontSize: 16,
-    color: '#555',
-  },
-  nutritionValue: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  ingredientsText: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#333',
-  },
-  additivesList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 8,
-  },
-  additiveTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 87, 34, 0.1)',
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginRight: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#FF5722',
-  },
-  additiveText: {
-    color: '#FF5722',
-    fontSize: 12,
-    fontWeight: '500',
-    marginLeft: 4,
-  },
-  allergensList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  allergenTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 152, 0, 0.1)',
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginRight: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#FF9800',
-  },
-  allergenText: {
-    color: '#FF9800',
-    fontSize: 12,
-    fontWeight: '500',
-    marginLeft: 4,
-  },
-  noAllergensText: {
-    fontSize: 14,
-    color: '#4CAF50',
-    fontWeight: '500',
-    marginLeft: 8,
-  },
-  dietaryInfoContainer: {
-    marginTop: 16,
-  },
-  dietaryInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  dietaryInfoText: {
-    fontSize: 16,
-    marginLeft: 12,
-  },
-  similarProductsSection: {
-    padding: 16,
-    backgroundColor: '#f9f9f9',
-  },
-  similarProductsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  similarProductsList: {
-    paddingVertical: 8,
-  },
-  similarProductCard: {
-    width: 280,
-    marginRight: 12,
-  },
-  noSimilarProductsContainer: {
-    padding: 16,
-    alignItems: 'center',
-  },
-  noSimilarProductsText: {
-    fontSize: 16,
-    fontStyle: 'italic',
-    color: '#757575',
-  },
-  metadataContainer: {
-    padding: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-  },
-  metadataText: {
-    fontSize: 12,
-    color: '#9E9E9E',
-    marginBottom: 4,
-  },
-  subsectionTitle: {
-    fontSize: 16,
-    marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 16,
+    color: '#34572a',
   },
   portionText: {
     fontSize: 14,
     color: '#666',
-    textAlign: 'center',
     marginBottom: 16,
-    fontStyle: 'italic',
+    textAlign: 'center',
   },
   nutritionGrid: {
     flexDirection: 'row',
@@ -831,10 +649,10 @@ const styles = StyleSheet.create({
     borderColor: '#e9ecef',
   },
   nutritionNumber: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#34572a',
-    marginBottom: 4,
+    textAlign: 'center',
   },
   nutritionLabelCompact: {
     fontSize: 12,
@@ -842,9 +660,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   detailsSection: {
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 12,
     marginBottom: 20,
   },
   detailsTitle: {
@@ -856,39 +671,42 @@ const styles = StyleSheet.create({
   nutritionRowCompact: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 6,
+    alignItems: 'center',
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    borderBottomColor: '#f0f0f0',
   },
   nutritionLabelSmall: {
     fontSize: 14,
-    color: '#555',
+    color: '#333',
   },
   nutritionValueSmall: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
     color: '#34572a',
   },
   wholeProductSection: {
-    backgroundColor: '#e8f5e8',
+    backgroundColor: '#f8f9fa',
     padding: 16,
     borderRadius: 12,
-    marginBottom: 16,
+    marginTop: 16,
   },
   wholeProductTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 12,
     color: '#34572a',
+    marginBottom: 12,
     textAlign: 'center',
   },
   wholeProductGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   wholeProductItem: {
+    width: '48%',
     alignItems: 'center',
-    flex: 1,
+    marginBottom: 12,
   },
   wholeProductLabel: {
     fontSize: 12,
@@ -923,12 +741,18 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#34572a',
   },
+  ingredientsText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#333',
+  },
   additivesCard: {
     backgroundColor: '#ffebee',
     padding: 16,
     borderRadius: 12,
     borderLeftWidth: 4,
     borderLeftColor: '#FF5722',
+    marginBottom: 16,
   },
   allergensCard: {
     backgroundColor: '#fff3cd',
@@ -936,6 +760,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderLeftWidth: 4,
     borderLeftColor: '#FF9800',
+    marginBottom: 16,
   },
   noAllergensCard: {
     backgroundColor: '#d4edda',
@@ -947,57 +772,163 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#4CAF50',
   },
-  dietaryCard: {
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
-  },
-  dietaryGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  dietaryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '48%',
-    marginBottom: 12,
-    padding: 8,
-    backgroundColor: 'rgba(255,255,255,0.5)',
-    borderRadius: 8,
-  },
-  dietaryText: {
+  noAllergensText: {
     fontSize: 14,
-    marginLeft: 8,
+    color: '#4CAF50',
     fontWeight: '500',
+    marginLeft: 8,
   },
   reviewsContainer: {
     padding: 16,
   },
-  tagsDisplayCard: {
-    backgroundColor: '#f8f9fa',
+  noCommentsText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 20,
+    fontStyle: 'italic',
+  },
+  similarProductsSection: {
     padding: 16,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#34572a',
+    backgroundColor: '#f9f9f9',
   },
-  tagsWrap: {
+  similarProductsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  similarProductsList: {
+    paddingVertical: 8,
+  },
+  similarProductCard: {
+    width: 280,
+    marginRight: 12,
+  },
+  noSimilarProductsContainer: {
+    padding: 16,
+    alignItems: 'center',
+  },
+  noSimilarProductsText: {
+    fontSize: 16,
+    fontStyle: 'italic',
+    color: '#757575',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#34572a',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  header: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
   },
-  tagDisplayItem: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#34572a',
+    flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 16,
+  },
+  backButton: {
+    padding: 8,
+  },
+  imageContainer: {
+    position: 'relative',
+    backgroundColor: '#fff',
+  },
+  nutriscoreContainer: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    alignItems: 'center',
+  },
+  nutriscoreText: {
+    fontSize: 10,
+    color: '#666',
+    marginBottom: 4,
+  },
+  nutriscoreBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  nutriscoreGrade: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  productInfo: {
+    padding: 16,
+    backgroundColor: '#fff',
+  },
+  productBrand: {
+    fontSize: 16,
+    color: '#666',
     marginBottom: 8,
-    borderWidth: 1,
   },
-  tagDisplayText: {
-    fontSize: 12,
+  tab: {
+    flex: 1,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#34572a',
+  },
+  tabText: {
+    fontSize: 14,
+    color: '#666',
     fontWeight: '500',
+  },
+  contentContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  ingredientsLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#34572a',
   },
 });
 

@@ -2,20 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet, Text, ActivityIndicator } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Feather from 'react-native-vector-icons/Feather';
+import { Ionicons } from '@expo/vector-icons';
 import { t } from '../utils/translations';
 
 interface SearchBarProps {
   initialQuery?: string;
   onSearch: (query: string) => void;
   onFilterPress?: () => void;
+  onBarcodePress?: () => void;
   loading?: boolean;
+  showBarcodeButton?: boolean;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({ 
   initialQuery = '',
   onSearch,
   onFilterPress,
-  loading = false
+  onBarcodePress,
+  loading = false,
+  showBarcodeButton = true
 }) => {
   const [query, setQuery] = useState(initialQuery);
   const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout | null>(null);
@@ -58,23 +63,45 @@ const SearchBar: React.FC<SearchBarProps> = ({
     onSearch('');
   };
 
+  const isBarcode = (text: string) => {
+    // Check if text is a barcode 
+    return /^\d{8,13}$/.test(text.trim());
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
         <Feather name="search" size={20} color="#6c757d" style={styles.searchIcon} />
         <TextInput
           style={styles.input}
-          placeholder={t('searchPlaceholder')}
+          placeholder={t('searchPlaceholder') + ' або штрих-код'}
           value={query}
           onChangeText={handleChangeText}
           returnKeyType="search"
           onSubmitEditing={handleSubmit}
           clearButtonMode="while-editing"
           placeholderTextColor="#6c757d"
+          keyboardType="default"
         />
         {query.length > 0 && (
-          <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
-            <Feather name="x-circle" size={18} color="#6c757d" />
+          <View style={styles.inputActions}>
+            {isBarcode(query) && (
+              <View style={styles.barcodeIndicator}>
+                <Ionicons name="barcode-outline" size={16} color="#34572a" />
+              </View>
+            )}
+            <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
+              <Feather name="x-circle" size={18} color="#6c757d" />
+            </TouchableOpacity>
+          </View>
+        )}
+        {showBarcodeButton && (
+          <TouchableOpacity 
+            style={styles.barcodeButton} 
+            onPress={onBarcodePress}
+            disabled={loading}
+          >
+            <Ionicons name="scan" size={20} color="#34572a" />
           </TouchableOpacity>
         )}
       </View>
@@ -120,9 +147,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
+  inputActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  barcodeIndicator: {
+    backgroundColor: '#e8f5e8',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   clearButton: {
     padding: 4,
+  },
+  barcodeButton: {
+    padding: 8,
     marginLeft: 8,
+    borderRadius: 20,
+    backgroundColor: '#f0f8f0',
+    borderWidth: 1,
+    borderColor: '#34572a',
   },
   filterButton: {
     backgroundColor: '#34572a',

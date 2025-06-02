@@ -33,7 +33,6 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
     imageUrl: '',
     nutriscoreGrade: 'C' as NutriScoreGrade,
     ingredients: '',
-    categories: [],
     allergens: [],
     additives: [],
     nutriments: {
@@ -127,7 +126,6 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
         imageUrl: product.imageUrl || '',
         nutriscoreGrade: product.nutriscoreGrade || 'C',
         ingredients: product.ingredients || '',
-        categories: product.categories || [],
         allergens: product.allergens || [],
         additives: product.additives || [],
         nutriments: product.nutriments || {
@@ -200,7 +198,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
           style={styles.input}
           value={product.imageUrl}
           onChangeText={(text) => setProduct({...product, imageUrl: text})}
-          placeholder="https://example.com/image.jpg"
+          placeholder={t('imageUrlPlaceholder')}
         />
         
         <Text style={styles.inputLabel}>{t('weight')} (г)</Text>
@@ -211,7 +209,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
             const weight = parseFloat(text) || 0;
             setProduct({...product, weight});
           }}
-          placeholder="0"
+          placeholder={t('zeroPlaceholder')}
           keyboardType="numeric"
         />
         
@@ -231,7 +229,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder="0"
+          placeholder={t('zeroPlaceholder')}
           keyboardType="numeric"
         />
         
@@ -249,7 +247,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder="0"
+          placeholder={t('zeroPlaceholder')}
           keyboardType="numeric"
         />
         
@@ -270,7 +268,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder="0"
+          placeholder={t('zeroPlaceholder')}
           keyboardType="numeric"
         />
         
@@ -291,7 +289,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder="0"
+          placeholder={t('zeroPlaceholder')}
           keyboardType="numeric"
         />
         
@@ -312,7 +310,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder="0"
+          placeholder={t('zeroPlaceholder')}
           keyboardType="numeric"
         />
         
@@ -333,7 +331,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder="0"
+          placeholder={t('zeroPlaceholder')}
           keyboardType="numeric"
         />
         
@@ -351,7 +349,7 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder="0"
+          placeholder={t('zeroPlaceholder')}
           keyboardType="numeric"
         />
         
@@ -409,17 +407,6 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
             additives: text.split(',').map(additive => additive.trim()).filter(additive => additive)
           })}
           placeholder={t('additivesPlaceholder')}
-        />
-        
-        <Text style={styles.inputLabel}>{t('categories')}</Text>
-        <TextInput
-          style={styles.input}
-          value={product.categories?.join(', ')}
-          onChangeText={(text) => setProduct({
-            ...product, 
-            categories: text.split(',').map(cat => cat.trim()).filter(cat => cat)
-          })}
-          placeholder={`${t('dairyCategory')}, ${t('beverageCategory')}`}
         />
         
         <Text style={styles.sectionTitle}>{t('tags')}</Text>

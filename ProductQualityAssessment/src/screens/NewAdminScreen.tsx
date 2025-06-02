@@ -68,7 +68,7 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
       setProducts(productsData || []);
     } catch (error) {
       console.error('Error loading data:', error);
-      Alert.alert('Error', 'Failed to load data. Please try again.');
+      Alert.alert(t('error'), t('errorLoadingData'));
     } finally {
       setLoading(false);
     }
@@ -86,7 +86,7 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
         }
       } catch (error) {
         console.error('Error updating user block status:', error);
-        Alert.alert('Error', 'Failed to update user status');
+        Alert.alert(t('error'), t('failedToUpdateUserStatus'));
         return;
       }
     }
@@ -104,21 +104,21 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
     if (!currentUser) return;
 
     Alert.alert(
-      'Confirm Delete',
-      'Are you sure you want to delete this product?',
+      t('confirmDelete'),
+      t('deleteProductConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               await deleteProduct(productId, currentUser.userId);
               setProducts(prev => prev.filter(p => p.productId !== productId));
-              Alert.alert('Success', 'Product deleted successfully');
+              Alert.alert(t('success'), t('productDeletedSuccessfully'));
             } catch (error) {
               console.error('Error deleting product:', error);
-              Alert.alert('Error', 'Failed to delete product');
+              Alert.alert(t('error'), t('productDeleteError'));
             }
           }
         }
@@ -138,7 +138,6 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
           brand: productData.brand || '',
           description: productData.description || '',
           imageUrl: productData.imageUrl || '',
-          categories: productData.categories || [],
           allergens: productData.allergens || [],
           additives: productData.additives || [],
           tags: productData.tags || [],
@@ -169,7 +168,7 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
       
       Alert.alert(
         t('submissionApproved'), 
-        'Продукт успішно затверджено та додано до бази даних!'
+        t('productApprovedSuccessfully')
       );
       
     
@@ -177,7 +176,7 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
       
     } catch (error) {
       console.error('Error creating approved product:', error);
-      Alert.alert('Error', 'Помилка при створенні продукту в базі даних');
+      Alert.alert(t('error'), t('errorCreatingProductInDatabase'));
     }
   };
 
@@ -206,7 +205,7 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
               color="#fff" 
             />
             <Text style={styles.statusText}>
-              {t('live')}
+              Live
             </Text>
           </View>
         </View>
