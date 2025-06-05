@@ -23,7 +23,7 @@ interface SimpleAlertOptions {
 
 export const showSuccess = (message: string, onPress?: () => void) => {
   Alert.alert(
-    '✅ Успіх',
+    'Успіх',
     message,
     [
       { 
@@ -38,7 +38,7 @@ export const showSuccess = (message: string, onPress?: () => void) => {
 
 export const showError = (message: string, onPress?: () => void) => {
   Alert.alert(
-    '❌ Помилка',
+    'Помилка',
     message,
     [
       { 
@@ -53,7 +53,7 @@ export const showError = (message: string, onPress?: () => void) => {
 
 export const showWarning = (message: string, onPress?: () => void) => {
   Alert.alert(
-    '⚠️ Попередження',
+    'Попередження',
     message,
     [
       { 
@@ -68,7 +68,7 @@ export const showWarning = (message: string, onPress?: () => void) => {
 
 export const showInfo = (message: string, onPress?: () => void) => {
   Alert.alert(
-    'ℹ️ Інформація',
+    'Інформація',
     message,
     [
       { 
@@ -113,7 +113,7 @@ export const showConfirm = (options: ConfirmDialogOptions) => {
 
 export const showDeleteConfirm = (itemName: string, onConfirm: () => void, onCancel?: () => void) => {
   showConfirm({
-    title: '🗑️ Видалення',
+    title: 'Видалення',
     message: `Ви впевнені, що хочете видалити "${itemName}"?\n\nЦю дію неможливо скасувати.`,
     confirmText: 'Видалити',
     cancelText: 'Скасувати',
@@ -126,7 +126,7 @@ export const showDeleteConfirm = (itemName: string, onConfirm: () => void, onCan
 
 export const showLogoutConfirm = (onConfirm: () => void, onCancel?: () => void) => {
   showConfirm({
-    title: '🚪 Вихід',
+    title: 'Вихід',
     message: 'Ви впевнені, що хочете вийти з облікового запису?',
     confirmText: 'Вийти',
     cancelText: 'Залишитися',
@@ -138,7 +138,7 @@ export const showLogoutConfirm = (onConfirm: () => void, onCancel?: () => void) 
 
 export const showDeleteAccountConfirm = (onConfirm: () => void, onCancel?: () => void) => {
   showConfirm({
-    title: '⚠️ Видалення облікового запису',
+    title: 'Видалення облікового запису',
     message: 'Ви впевнені, що хочете НАЗАВЖДИ видалити свій обліковий запис?\n\nВсі ваші дані будуть втрачені безповоротно!\n\nЦя дія не може бути скасована.',
     confirmText: 'Видалити назавжди',
     cancelText: 'Скасувати',
@@ -151,7 +151,7 @@ export const showDeleteAccountConfirm = (onConfirm: () => void, onCancel?: () =>
 
 export const showSaveConfirm = (onConfirm: () => void, onCancel?: () => void) => {
   showConfirm({
-    title: '💾 Збереження',
+    title: 'Збереження',
     message: 'Зберегти зміни?',
     confirmText: 'Зберегти',
     cancelText: 'Скасувати',
@@ -163,7 +163,7 @@ export const showSaveConfirm = (onConfirm: () => void, onCancel?: () => void) =>
 
 export const showUnsavedChangesConfirm = (onConfirm: () => void, onCancel?: () => void) => {
   showConfirm({
-    title: '⚠️ Незбережені зміни',
+    title: 'Незбережені зміни',
     message: 'У вас є незбережені зміни. Ви впевнені, що хочете вийти без збереження?',
     confirmText: 'Вийти без збереження',
     cancelText: 'Повернутися',
@@ -176,7 +176,7 @@ export const showUnsavedChangesConfirm = (onConfirm: () => void, onCancel?: () =
 
 export const showRefreshConfirm = (onConfirm: () => void, onCancel?: () => void) => {
   showConfirm({
-    title: '🔄 Оновлення',
+    title: 'Оновлення',
     message: 'Оновити дані? Незбережені зміни можуть бути втрачені.',
     confirmText: 'Оновити',
     cancelText: 'Скасувати',
@@ -188,7 +188,7 @@ export const showRefreshConfirm = (onConfirm: () => void, onCancel?: () => void)
 
 export const showClearCacheConfirm = (onConfirm: () => void, onCancel?: () => void) => {
   showConfirm({
-    title: '🧹 Очищення кешу',
+    title: 'Очищення кешу',
     message: 'Очистити кеш додатку? Це може покращити швидкодію, але деякі дані доведеться завантажити заново.',
     confirmText: 'Очистити',
     cancelText: 'Скасувати',
@@ -200,7 +200,7 @@ export const showClearCacheConfirm = (onConfirm: () => void, onCancel?: () => vo
 
 export const showSubmitConfirm = (formName: string, onConfirm: () => void, onCancel?: () => void) => {
   showConfirm({
-    title: '📤 Відправка',
+    title: 'Відправка',
     message: `Відправити ${formName}?`,
     confirmText: 'Відправити',
     cancelText: 'Перевірити ще раз',
@@ -219,7 +219,7 @@ export const showNetworkError = (onRetry?: () => void) => {
     : [{ text: 'Зрозуміло' }];
 
   Alert.alert(
-    '🌐 Помилка мережі',
+    'Помилка мережі',
     'Не вдалося підключитися до сервера. Перевірте з\'єднання з інтернетом.',
     buttons
   );
@@ -235,7 +235,7 @@ export const showAuthError = (onRetry?: () => void) => {
     : [{ text: 'Зрозуміло' }];
 
   Alert.alert(
-    '🔐 Помилка авторизації',
+    'Помилка авторизації',
     'Сесія застаріла або недійсна. Увійдіть в обліковий запис знову.',
     buttons
   );

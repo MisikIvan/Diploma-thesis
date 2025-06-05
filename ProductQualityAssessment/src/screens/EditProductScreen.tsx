@@ -18,12 +18,14 @@ import { RootStackParamList } from '../types/navigation';
 import { t } from '../utils/translations';
 import { PREDEFINED_TAGS, getTagDisplayName } from '../utils/helpers';
 import ImageUploader from '../components/ImageUploader';
+import { autoFillFormFromAnalysis } from '../api/smartProductAnalysis';
 
 type EditProductScreenProps = StackScreenProps<RootStackParamList, 'EditProduct'>;
 
 const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route }) => {
-  const { productId } = route.params;
+  const { productId, prefilledData } = route.params;
   const currentUser = useAppSelector(state => state.user.currentUser);
+  const isCreating = productId === 'new';
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -46,13 +48,10 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
         total: 0, 
         sugar: 0 
       },
-      salt: 0
+      salt: 0,
+      fiber: 0
     },
     tags: [],
-    isVegan: false,
-    isVegetarian: false,
-    hasLactose: false,
-    hasGluten: false,
     weight: 0
   });
 
@@ -77,8 +76,16 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
       return;
     }
     
-    loadProduct();
-  }, [productId]);
+    if (isCreating) {
+      if (prefilledData) {
+        const autoFilledData = autoFillFormFromAnalysis(prefilledData, product);
+        setProduct(autoFilledData);
+      }
+      setLoading(false);
+    } else {
+      loadProduct();
+    }
+  }, [productId, prefilledData]);
 
   const loadProduct = async () => {
     try {
@@ -136,10 +143,6 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
           salt: 0
         },
         tags: product.tags || [],
-        isVegan: product.isVegan || false,
-        isVegetarian: product.isVegetarian || false,
-        hasLactose: product.hasLactose || false,
-        hasGluten: product.hasGluten || false,
         weight: product.weight || 0
       }, currentUser.userId);
 
@@ -353,6 +356,24 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
           keyboardType="numeric"
         />
         
+        <Text style={styles.inputLabel}>Клітковина (г)</Text>
+        <TextInput
+          style={styles.input}
+          value={product.nutriments?.fiber?.toString()}
+          onChangeText={(text) => {
+            const fiber = parseFloat(text) || 0;
+            setProduct({
+              ...product, 
+              nutriments: {
+                ...product.nutriments!,
+                fiber
+              }
+            });
+          }}
+          placeholder={t('zeroPlaceholder')}
+          keyboardType="numeric"
+        />
+        
         <Text style={styles.inputLabel}>{t('nutriscoreGrade')}</Text>
         <View style={styles.nutriScoreSelector}>
           {['A', 'B', 'C', 'D', 'E'].map((grade) => (
@@ -454,66 +475,6 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
         
         <Text style={styles.sectionTitle}>{t('dietaryInfo')} (Legacy)</Text>
         <Text style={styles.inputHelper}>{t('legacyFieldsNote')}</Text>
-        
-        <View style={styles.checkboxRow}>
-          <TouchableOpacity 
-            style={styles.checkbox}
-            onPress={() => setProduct({...product, isVegan: !product.isVegan})}
-          >
-            <View style={[
-              styles.checkboxInner, 
-              product.isVegan && styles.checkboxChecked
-            ]}>
-              {product.isVegan && <Ionicons name="checkmark" size={16} color="#fff" />}
-            </View>
-          </TouchableOpacity>
-          <Text style={styles.checkboxLabel}>{t('vegan')}</Text>
-        </View>
-        
-        <View style={styles.checkboxRow}>
-          <TouchableOpacity 
-            style={styles.checkbox}
-            onPress={() => setProduct({...product, isVegetarian: !product.isVegetarian})}
-          >
-            <View style={[
-              styles.checkboxInner, 
-              product.isVegetarian && styles.checkboxChecked
-            ]}>
-              {product.isVegetarian && <Ionicons name="checkmark" size={16} color="#fff" />}
-            </View>
-          </TouchableOpacity>
-          <Text style={styles.checkboxLabel}>{t('vegetarian')}</Text>
-        </View>
-        
-        <View style={styles.checkboxRow}>
-          <TouchableOpacity 
-            style={styles.checkbox}
-            onPress={() => setProduct({...product, hasLactose: !product.hasLactose})}
-          >
-            <View style={[
-              styles.checkboxInner, 
-              product.hasLactose && styles.checkboxChecked
-            ]}>
-              {product.hasLactose && <Ionicons name="checkmark" size={16} color="#fff" />}
-            </View>
-          </TouchableOpacity>
-          <Text style={styles.checkboxLabel}>{t('containsLactose')}</Text>
-        </View>
-        
-        <View style={styles.checkboxRow}>
-          <TouchableOpacity 
-            style={styles.checkbox}
-            onPress={() => setProduct({...product, hasGluten: !product.hasGluten})}
-          >
-            <View style={[
-              styles.checkboxInner, 
-              product.hasGluten && styles.checkboxChecked
-            ]}>
-              {product.hasGluten && <Ionicons name="checkmark" size={16} color="#fff" />}
-            </View>
-          </TouchableOpacity>
-          <Text style={styles.checkboxLabel}>{t('containsGluten')}</Text>
-        </View>
         
         <View style={styles.buttonContainer}>
           <TouchableOpacity 

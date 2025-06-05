@@ -1,3 +1,5 @@
+import { AnalyzedProductData } from '../api/smartProductAnalysis';
+
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
@@ -20,7 +22,7 @@ export type RootStackParamList = {
     currentGender: 'male' | 'female' | 'other'; 
     title: string; 
   };
-  EditProduct: { productId: string };
+  EditProduct: { productId: string; prefilledData?: AnalyzedProductData };
   Admin: undefined;
   ProductSearch: undefined;
   UserSearch: undefined;

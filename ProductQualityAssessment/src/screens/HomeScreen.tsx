@@ -18,6 +18,8 @@ import { getAllProducts } from '../api/firebase';
 import { StorageService } from '../utils/storage';
 import { showSuccess, showError, showSubmitSuccess, showNetworkError } from '../utils/alerts';
 import { Colors, Spacing, Typography, ComponentStyles, Shadows } from '../utils/theme';
+import QuickAnalysisFloatingButton from '../components/QuickAnalysisFloatingButton';
+import { AnalyzedProductData } from '../api/smartProductAnalysis';
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Main'>;
 
@@ -239,7 +241,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   };
 
- 
   const handleRetry = () => {
     loadProducts(true);
   };
@@ -367,6 +368,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         onClose={() => setShowBarcodeScanner(false)}
         onBarcodeScanned={handleBarcodeScanned}
       />
+
+      <QuickAnalysisFloatingButton />
     </View>
   );
 };
@@ -377,7 +380,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   listContent: {
-    paddingBottom: 120,
+    paddingBottom: 200,
     paddingHorizontal: Spacing.sm,
   },
   loadingContainer: {
