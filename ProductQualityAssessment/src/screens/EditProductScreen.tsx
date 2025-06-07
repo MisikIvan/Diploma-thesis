@@ -19,6 +19,7 @@ import { t } from '../utils/translations';
 import { PREDEFINED_TAGS, getTagDisplayName } from '../utils/helpers';
 import ImageUploader from '../components/ImageUploader';
 import { autoFillFormFromAnalysis } from '../api/smartProductAnalysis';
+import { quickNutriScore, determineFoodCategory } from '../utils/nutriScore';
 
 type EditProductScreenProps = StackScreenProps<RootStackParamList, 'EditProduct'>;
 
@@ -29,6 +30,8 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [calculatedNutriScore, setCalculatedNutriScore] = useState<NutriScoreGrade | null>(null);
+  const [isManualNutriScore, setIsManualNutriScore] = useState(false);
   const [product, setProduct] = useState<Partial<Product>>({
     name: '',
     description: '',
@@ -65,6 +68,96 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
       default: return '#34572a';
     }
   };
+
+  // Функція для правильної обробки десяткових чисел
+  const parseNumericValue = (text: string): number => {
+    if (!text || text.trim() === '') return 0;
+    
+    // Заміна коми на крапку для підтримки європейського формату
+    const normalizedText = text.replace(',', '.');
+    
+    // Перевірка на валідність числа
+    const parsed = parseFloat(normalizedText);
+    
+    // Повертаємо 0 якщо число невалідне, інакше повертаємо значення з максимум 2 знаками після коми
+    return isNaN(parsed) ? 0 : Math.round(parsed * 100) / 100;
+  };
+
+  // Функція для форматування відображення числа
+  const formatDisplayValue = (value: number | undefined): string => {
+    if (value === undefined || value === 0) return '';
+    return value.toString();
+  };
+
+  // Функція автоматичного обчислення Nutri-Score
+  const calculateNutriScoreAutomatically = () => {
+    if (!product.nutriments) return null;
+
+    const { nutriments } = product;
+    
+    // Перевіряємо, чи є достатньо даних для розрахунку
+    if (
+      nutriments.calories !== undefined &&
+      nutriments.fats?.total !== undefined &&
+      nutriments.carbohydrates?.total !== undefined &&
+      nutriments.salt !== undefined
+    ) {
+      try {
+        const category = determineFoodCategory(
+          product.name || '',
+          product.ingredients || '',
+          product.tags || []
+        );
+
+        const result = quickNutriScore(
+          nutriments.calories,
+          nutriments.fats?.saturated || 0,
+          nutriments.carbohydrates?.sugar || 0,
+          nutriments.salt,
+          nutriments.fiber || 0,
+          nutriments.proteins || 0,
+          0, // fruitsVegetablesNuts - можна додати пізніше як окреме поле
+          category
+        );
+
+        return result.grade;
+      } catch (error) {
+        console.warn('Error calculating Nutri-Score:', error);
+        return null;
+      }
+    }
+    
+    return null;
+  };
+
+  // useEffect для автоматичного обчислення при зміні харчових значень
+  useEffect(() => {
+    if (!isManualNutriScore && product.nutriments) {
+      const autoGrade = calculateNutriScoreAutomatically();
+      setCalculatedNutriScore(autoGrade);
+      
+      // Автоматично встановлюємо розрахований Nutri-Score, якщо він не був вручну змінений
+      if (autoGrade && !isManualNutriScore) {
+        setProduct(prev => ({
+          ...prev,
+          nutriscoreGrade: autoGrade
+        }));
+      }
+    }
+  }, [
+    product.nutriments?.calories,
+    product.nutriments?.proteins,
+    product.nutriments?.fats?.total,
+    product.nutriments?.fats?.saturated,
+    product.nutriments?.carbohydrates?.total,
+    product.nutriments?.carbohydrates?.sugar,
+    product.nutriments?.salt,
+    product.nutriments?.fiber,
+    product.name,
+    product.ingredients,
+    product.tags,
+    isManualNutriScore
+  ]);
 
   useEffect(() => {
     if (!currentUser || currentUser.role !== 'admin') {
@@ -207,13 +300,13 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
         <Text style={styles.inputLabel}>{t('weight')} (г)</Text>
         <TextInput
           style={styles.input}
-          value={product.weight?.toString()}
+          value={formatDisplayValue(product.weight)}
           onChangeText={(text) => {
-            const weight = parseFloat(text) || 0;
+            const weight = parseNumericValue(text);
             setProduct({...product, weight});
           }}
-          placeholder={t('zeroPlaceholder')}
-          keyboardType="numeric"
+          placeholder="Наприклад: 100 або 125.5"
+          keyboardType="decimal-pad"
         />
         
         <Text style={styles.sectionTitle}>{t('nutritionalInfo')}</Text>
@@ -221,9 +314,9 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
         <Text style={styles.inputLabel}>{t('calories')}</Text>
         <TextInput
           style={styles.input}
-          value={product.nutriments?.calories?.toString()}
+          value={formatDisplayValue(product.nutriments?.calories)}
           onChangeText={(text) => {
-            const calories = parseFloat(text) || 0;
+            const calories = parseNumericValue(text);
             setProduct({
               ...product, 
               nutriments: {
@@ -232,16 +325,16 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder={t('zeroPlaceholder')}
-          keyboardType="numeric"
+          placeholder="Наприклад: 250 або 342.8"
+          keyboardType="decimal-pad"
         />
         
         <Text style={styles.inputLabel}>{t('proteins')} (г)</Text>
         <TextInput
           style={styles.input}
-          value={product.nutriments?.proteins?.toString()}
+          value={formatDisplayValue(product.nutriments?.proteins)}
           onChangeText={(text) => {
-            const proteins = parseFloat(text) || 0;
+            const proteins = parseNumericValue(text);
             setProduct({
               ...product, 
               nutriments: {
@@ -250,16 +343,16 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder={t('zeroPlaceholder')}
-          keyboardType="numeric"
+          placeholder="Наприклад: 12.5 або 0.8"
+          keyboardType="decimal-pad"
         />
         
         <Text style={styles.inputLabel}>{t('carbohydrates')} (г)</Text>
         <TextInput
           style={styles.input}
-          value={product.nutriments?.carbohydrates?.total?.toString()}
+          value={formatDisplayValue(product.nutriments?.carbohydrates?.total)}
           onChangeText={(text) => {
-            const carbs = parseFloat(text) || 0;
+            const carbs = parseNumericValue(text);
             setProduct({
               ...product, 
               nutriments: {
@@ -271,16 +364,16 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder={t('zeroPlaceholder')}
-          keyboardType="numeric"
+          placeholder="Наприклад: 45.2 або 0.5"
+          keyboardType="decimal-pad"
         />
         
         <Text style={[styles.inputLabel, styles.indentedLabel]}>{t('sugar')} (г)</Text>
         <TextInput
           style={[styles.input, styles.indentedInput]}
-          value={product.nutriments?.carbohydrates?.sugar?.toString()}
+          value={formatDisplayValue(product.nutriments?.carbohydrates?.sugar)}
           onChangeText={(text) => {
-            const sugar = parseFloat(text) || 0;
+            const sugar = parseNumericValue(text);
             setProduct({
               ...product, 
               nutriments: {
@@ -292,16 +385,16 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder={t('zeroPlaceholder')}
-          keyboardType="numeric"
+          placeholder="Наприклад: 8.3 або 0.2"
+          keyboardType="decimal-pad"
         />
         
         <Text style={styles.inputLabel}>{t('fats')} (г)</Text>
         <TextInput
           style={styles.input}
-          value={product.nutriments?.fats?.total?.toString()}
+          value={formatDisplayValue(product.nutriments?.fats?.total)}
           onChangeText={(text) => {
-            const fats = parseFloat(text) || 0;
+            const fats = parseNumericValue(text);
             setProduct({
               ...product, 
               nutriments: {
@@ -313,16 +406,16 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder={t('zeroPlaceholder')}
-          keyboardType="numeric"
+          placeholder="Наприклад: 15.7 або 0.9"
+          keyboardType="decimal-pad"
         />
         
         <Text style={[styles.inputLabel, styles.indentedLabel]}>{t('saturatedFats')} (г)</Text>
         <TextInput
           style={[styles.input, styles.indentedInput]}
-          value={product.nutriments?.fats?.saturated?.toString()}
+          value={formatDisplayValue(product.nutriments?.fats?.saturated)}
           onChangeText={(text) => {
-            const saturated = parseFloat(text) || 0;
+            const saturated = parseNumericValue(text);
             setProduct({
               ...product, 
               nutriments: {
@@ -334,16 +427,16 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder={t('zeroPlaceholder')}
-          keyboardType="numeric"
+          placeholder="Наприклад: 4.1 або 0.1"
+          keyboardType="decimal-pad"
         />
         
         <Text style={styles.inputLabel}>{t('salt')} (г)</Text>
         <TextInput
           style={styles.input}
-          value={product.nutriments?.salt?.toString()}
+          value={formatDisplayValue(product.nutriments?.salt)}
           onChangeText={(text) => {
-            const salt = parseFloat(text) || 0;
+            const salt = parseNumericValue(text);
             setProduct({
               ...product, 
               nutriments: {
@@ -352,16 +445,16 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder={t('zeroPlaceholder')}
-          keyboardType="numeric"
+          placeholder="Наприклад: 1.2 або 0.3"
+          keyboardType="decimal-pad"
         />
         
         <Text style={styles.inputLabel}>Клітковина (г)</Text>
         <TextInput
           style={styles.input}
-          value={product.nutriments?.fiber?.toString()}
+          value={formatDisplayValue(product.nutriments?.fiber)}
           onChangeText={(text) => {
-            const fiber = parseFloat(text) || 0;
+            const fiber = parseNumericValue(text);
             setProduct({
               ...product, 
               nutriments: {
@@ -370,11 +463,49 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
               }
             });
           }}
-          placeholder={t('zeroPlaceholder')}
-          keyboardType="numeric"
+          placeholder="Наприклад: 4.6 або 0.8"
+          keyboardType="decimal-pad"
         />
         
         <Text style={styles.inputLabel}>{t('nutriscoreGrade')}</Text>
+        
+        {/* Інформація про автоматичний розрахунок */}
+        {calculatedNutriScore && !isManualNutriScore && (
+          <View style={styles.autoCalculationInfo}>
+            <Ionicons name="calculator" size={16} color="#34572a" />
+            <Text style={styles.autoCalculationText}>
+              Автоматично розраховано: {calculatedNutriScore}
+            </Text>
+            <TouchableOpacity
+              style={styles.manualOverrideButton}
+              onPress={() => setIsManualNutriScore(true)}
+            >
+              <Text style={styles.manualOverrideText}>Змінити вручну</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        
+        {isManualNutriScore && (
+          <View style={styles.manualModeInfo}>
+            <Ionicons name="hand-left" size={16} color="#FF9800" />
+            <Text style={styles.manualModeText}>
+              Ручний режим
+            </Text>
+            <TouchableOpacity
+              style={styles.autoModeButton}
+              onPress={() => {
+                setIsManualNutriScore(false);
+                const autoGrade = calculateNutriScoreAutomatically();
+                if (autoGrade) {
+                  setProduct({...product, nutriscoreGrade: autoGrade});
+                }
+              }}
+            >
+              <Text style={styles.autoModeText}>Авто розрахунок</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        
         <View style={styles.nutriScoreSelector}>
           {['A', 'B', 'C', 'D', 'E'].map((grade) => (
             <TouchableOpacity
@@ -386,7 +517,10 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
                   borderColor: getNutriScoreColor(grade)
                 }
               ]}
-              onPress={() => setProduct({...product, nutriscoreGrade: grade as NutriScoreGrade})}
+              onPress={() => {
+                setProduct({...product, nutriscoreGrade: grade as NutriScoreGrade});
+                setIsManualNutriScore(true);
+              }}
             >
               <Text style={[
                 styles.nutriScoreOptionText,
@@ -674,6 +808,62 @@ const styles = StyleSheet.create({
   },
   tagButtonTextSelected: {
     color: '#fff',
+  },
+  autoCalculationInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#e8f5e8',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#34572a',
+  },
+  autoCalculationText: {
+    fontSize: 14,
+    color: '#34572a',
+    marginLeft: 8,
+    flex: 1,
+    fontWeight: '500',
+  },
+  manualOverrideButton: {
+    backgroundColor: '#34572a',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  manualOverrideText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  manualModeInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff3cd',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9800',
+  },
+  manualModeText: {
+    fontSize: 14,
+    color: '#856404',
+    marginLeft: 8,
+    flex: 1,
+    fontWeight: '500',
+  },
+  autoModeButton: {
+    backgroundColor: '#FF9800',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  autoModeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
 

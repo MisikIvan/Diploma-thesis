@@ -44,6 +44,26 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
   onProductAdded,
 }) => {
   const currentUser = useAppSelector(state => state.user.currentUser);
+
+  // Функція для правильної обробки десяткових чисел
+  const parseNumericValue = (text: string): number => {
+    if (!text || text.trim() === '') return 0;
+    
+    // Заміна коми на крапку для підтримки європейського формату
+    const normalizedText = text.replace(',', '.');
+    
+    // Перевірка на валідність числа
+    const parsed = parseFloat(normalizedText);
+    
+    // Повертаємо 0 якщо число невалідне, інакше повертаємо значення з максимум 2 знаками після коми
+    return isNaN(parsed) ? 0 : Math.round(parsed * 100) / 100;
+  };
+
+  // Функція для форматування відображення числа
+  const formatDisplayValue = (value: number | undefined): string => {
+    if (value === undefined || value === 0) return '';
+    return value.toString();
+  };
   
   const [currentStep, setCurrentStep] = useState<FormStep>('ai-scan');
   const [formData, setFormData] = useState({
@@ -119,7 +139,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     setProductImages([]);
     setAnalysisResult(null);
     setCurrentStep('ai-scan');
-    console.log('✅ Form reset complete');
+    console.log('Form reset complete');
   };
 
   const handleClose = () => {
@@ -845,11 +865,11 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                 <Text style={styles.inputLabel}>Вага (г)</Text>
                 <TextInput
                   style={styles.input}
-                  value={(formData.weight || 0).toString()}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, weight: parseInt(text) || 0 }))}
-                  placeholder="Вага в грамах"
+                  value={formatDisplayValue(formData.weight)}
+                  onChangeText={(text) => setFormData(prev => ({ ...prev, weight: parseNumericValue(text) }))}
+                  placeholder="Наприклад: 100 або 125.5"
                   placeholderTextColor={Colors.text.disabled}
-                  keyboardType="numeric"
+                  keyboardType="decimal-pad"
                 />
               </View>
             </View>
@@ -874,11 +894,11 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.inputLabel}>Фрукти, овочі, горіхи (%)</Text>
                   <TextInput
                     style={styles.input}
-                    value={fruitsVegetablesNuts.toString()}
-                    onChangeText={(text) => setFruitsVegetablesNuts(parseFloat(text) || 0)}
-                    placeholder="0-100%"
+                    value={formatDisplayValue(fruitsVegetablesNuts)}
+                    onChangeText={(text) => setFruitsVegetablesNuts(parseNumericValue(text))}
+                    placeholder="Наприклад: 15.5 або 0.8"
                     placeholderTextColor={Colors.text.disabled}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                   />
                   <Text style={styles.inputHint}>
                     Вкажіть відсоток фруктів, овочів та горіхів у складі продукту для точнішого розрахунку
@@ -937,12 +957,12 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Калорії</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={(formData.nutriments?.calories || 0).toString()}
+                    value={formatDisplayValue(formData.nutriments?.calories)}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
-                      nutriments: { ...prev.nutriments, calories: parseFloat(text) || 0 }
+                      nutriments: { ...prev.nutriments, calories: parseNumericValue(text) }
                     }))}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholder="ккал"
                   />
                 </View>
@@ -951,12 +971,12 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Білки</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={(formData.nutriments?.proteins || 0).toString()}
+                    value={formatDisplayValue(formData.nutriments?.proteins)}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
-                      nutriments: { ...prev.nutriments, proteins: parseFloat(text) || 0 }
+                      nutriments: { ...prev.nutriments, proteins: parseNumericValue(text) }
                     }))}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholder="г"
                   />
                 </View>
@@ -965,15 +985,15 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Жири</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={(formData.nutriments?.fats?.total || 0).toString()}
+                    value={formatDisplayValue(formData.nutriments?.fats?.total)}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
                       nutriments: { 
                         ...prev.nutriments, 
-                        fats: { ...prev.nutriments.fats, total: parseFloat(text) || 0 }
+                        fats: { ...prev.nutriments.fats, total: parseNumericValue(text) }
                       }
                     }))}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholder="г"
                   />
                 </View>
@@ -982,15 +1002,15 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Насичені жири</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={(formData.nutriments?.fats?.saturated || 0).toString()}
+                    value={formatDisplayValue(formData.nutriments?.fats?.saturated)}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
                       nutriments: { 
                         ...prev.nutriments, 
-                        fats: { ...prev.nutriments.fats, saturated: parseFloat(text) || 0 }
+                        fats: { ...prev.nutriments.fats, saturated: parseNumericValue(text) }
                       }
                     }))}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholder="г"
                   />
                 </View>
@@ -999,15 +1019,15 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Ненасичені жири</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={(formData.nutriments?.fats?.unsaturated || 0).toString()}
+                    value={formatDisplayValue(formData.nutriments?.fats?.unsaturated)}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
                       nutriments: { 
                         ...prev.nutriments, 
-                        fats: { ...prev.nutriments.fats, unsaturated: parseFloat(text) || 0 }
+                        fats: { ...prev.nutriments.fats, unsaturated: parseNumericValue(text) }
                       }
                     }))}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholder="г"
                   />
                 </View>
@@ -1016,15 +1036,15 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Вуглеводи</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={(formData.nutriments?.carbohydrates?.total || 0).toString()}
+                    value={formatDisplayValue(formData.nutriments?.carbohydrates?.total)}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
                       nutriments: { 
                         ...prev.nutriments, 
-                        carbohydrates: { ...prev.nutriments.carbohydrates, total: parseFloat(text) || 0 }
+                        carbohydrates: { ...prev.nutriments.carbohydrates, total: parseNumericValue(text) }
                       }
                     }))}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholder="г"
                   />
                 </View>
@@ -1033,15 +1053,15 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Цукор</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={(formData.nutriments?.carbohydrates?.sugar || 0).toString()}
+                    value={formatDisplayValue(formData.nutriments?.carbohydrates?.sugar)}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
                       nutriments: { 
                         ...prev.nutriments, 
-                        carbohydrates: { ...prev.nutriments.carbohydrates, sugar: parseFloat(text) || 0 }
+                        carbohydrates: { ...prev.nutriments.carbohydrates, sugar: parseNumericValue(text) }
                       }
                     }))}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholder="г"
                   />
                 </View>
@@ -1050,12 +1070,12 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Клітковина</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={(formData.nutriments?.fiber || 0).toString()}
+                    value={formatDisplayValue(formData.nutriments?.fiber)}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
-                      nutriments: { ...prev.nutriments, fiber: parseFloat(text) || 0 }
+                      nutriments: { ...prev.nutriments, fiber: parseNumericValue(text) }
                     }))}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholder="г"
                   />
                 </View>
@@ -1064,12 +1084,12 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Сіль</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={(formData.nutriments?.salt || 0).toString()}
+                    value={formatDisplayValue(formData.nutriments?.salt)}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
-                      nutriments: { ...prev.nutriments, salt: parseFloat(text) || 0 }
+                      nutriments: { ...prev.nutriments, salt: parseNumericValue(text) }
                     }))}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholder="г"
                   />
                 </View>

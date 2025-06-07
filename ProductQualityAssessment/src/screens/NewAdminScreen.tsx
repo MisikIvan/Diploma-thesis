@@ -97,7 +97,7 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
   };
 
   const handleProductEdit = (product: Product) => {
-    navigation.navigate('EditProduct', { product });
+    navigation.navigate('EditProduct', { productId: product.productId });
   };
 
   const handleProductDelete = async (productId: string) => {
@@ -150,10 +150,6 @@ const NewAdminScreen: React.FC<NewAdminScreenProps> = ({ navigation }) => {
             salt: 0
           },
           ingredients: productData.ingredients || '',
-          isVegan: productData.isVegan || false,
-          isVegetarian: productData.isVegetarian || false,
-          hasLactose: productData.hasLactose || false,
-          hasGluten: productData.hasGluten || false,
           weight: productData.weight || 0,
           createdBy: 'admin'
         },

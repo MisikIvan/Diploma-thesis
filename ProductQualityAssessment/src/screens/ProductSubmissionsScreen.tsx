@@ -35,6 +35,26 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
   onSubmissionRejected,
 }) => {
   const currentUser = useAppSelector(state => state.user.currentUser);
+
+  // Функція для правильної обробки десяткових чисел
+  const parseNumericValue = (text: string): number => {
+    if (!text || text.trim() === '') return 0;
+    
+    // Заміна коми на крапку для підтримки європейського формату
+    const normalizedText = text.replace(',', '.');
+    
+    // Перевірка на валідність числа
+    const parsed = parseFloat(normalizedText);
+    
+    // Повертаємо 0 якщо число невалідне, інакше повертаємо значення з максимум 2 знаками після коми
+    return isNaN(parsed) ? 0 : Math.round(parsed * 100) / 100;
+  };
+
+  // Функція для форматування відображення числа
+  const formatDisplayValue = (value: number | undefined): string => {
+    if (value === undefined || value === 0) return '';
+    return value.toString();
+  };
   const [activeTab, setActiveTab] = useState<TabType>('pending');
   const [pendingSubmissions, setPendingSubmissions] = useState<ProductSubmission[]>([]);
   const [processedSubmissions, setProcessedSubmissions] = useState<ProductSubmission[]>([]);
@@ -365,7 +385,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
 
               <View style={styles.detailSection}>
                 <View style={styles.sectionHeader}>
-                  <Text style={styles.sectionTitle}>{t('basicInformation')}</Text>
+                <Text style={styles.sectionTitle}>{t('basicInformation')}</Text>
                   <TouchableOpacity
                     style={styles.editButton}
                     onPress={() => setIsEditing(!isEditing)}
@@ -448,21 +468,21 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
                   {isEditing ? (
                     <TextInput
                       style={styles.editableInput}
-                      value={editedProductData?.nutriments?.calories?.toString() || ''}
+                      value={formatDisplayValue(editedProductData?.nutriments?.calories)}
                       onChangeText={(text) => setEditedProductData({
                         ...editedProductData, 
                         nutriments: {
                           ...editedProductData?.nutriments,
-                          calories: parseFloat(text) || 0
+                          calories: parseNumericValue(text)
                         }
                       })}
-                      keyboardType="numeric"
-                      placeholder="0"
+                      keyboardType="decimal-pad"
+                      placeholder="Наприклад: 250.5"
                     />
                   ) : (
                     <Text style={styles.fieldValue}>
                       {editedProductData?.nutriments?.calories} {t('kcalUnit')}
-                    </Text>
+                </Text>
                   )}
                 </View>
                 
@@ -471,21 +491,21 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
                   {isEditing ? (
                     <TextInput
                       style={styles.editableInput}
-                      value={editedProductData?.nutriments?.proteins?.toString() || ''}
+                      value={formatDisplayValue(editedProductData?.nutriments?.proteins)}
                       onChangeText={(text) => setEditedProductData({
                         ...editedProductData, 
                         nutriments: {
                           ...editedProductData?.nutriments,
-                          proteins: parseFloat(text) || 0
+                          proteins: parseNumericValue(text)
                         }
                       })}
-                      keyboardType="numeric"
-                      placeholder="0"
+                      keyboardType="decimal-pad"
+                      placeholder="Наприклад: 12.5"
                     />
                   ) : (
                     <Text style={styles.fieldValue}>
                       {editedProductData?.nutriments?.proteins} {t('gramsUnit')}
-                    </Text>
+                </Text>
                   )}
                 </View>
                 
@@ -494,24 +514,24 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
                   {isEditing ? (
                     <TextInput
                       style={styles.editableInput}
-                      value={editedProductData?.nutriments?.fats?.total?.toString() || ''}
+                      value={formatDisplayValue(editedProductData?.nutriments?.fats?.total)}
                       onChangeText={(text) => setEditedProductData({
                         ...editedProductData, 
                         nutriments: {
                           ...editedProductData?.nutriments,
                           fats: {
                             ...editedProductData?.nutriments?.fats,
-                            total: parseFloat(text) || 0
+                            total: parseNumericValue(text)
                           }
                         }
                       })}
-                      keyboardType="numeric"
-                      placeholder="0"
+                      keyboardType="decimal-pad"
+                      placeholder="Наприклад: 15.7"
                     />
                   ) : (
                     <Text style={styles.fieldValue}>
                       {editedProductData?.nutriments?.fats?.total} {t('gramsUnit')}
-                    </Text>
+                </Text>
                   )}
                 </View>
                 
@@ -520,24 +540,24 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
                   {isEditing ? (
                     <TextInput
                       style={styles.editableInput}
-                      value={editedProductData?.nutriments?.carbohydrates?.total?.toString() || ''}
+                      value={formatDisplayValue(editedProductData?.nutriments?.carbohydrates?.total)}
                       onChangeText={(text) => setEditedProductData({
                         ...editedProductData, 
                         nutriments: {
                           ...editedProductData?.nutriments,
                           carbohydrates: {
                             ...editedProductData?.nutriments?.carbohydrates,
-                            total: parseFloat(text) || 0
+                            total: parseNumericValue(text)
                           }
                         }
                       })}
-                      keyboardType="numeric"
-                      placeholder="0"
+                      keyboardType="decimal-pad"
+                      placeholder="Наприклад: 45.2"
                     />
                   ) : (
                     <Text style={styles.fieldValue}>
                       {editedProductData?.nutriments?.carbohydrates?.total} {t('gramsUnit')}
-                    </Text>
+                </Text>
                   )}
                 </View>
               </View>
@@ -607,7 +627,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
                       value={editedProductData?.barcode || ''}
                       onChangeText={(text) => setEditedProductData({...editedProductData, barcode: text})}
                       placeholder={t('barcodeLabel')}
-                      keyboardType="numeric"
+                      keyboardType="number-pad"
                     />
                   ) : (
                     <Text style={styles.fieldValue}>{editedProductData?.barcode || t('notSpecified')}</Text>

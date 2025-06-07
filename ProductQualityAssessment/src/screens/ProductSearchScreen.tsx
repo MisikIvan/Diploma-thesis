@@ -76,8 +76,8 @@ const ProductSearchScreen: React.FC = () => {
         {
           text: t('editAction'),
           onPress: () => {
-          
-            navigation.navigate('ProductDetail', { productId: product.productId });
+            // Навігація на екран редагування продукту
+            navigation.navigate('EditProduct', { productId: product.productId });
           },
         },
       ]
