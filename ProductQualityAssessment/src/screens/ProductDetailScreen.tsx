@@ -31,6 +31,28 @@ import {
   getTagColor,
 } from '../utils/helpers';
 import { Product, getNutriScoreColor, Favorite } from '../types/index';
+
+const getNutriScoreBackgroundColor = (grade: string) => {
+  switch (grade) {
+    case 'A': return '#2E7D32'; // Темно-зелений
+    case 'B': return '#689F38'; // Світло-зелений  
+    case 'C': return '#FFA000'; // Жовтий
+    case 'D': return '#F57C00'; // Помаранчевий
+    case 'E': return '#D32F2F'; // Червоний
+    default: return '#757575'; // Сірий
+  }
+};
+
+const getNutriScoreTextColor = (grade: string) => {
+  switch (grade) {
+    case 'A':
+    case 'B': 
+    case 'C':
+    case 'D':
+    case 'E': return '#FFFFFF'; // Білий текст для всіх кольорів
+    default: return '#FFFFFF';
+  }
+};
 import ProductCard from '../components/ui/ProductCard';
 import CommentSection from '../components/CommentSection';
 import LoadingScreen from '../components/LoadingScreen';
@@ -61,7 +83,8 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
     dispatch(getProductDetails(productId))
       .unwrap()
       .then(() => {
-        dispatch(getSimilarProducts(productId));
+        // Тимчасово відключено - завантаження схожих продуктів
+        // dispatch(getSimilarProducts(productId));
       })
       .catch(err => {
         console.error('Error fetching product:', err);
@@ -435,12 +458,18 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
             </View>
             
             <View style={styles.nutriScoreContainer}>
-              <Text style={styles.nutriScoreText}>
-                Nutri-Score: {currentProduct.nutriscoreGrade}
-              </Text>
-              <Text style={styles.nutriScoreEmoji}>
-                {getNutriScoreColor(currentProduct.nutriscoreGrade)}
-              </Text>
+              <Text style={styles.nutriScoreLabel}>Nutri-Score:</Text>
+              <View style={[
+                styles.nutriScoreBadge,
+                { backgroundColor: getNutriScoreBackgroundColor(currentProduct.nutriscoreGrade) }
+              ]}>
+                <Text style={[
+                  styles.nutriScoreGrade,
+                  { color: getNutriScoreTextColor(currentProduct.nutriscoreGrade) }
+                ]}>
+                  {currentProduct.nutriscoreGrade}
+                </Text>
+              </View>
             </View>
 
             {currentProduct.description && (
@@ -495,10 +524,11 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
         
         {renderTabContent()}
         
-        <View style={styles.similarProductsSection}>
+        {/* Тимчасово приховано - Схожі продукти */}
+        {/* <View style={styles.similarProductsSection}>
           <Text style={styles.similarProductsTitle}>{t('similarProducts') || 'Similar Products'}</Text>
           {renderSimilarProducts()}
-        </View>
+        </View> */}
         
         <AdminInfo 
           product={currentProduct} 
@@ -529,14 +559,17 @@ const styles = StyleSheet.create({
   },
   productNameContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 8,
+    justifyContent: 'space-between',
   },
   productName: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 4,
+    flex: 1,
+    marginRight: 12,
   },
   favoriteButton: {
     backgroundColor: '#34572a',
@@ -544,8 +577,8 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 10,
     borderRadius: 8,
+    flexShrink: 0,
   },
   productDescription: {
     fontSize: 14,
@@ -557,13 +590,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  nutriScoreText: {
+  nutriScoreLabel: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginRight: 8,
+    marginRight: 12,
+    color: '#333',
   },
-  nutriScoreEmoji: {
+  nutriScoreBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    minWidth: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  nutriScoreGrade: {
     fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: 1,
   },
   tabsContainer: {
     flexDirection: 'row',

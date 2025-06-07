@@ -44,6 +44,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
   const [rejectionReason, setRejectionReason] = useState('');
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [editedProductData, setEditedProductData] = useState<any>(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -77,7 +78,15 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
   const handleViewDetails = (submission: ProductSubmission) => {
     setSelectedSubmission(submission);
     setEditedProductData(submission.productData);
+    setIsEditing(false);
     setShowDetailModal(true);
+  };
+
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false);
+    setSelectedSubmission(null);
+    setEditedProductData(null);
+    setIsEditing(false);
   };
 
   const handleApprove = (submission: ProductSubmission) => {
@@ -104,7 +113,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
       if (onSubmissionApproved) {
         const product: Product = {
           productId: `prod-${Date.now()}`,
-          ...selectedSubmission.productData,
+          ...editedProductData, // Використовуємо відредаговані дані
           createdBy: currentUser.uid,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -112,8 +121,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
         onSubmissionApproved(selectedSubmission, product);
       }
       
-      setShowDetailModal(false);
-      setSelectedSubmission(null);
+      handleCloseDetailModal();
       await loadSubmissions();
     } catch (error) {
       console.error('Error approving submission:', error);
@@ -239,50 +247,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
             </TouchableOpacity>
           </View>
 
-          {/* AI Banner */}
-          <View style={styles.aiBanner}>
-            <ImageBackground 
-              source={require('../assets/AI-banner.png')} 
-              style={styles.bannerBackground}
-              imageStyle={styles.bannerImageStyle}
-            >
-              <View style={styles.bannerOverlay} />
-              <View style={styles.bannerContent}>
-                <View style={styles.bannerTextContainer}>
-                  <View style={styles.bannerTitleRow}>
-                    <MaterialIcons 
-                      name="psychology" 
-                      size={24} 
-                      color="#fff" 
-                      style={styles.bannerTitleIcon}
-                    />
-                    <Text style={styles.bannerTitle}>{t('smartProductAnalysis')}</Text>
-                  </View>
-                  <Text style={styles.bannerSubtitle}>
-                    {t('addUpToThreePhotos')}
-                  </Text>
-                  <View style={styles.bannerFeatureRow}>
-                    <MaterialIcons name="auto-awesome" size={14} color="rgba(255, 255, 255, 0.8)" />
-                    <Text style={styles.bannerFeatureText}>{t('fast')}</Text>
-                    <MaterialIcons name="verified" size={14} color="rgba(255, 255, 255, 0.8)" />
-                    <Text style={styles.bannerFeatureText}>{t('accurate')}</Text>
-                    <MaterialIcons name="android" size={14} color="rgba(255, 255, 255, 0.8)" />
-                    <Text style={styles.bannerFeatureText}>{t('smart')}</Text>
-                  </View>
-                </View>
-                
-                <View style={styles.bannerIconContainer}>
-                  <View style={styles.bannerIconBackground}>
-                    <MaterialIcons 
-                      name="photo-camera" 
-                      size={28} 
-                      color="#34572a" 
-                    />
-                  </View>
-                </View>
-              </View>
-            </ImageBackground>
-          </View>
+
 
           {/* Tabs */}
           <View style={styles.tabsContainer}>
@@ -364,14 +329,14 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity 
-              onPress={() => setShowDetailModal(false)} 
+              onPress={handleCloseDetailModal} 
               style={styles.closeButton}
             >
               <Ionicons name="arrow-back" size={24} color="#666" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>{t('reviewSubmission')}</Text>
             <TouchableOpacity 
-              onPress={() => setShowDetailModal(false)} 
+              onPress={handleCloseDetailModal} 
               style={styles.helpButton}
             >
               <Ionicons name="information-circle-outline" size={24} color="#666" />
@@ -399,19 +364,63 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
               </View>
 
               <View style={styles.detailSection}>
-                <Text style={styles.sectionTitle}>{t('basicInformation')}</Text>
-                <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>{t('nameLabel')}</Text>
-                  {editedProductData?.name}
-                </Text>
-                <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>{t('brandLabel')}</Text>
-                  {editedProductData?.brand || t('notSpecified')}
-                </Text>
-                <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>{t('descriptionLabel')}</Text>
-                  {editedProductData?.description || t('notSpecified')}
-                </Text>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>{t('basicInformation')}</Text>
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() => setIsEditing(!isEditing)}
+                  >
+                    <Ionicons 
+                      name={isEditing ? "checkmark" : "pencil"} 
+                      size={20} 
+                      color={isEditing ? "#28a745" : "#007AFF"} 
+                    />
+                  </TouchableOpacity>
+                </View>
+                
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.fieldLabel}>{t('nameLabel')}</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={styles.editableInput}
+                      value={editedProductData?.name || ''}
+                      onChangeText={(text) => setEditedProductData({...editedProductData, name: text})}
+                      placeholder={t('productName')}
+                    />
+                  ) : (
+                    <Text style={styles.fieldValue}>{editedProductData?.name}</Text>
+                  )}
+                </View>
+                
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.fieldLabel}>{t('brandLabel')}</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={styles.editableInput}
+                      value={editedProductData?.brand || ''}
+                      onChangeText={(text) => setEditedProductData({...editedProductData, brand: text})}
+                      placeholder={t('brandLabel')}
+                    />
+                  ) : (
+                    <Text style={styles.fieldValue}>{editedProductData?.brand || t('notSpecified')}</Text>
+                  )}
+                </View>
+                
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.fieldLabel}>{t('descriptionLabel')}</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={[styles.editableInput, styles.multilineInput]}
+                      value={editedProductData?.description || ''}
+                      onChangeText={(text) => setEditedProductData({...editedProductData, description: text})}
+                      placeholder={t('productDescription')}
+                      multiline
+                      numberOfLines={3}
+                    />
+                  ) : (
+                    <Text style={styles.fieldValue}>{editedProductData?.description || t('notSpecified')}</Text>
+                  )}
+                </View>
               </View>
 
               <View style={styles.detailSection}>
@@ -433,58 +442,219 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
 
               <View style={styles.detailSection}>
                 <Text style={styles.sectionTitle}>{t('nutritionalValue')}</Text>
-                <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>{t('caloriesLabel')}</Text>
-                  {editedProductData?.nutriments.calories} {t('kcalUnit')}
-                </Text>
-                <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>{t('proteinsLabel')}</Text>
-                  {editedProductData?.nutriments.proteins} {t('gramsUnit')}
-                </Text>
-                <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>{t('fatsLabel')}</Text>
-                  {editedProductData?.nutriments.fats.total} {t('gramsUnit')}
-                </Text>
-                <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>{t('carbohydratesLabel')}</Text>
-                  {editedProductData?.nutriments.carbohydrates.total} {t('gramsUnit')}
-                </Text>
+                
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.fieldLabel}>{t('caloriesLabel')}</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={styles.editableInput}
+                      value={editedProductData?.nutriments?.calories?.toString() || ''}
+                      onChangeText={(text) => setEditedProductData({
+                        ...editedProductData, 
+                        nutriments: {
+                          ...editedProductData?.nutriments,
+                          calories: parseFloat(text) || 0
+                        }
+                      })}
+                      keyboardType="numeric"
+                      placeholder="0"
+                    />
+                  ) : (
+                    <Text style={styles.fieldValue}>
+                      {editedProductData?.nutriments?.calories} {t('kcalUnit')}
+                    </Text>
+                  )}
+                </View>
+                
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.fieldLabel}>{t('proteinsLabel')}</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={styles.editableInput}
+                      value={editedProductData?.nutriments?.proteins?.toString() || ''}
+                      onChangeText={(text) => setEditedProductData({
+                        ...editedProductData, 
+                        nutriments: {
+                          ...editedProductData?.nutriments,
+                          proteins: parseFloat(text) || 0
+                        }
+                      })}
+                      keyboardType="numeric"
+                      placeholder="0"
+                    />
+                  ) : (
+                    <Text style={styles.fieldValue}>
+                      {editedProductData?.nutriments?.proteins} {t('gramsUnit')}
+                    </Text>
+                  )}
+                </View>
+                
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.fieldLabel}>{t('fatsLabel')}</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={styles.editableInput}
+                      value={editedProductData?.nutriments?.fats?.total?.toString() || ''}
+                      onChangeText={(text) => setEditedProductData({
+                        ...editedProductData, 
+                        nutriments: {
+                          ...editedProductData?.nutriments,
+                          fats: {
+                            ...editedProductData?.nutriments?.fats,
+                            total: parseFloat(text) || 0
+                          }
+                        }
+                      })}
+                      keyboardType="numeric"
+                      placeholder="0"
+                    />
+                  ) : (
+                    <Text style={styles.fieldValue}>
+                      {editedProductData?.nutriments?.fats?.total} {t('gramsUnit')}
+                    </Text>
+                  )}
+                </View>
+                
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.fieldLabel}>{t('carbohydratesLabel')}</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={styles.editableInput}
+                      value={editedProductData?.nutriments?.carbohydrates?.total?.toString() || ''}
+                      onChangeText={(text) => setEditedProductData({
+                        ...editedProductData, 
+                        nutriments: {
+                          ...editedProductData?.nutriments,
+                          carbohydrates: {
+                            ...editedProductData?.nutriments?.carbohydrates,
+                            total: parseFloat(text) || 0
+                          }
+                        }
+                      })}
+                      keyboardType="numeric"
+                      placeholder="0"
+                    />
+                  ) : (
+                    <Text style={styles.fieldValue}>
+                      {editedProductData?.nutriments?.carbohydrates?.total} {t('gramsUnit')}
+                    </Text>
+                  )}
+                </View>
               </View>
 
               <View style={styles.detailSection}>
                 <Text style={styles.sectionTitle}>{t('additionalInfo')}</Text>
-                <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>{t('ingredientsLabel')}</Text>
-                  {editedProductData?.ingredients}
-                </Text>
-                <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>{t('allergensLabel')}</Text>
-                  {editedProductData?.allergens.join(', ') || t('none')}
-                </Text>
-                <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>{t('tagsLabel')}</Text>
-                  {editedProductData?.tags.join(', ') || t('none')}
-                </Text>
+                
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.fieldLabel}>{t('ingredientsLabel')}</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={[styles.editableInput, styles.multilineInput]}
+                      value={editedProductData?.ingredients || ''}
+                      onChangeText={(text) => setEditedProductData({...editedProductData, ingredients: text})}
+                      placeholder={t('ingredientsLabel')}
+                      multiline
+                      numberOfLines={4}
+                    />
+                  ) : (
+                    <Text style={styles.fieldValue}>{editedProductData?.ingredients || t('notSpecified')}</Text>
+                  )}
+                </View>
+                
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.fieldLabel}>{t('allergensLabel')}</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={styles.editableInput}
+                      value={editedProductData?.allergens?.join(', ') || ''}
+                      onChangeText={(text) => setEditedProductData({
+                        ...editedProductData, 
+                        allergens: text.split(',').map(item => item.trim()).filter(item => item.length > 0)
+                      })}
+                      placeholder={t('allergensLabel')}
+                    />
+                  ) : (
+                    <Text style={styles.fieldValue}>{editedProductData?.allergens?.join(', ') || t('none')}</Text>
+                  )}
+                </View>
+                
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.fieldLabel}>{t('tagsLabel')}</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={styles.editableInput}
+                      value={editedProductData?.tags?.join(', ') || ''}
+                      onChangeText={(text) => setEditedProductData({
+                        ...editedProductData, 
+                        tags: text.split(',').map(item => item.trim()).filter(item => item.length > 0)
+                      })}
+                      placeholder={t('tagsLabel')}
+                    />
+                  ) : (
+                    <Text style={styles.fieldValue}>{editedProductData?.tags?.join(', ') || t('none')}</Text>
+                  )}
+                </View>
               </View>
 
               <View style={styles.detailSection}>
                 <Text style={styles.sectionTitle}>{t('verificationInformation')}</Text>
-                <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>{t('barcodeLabel')}</Text>
-                  {editedProductData?.barcode || t('notSpecified')}
-                </Text>
-                <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>{t('manufacturerLabel')}</Text>
-                  {editedProductData?.manufacturer || t('notSpecified')}
-                </Text>
-                <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>{t('countryLabel')}</Text>
-                  {editedProductData?.countryOfOrigin || t('notSpecified')}
-                </Text>
-                <Text style={styles.detailText}>
-                  <Text style={styles.detailLabel}>{t('sourceLabel')}</Text>
-                  {editedProductData?.source || t('notSpecified')}
-                </Text>
+                
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.fieldLabel}>{t('barcodeLabel')}</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={styles.editableInput}
+                      value={editedProductData?.barcode || ''}
+                      onChangeText={(text) => setEditedProductData({...editedProductData, barcode: text})}
+                      placeholder={t('barcodeLabel')}
+                      keyboardType="numeric"
+                    />
+                  ) : (
+                    <Text style={styles.fieldValue}>{editedProductData?.barcode || t('notSpecified')}</Text>
+                  )}
+                </View>
+                
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.fieldLabel}>{t('manufacturerLabel')}</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={styles.editableInput}
+                      value={editedProductData?.manufacturer || ''}
+                      onChangeText={(text) => setEditedProductData({...editedProductData, manufacturer: text})}
+                      placeholder={t('manufacturerLabel')}
+                    />
+                  ) : (
+                    <Text style={styles.fieldValue}>{editedProductData?.manufacturer || t('notSpecified')}</Text>
+                  )}
+                </View>
+                
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.fieldLabel}>{t('countryLabel')}</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={styles.editableInput}
+                      value={editedProductData?.countryOfOrigin || ''}
+                      onChangeText={(text) => setEditedProductData({...editedProductData, countryOfOrigin: text})}
+                      placeholder={t('countryLabel')}
+                    />
+                  ) : (
+                    <Text style={styles.fieldValue}>{editedProductData?.countryOfOrigin || t('notSpecified')}</Text>
+                  )}
+                </View>
+                
+                <View style={styles.fieldContainer}>
+                  <Text style={styles.fieldLabel}>{t('sourceLabel')}</Text>
+                  {isEditing ? (
+                    <TextInput
+                      style={styles.editableInput}
+                      value={editedProductData?.source || ''}
+                      onChangeText={(text) => setEditedProductData({...editedProductData, source: text})}
+                      placeholder={t('sourceLabel')}
+                    />
+                  ) : (
+                    <Text style={styles.fieldValue}>{editedProductData?.source || t('notSpecified')}</Text>
+                  )}
+                </View>
               </View>
 
               {selectedSubmission.status === 'rejected' && selectedSubmission.rejectionReason && (
@@ -500,7 +670,7 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
                 <View style={styles.actionButtons}>
                   <TouchableOpacity 
                     style={[styles.actionButton, styles.approveButton]}
-                    onPress={() => handleApprove(selectedSubmission)}
+                    onPress={confirmApprove}
                   >
                     <Ionicons name="checkmark-circle" size={20} color="#fff" />
                     <Text style={[styles.actionButtonText, { color: '#fff' }]}>
@@ -702,6 +872,43 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     marginBottom: 16,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  editButton: {
+    padding: 8,
+    backgroundColor: '#f0f2f5',
+    borderRadius: 8,
+  },
+  fieldContainer: {
+    marginBottom: 16,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2E8B57',
+    marginBottom: 8,
+  },
+  fieldValue: {
+    fontSize: 15,
+    color: '#333',
+    lineHeight: 22,
+  },
+  editableInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 15,
+    backgroundColor: '#fff',
+  },
+  multilineInput: {
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
   detailText: {
     fontSize: 15,
     color: '#333',
@@ -854,70 +1061,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#f5c6cb',
   },
-  aiBanner: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  bannerBackground: {
-    width: '100%',
-    height: 120,
-  },
-  bannerImageStyle: {
-    borderRadius: 12,
-  },
-  bannerOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  bannerContent: {
-    flex: 1,
-    justifyContent: 'space-between',
-    padding: 16,
-  },
-  bannerTextContainer: {
-    flex: 1,
-  },
-  bannerTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  bannerTitleIcon: {
-    marginRight: 8,
-  },
-  bannerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  bannerSubtitle: {
-    fontSize: 14,
-    color: '#fff',
-    marginBottom: 16,
-  },
-  bannerFeatureRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  bannerFeatureText: {
-    fontSize: 14,
-    color: '#fff',
-    marginHorizontal: 4,
-  },
-  bannerIconContainer: {
-    alignItems: 'flex-end',
-  },
-  bannerIconBackground: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+
   refreshButton: {
     padding: 8,
   },
