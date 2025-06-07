@@ -283,12 +283,14 @@ export const autoFillFormFromAnalysis = (
       return value;
     };
 
+  
     autoFilledData.nutriments = {
       calories: validateNutrition(nutrition.calories, 900), 
       proteins: validateNutrition(nutrition.proteins, 100),
       fats: {
         total: validateNutrition(nutrition.fats, 100),
         saturated: validateNutrition(nutrition.saturatedFat, 100),
+        unsaturated: 0, 
       },
       carbohydrates: {
         total: validateNutrition(nutrition.carbohydrates, 100),
@@ -298,23 +300,40 @@ export const autoFillFormFromAnalysis = (
       fiber: validateNutrition(nutrition.fiber, 100),
     };
 
-    console.log('✅ Filled nutrition data:', autoFilledData.nutriments);
+    console.log('Filled nutrition data:', autoFilledData.nutriments);
+  } else {
+    // Ensure nutriments object always exists with proper structure
+    autoFilledData.nutriments = autoFilledData.nutriments || {
+      calories: 0,
+      proteins: 0,
+      fats: {
+        total: 0,
+        saturated: 0,
+        unsaturated: 0,
+      },
+      carbohydrates: {
+        total: 0,
+        sugar: 0,
+      },
+      salt: 0,
+      fiber: 0,
+    };
   }
 
 
-  if (analysisResult.allergens && analysisResult.allergens.length > 0) {
-    const validAllergens = analysisResult.allergens.filter(a => a && a.trim().length > 0);
+  if (analysisResult.allergens && Array.isArray(analysisResult.allergens) && analysisResult.allergens.length > 0) {
+    const validAllergens = analysisResult.allergens.filter(a => a && typeof a === 'string' && a.trim().length > 0);
     if (validAllergens.length > 0) {
-      autoFilledData.allergens = [...new Set([...autoFilledData.allergens, ...validAllergens])];
-      console.log('✅ Filled allergens:', validAllergens);
+      autoFilledData.allergens = [...new Set([...(autoFilledData.allergens || []), ...validAllergens])];
+      console.log('Filled allergens:', validAllergens);
     }
   }
 
-  if (analysisResult.additives && analysisResult.additives.length > 0) {
-    const validAdditives = analysisResult.additives.filter(a => a && a.trim().length > 0);
+  if (analysisResult.additives && Array.isArray(analysisResult.additives) && analysisResult.additives.length > 0) {
+    const validAdditives = analysisResult.additives.filter(a => a && typeof a === 'string' && a.trim().length > 0);
     if (validAdditives.length > 0) {
-      autoFilledData.additives = [...new Set([...autoFilledData.additives, ...validAdditives])];
-      console.log('✅ Filled additives:', validAdditives);
+      autoFilledData.additives = [...new Set([...(autoFilledData.additives || []), ...validAdditives])];
+      console.log('Filled additives:', validAdditives);
     }
   }
 
@@ -338,28 +357,28 @@ export const autoFillFormFromAnalysis = (
 
   if (analysisResult.weight && analysisResult.confidence > 0.4) {
   
-    const weight = parseFloat(analysisResult.weight.toString());
+    const weight = parseFloat(String(analysisResult.weight));
     if (!isNaN(weight) && weight > 0 && weight <= 10000) {
       autoFilledData.weight = weight;
       console.log('✅ Filled weight:', weight + 'g');
     }
   }
 
-  if (analysisResult.barcode && analysisResult.barcode.trim().length > 0) {
+  if (analysisResult.barcode && typeof analysisResult.barcode === 'string' && analysisResult.barcode.trim().length > 0) {
     autoFilledData.barcode = analysisResult.barcode.trim();
     console.log('✅ Filled barcode:', analysisResult.barcode);
   }
 
-  if (analysisResult.manufacturer && analysisResult.manufacturer.trim().length > 0) {
+  if (analysisResult.manufacturer && typeof analysisResult.manufacturer === 'string' && analysisResult.manufacturer.trim().length > 0) {
     autoFilledData.manufacturer = analysisResult.manufacturer.trim();
   }
 
-  if (analysisResult.countryOfOrigin && analysisResult.countryOfOrigin.trim().length > 0) {
+  if (analysisResult.countryOfOrigin && typeof analysisResult.countryOfOrigin === 'string' && analysisResult.countryOfOrigin.trim().length > 0) {
     autoFilledData.countryOfOrigin = analysisResult.countryOfOrigin.trim();
   }
 
  
-  if (analysisResult.tags && analysisResult.tags.length > 0 && analysisResult.confidence > 0.3) {
+  if (analysisResult.tags && Array.isArray(analysisResult.tags) && analysisResult.tags.length > 0 && analysisResult.confidence > 0.3) {
   
     const validTags = analysisResult.tags
       .filter(tag => tag && typeof tag === 'string' && tag.trim().length > 1 && tag.trim().length < 50)
@@ -378,7 +397,7 @@ export const autoFillFormFromAnalysis = (
   }
 
  
-  if (analysisResult.category && analysisResult.category !== 'загальна' && analysisResult.confidence > 0.4) {
+  if (analysisResult.category && typeof analysisResult.category === 'string' && analysisResult.category !== 'загальна' && analysisResult.confidence > 0.4) {
     const categoryTags = (autoFilledData.tags || []).map((tag: string) => tag.toLowerCase());
     const categoryTag = analysisResult.category.toLowerCase();
     

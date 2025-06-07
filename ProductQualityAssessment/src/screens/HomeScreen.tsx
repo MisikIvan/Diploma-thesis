@@ -210,14 +210,55 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
  
   const handleProductPress = useCallback(async (product: Product) => {
     try {
-      // Add to view history
-      if (currentUser?.userId) {
-        await StorageService.viewHistory.addToViewHistory(currentUser.userId, product);
+      // Enhanced validation
+      console.log('handleProductPress called with product:', {
+        productId: product?.productId,
+        name: product?.name,
+        hasProduct: !!product,
+        productKeys: product ? Object.keys(product) : 'none'
+      });
+      
+      if (!product) {
+        console.warn('handleProductPress: No product provided');
+        return;
       }
+      
+      if (!product.productId) {
+        console.warn('handleProductPress: Product missing productId:', product);
+        return;
+      }
+      
+      if (!product.name) {
+        console.warn('handleProductPress: Product missing name:', product);
+        return;
+      }
+      
+      // Add to view history with enhanced logging
+      if (currentUser?.userId) {
+        console.log('Adding to view history for user:', currentUser.userId);
+        await StorageService.viewHistory.addToViewHistory(currentUser.userId, product);
+        console.log('Successfully added to view history');
+      } else {
+        console.log('No current user, skipping view history');
+      }
+      
+      console.log('Navigating to ProductDetail with productId:', product.productId);
       navigation.navigate('ProductDetail', { productId: product.productId });
+      
     } catch (error) {
-      console.error('Error saving recent product:', error);
-      navigation.navigate('ProductDetail', { productId: product.productId });
+      console.error('Error in handleProductPress:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+      console.error('Product data at error:', JSON.stringify(product, null, 2));
+      
+      // Still navigate even if history saving fails
+      if (product?.productId) {
+        console.log('Attempting navigation despite error...');
+        try {
+          navigation.navigate('ProductDetail', { productId: product.productId });
+        } catch (navError) {
+          console.error('Navigation also failed:', navError);
+        }
+      }
     }
   }, [navigation, currentUser?.userId]);
 

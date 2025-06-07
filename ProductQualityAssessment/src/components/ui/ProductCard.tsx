@@ -10,7 +10,23 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = memo(({ product, onPress, compact = false }) => {
-  if (!product || !product.name) {
+  // Enhanced validation with logging
+  if (!product) {
+    console.warn('ProductCard: No product provided');
+    return null;
+  }
+  
+  if (!product.name || typeof product.name !== 'string') {
+    console.warn('ProductCard: Invalid product name:', { 
+      name: product.name, 
+      type: typeof product.name,
+      productId: product.productId 
+    });
+    return null;
+  }
+  
+  if (!product.nutriscoreGrade) {
+    console.warn('ProductCard: Missing nutriscoreGrade:', product);
     return null;
   }
   
@@ -28,7 +44,16 @@ const ProductCard: React.FC<ProductCardProps> = memo(({ product, onPress, compac
   };
 
   const handlePress = () => {
-    onPress(product);
+    console.log('ProductCard handlePress called with product:', {
+      productId: product.productId,
+      name: product.name
+    });
+    
+    try {
+      onPress(product);
+    } catch (error) {
+      console.error('Error in ProductCard onPress:', error);
+    }
   };
 
   
@@ -38,12 +63,15 @@ const ProductCard: React.FC<ProductCardProps> = memo(({ product, onPress, compac
   
   try {
     productTags = getTagsFromProduct(product);
-    if (productTags.length > 0) {
-     
-      const firstTagDisplayName = getTagDisplayName(productTags[0]);
-      if (firstTagDisplayName && typeof firstTagDisplayName === 'string' && firstTagDisplayName.trim() !== '') {
-        firstTag = firstTagDisplayName;
-        additionalTagsCount = Math.max(0, productTags.length - 1);
+    if (productTags && Array.isArray(productTags) && productTags.length > 0) {
+      // Extra validation for first tag
+      const firstTagValue = productTags[0];
+      if (firstTagValue && typeof firstTagValue === 'string' && firstTagValue.trim() !== '') {
+        const firstTagDisplayName = getTagDisplayName(firstTagValue);
+        if (firstTagDisplayName && typeof firstTagDisplayName === 'string' && firstTagDisplayName.trim() !== '' && firstTagDisplayName !== 'Невідомий тег') {
+          firstTag = firstTagDisplayName;
+          additionalTagsCount = Math.max(0, productTags.length - 1);
+        }
       }
     }
   } catch (error) {
@@ -69,16 +97,16 @@ const ProductCard: React.FC<ProductCardProps> = memo(({ product, onPress, compac
         <View style={styles.contentContainer}>
           <View style={styles.textContent}>
             <Text style={styles.name} numberOfLines={2}>
-              {name}
+              {String(name || 'Unknown Product')}
             </Text>
-            {brand ? (
+            {brand && typeof brand === 'string' && brand.trim() !== '' ? (
               <Text style={styles.brand} numberOfLines={1}>
-                {brand}
+                {String(brand)}
               </Text>
             ) : null}
             
   
-            {firstTag && (
+            {firstTag && typeof firstTag === 'string' && firstTag.trim() !== '' && firstTag !== 'Невідомий тег' && productTags[0] && (
               <View style={styles.tagsContainer}>
                 <View style={[
                   styles.tag, 
@@ -96,15 +124,15 @@ const ProductCard: React.FC<ProductCardProps> = memo(({ product, onPress, compac
                 </View>
                 {additionalTagsCount > 0 && (
                   <View style={styles.additionalTagsCounter}>
-                    <Text style={styles.additionalTagsText}>+{additionalTagsCount}</Text>
+                    <Text style={styles.additionalTagsText}>+{Math.max(0, additionalTagsCount)}</Text>
                   </View>
                 )}
               </View>
             )}
           </View>
           
-          <View style={[styles.gradeContainer, { backgroundColor: getGradeColor(nutriscoreGrade) }]}>
-            <Text style={styles.gradeText}>{nutriscoreGrade}</Text>
+          <View style={[styles.gradeContainer, { backgroundColor: getGradeColor(nutriscoreGrade || 'C') }]}>
+            <Text style={styles.gradeText}>{String(nutriscoreGrade || 'C')}</Text>
           </View>
         </View>
       </View>

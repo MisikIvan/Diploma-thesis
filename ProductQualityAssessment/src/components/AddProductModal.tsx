@@ -28,6 +28,7 @@ import {
   fallbackProductAnalysis
 } from '../api/smartProductAnalysis';
 import { addProduct } from '../api/firebase';
+import AutoNutriScore from './AutoNutriScore';
 
 interface AddProductModalProps {
   visible: boolean;
@@ -84,8 +85,11 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
   const [fruitsVegetablesNuts, setFruitsVegetablesNuts] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [manualBarcodeInput, setManualBarcodeInput] = useState('');
+  const [autoCalculatedGrade, setAutoCalculatedGrade] = useState<'A' | 'B' | 'C' | 'D' | 'E'>('C');
+  const [useAutoGrade, setUseAutoGrade] = useState(true);
 
   const resetForm = () => {
+    console.log('Resetting form data');
     setFormData({
       name: '',
       description: '',
@@ -115,6 +119,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     setProductImages([]);
     setAnalysisResult(null);
     setCurrentStep('ai-scan');
+    console.log('✅ Form reset complete');
   };
 
   const handleClose = () => {
@@ -196,6 +201,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
       return;
     }
 
+    console.log('🤖 Starting AI analysis with images:', aiScanImages.length);
     setIsAnalyzing(true);
     setAnalysisStep(t('preparingAnalysis'));
 
@@ -203,31 +209,42 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
       setAnalysisStep(t('analyzingProductComposition'));
       await new Promise(resolve => setTimeout(resolve, 1000));
 
+      console.log('📸 Analyzing image:', aiScanImages[0]);
       const analysisData = await analyzeProductImage(aiScanImages[0], {
         name: formData.name,
         barcode: formData.barcode,
       });
       
+      console.log('🔍 Analysis result:', analysisData);
       setAnalysisStep(t('processingResults'));
       await new Promise(resolve => setTimeout(resolve, 500));
 
       setAnalysisResult(analysisData);
       
+      console.log('🔄 Auto-filling form with analysis result:', analysisData);
       const autoFilledData = autoFillFormFromAnalysis(analysisData, formData);
       applyAnalysisResults(autoFilledData);
       
       setAnalysisStep(t('analysisComplete'));
       await new Promise(resolve => setTimeout(resolve, 500));
+      console.log('✅ AI analysis completed successfully');
       
     } catch (error) {
-      console.error('AI Analysis error:', error);
+      console.error('❌ AI Analysis error:', error);
       
-      setAnalysisStep(t('usingBackupAnalysis'));
-      const fallbackData = fallbackProductAnalysis('');
-      setAnalysisResult(fallbackData);
-      
-      const autoFilledData = autoFillFormFromAnalysis(fallbackData, formData);
-      applyAnalysisResults(autoFilledData);
+      try {
+        setAnalysisStep(t('usingBackupAnalysis'));
+        const fallbackData = fallbackProductAnalysis('');
+        setAnalysisResult(fallbackData);
+        
+        console.log('🔄 Auto-filling form with fallback result:', fallbackData);
+        const autoFilledData = autoFillFormFromAnalysis(fallbackData, formData);
+        applyAnalysisResults(autoFilledData);
+        console.log('✅ Fallback analysis applied');
+      } catch (fallbackError) {
+        console.error('❌ Fallback analysis also failed:', fallbackError);
+        Alert.alert('Помилка аналізу', 'Не вдалося проаналізувати зображення. Заповніть форму вручну.');
+      }
     } finally {
       setIsAnalyzing(false);
       setAnalysisStep('');
@@ -235,12 +252,57 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
   };
 
   const applyAnalysisResults = (autoFilledData: any) => {
-    setFormData(prev => ({
-      ...prev,
-      ...autoFilledData,
-      imageUrl: aiScanImages[0] || prev.imageUrl,
-      additionalImages: aiScanImages.slice(1),
-    }));
+    console.log('🔄 Applying analysis results:', autoFilledData);
+    
+    try {
+      setFormData(prev => {
+        const newData = {
+          ...prev,
+          // Safely merge basic fields
+          name: autoFilledData?.name || prev.name,
+          description: autoFilledData?.description || prev.description,
+          brand: autoFilledData?.brand || prev.brand,
+          ingredients: autoFilledData?.ingredients || prev.ingredients,
+          source: autoFilledData?.source || prev.source,
+          manufacturer: autoFilledData?.manufacturer || prev.manufacturer,
+          countryOfOrigin: autoFilledData?.countryOfOrigin || prev.countryOfOrigin,
+          barcode: autoFilledData?.barcode || prev.barcode,
+          weight: autoFilledData?.weight || prev.weight,
+          nutriscoreGrade: autoFilledData?.nutriscoreGrade || prev.nutriscoreGrade,
+          
+          // Safely merge arrays
+          allergens: Array.isArray(autoFilledData?.allergens) ? autoFilledData.allergens : prev.allergens,
+          additives: Array.isArray(autoFilledData?.additives) ? autoFilledData.additives : prev.additives,
+          tags: Array.isArray(autoFilledData?.tags) ? autoFilledData.tags : prev.tags,
+          
+          // Safely merge nutrition data
+          nutriments: {
+            calories: autoFilledData?.nutriments?.calories ?? prev.nutriments?.calories ?? 0,
+            proteins: autoFilledData?.nutriments?.proteins ?? prev.nutriments?.proteins ?? 0,
+            fats: {
+              total: autoFilledData?.nutriments?.fats?.total ?? prev.nutriments?.fats?.total ?? 0,
+              saturated: autoFilledData?.nutriments?.fats?.saturated ?? prev.nutriments?.fats?.saturated ?? 0,
+              unsaturated: autoFilledData?.nutriments?.fats?.unsaturated ?? prev.nutriments?.fats?.unsaturated ?? 0,
+            },
+            carbohydrates: {
+              total: autoFilledData?.nutriments?.carbohydrates?.total ?? prev.nutriments?.carbohydrates?.total ?? 0,
+              sugar: autoFilledData?.nutriments?.carbohydrates?.sugar ?? prev.nutriments?.carbohydrates?.sugar ?? 0,
+            },
+            salt: autoFilledData?.nutriments?.salt ?? prev.nutriments?.salt ?? 0,
+            fiber: autoFilledData?.nutriments?.fiber ?? prev.nutriments?.fiber ?? 0,
+          },
+          
+          // Set main image from first scan image if no main image exists
+          imageUrl: prev.imageUrl || aiScanImages[0] || '',
+          additionalImages: aiScanImages.slice(1),
+        };
+        
+        console.log('✅ Applied analysis results successfully');
+        return newData;
+      });
+    } catch (error) {
+      console.error('❌ Error applying analysis results:', error);
+    }
   };
 
   const handleBarcodeScanned = async (barcode: string) => {
@@ -335,6 +397,105 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
       Alert.alert('Помилка', 'Не вдалося додати продукт');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Product Image Functions
+  const takeProductPhoto = async () => {
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(t('permissionRequired'), t('cameraPermissionNeeded'));
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+        exif: false,
+        base64: false,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const imageUri = result.assets[0].uri;
+        setFormData(prev => ({ ...prev, imageUrl: imageUri }));
+      }
+    } catch (error) {
+      Alert.alert(t('error'), t('imageSelectionErrorOccurred'));
+    }
+  };
+
+  const pickProductImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(t('permissionRequired'), t('galleryPermissionNeeded'));
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+        exif: false,
+        base64: false,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const imageUri = result.assets[0].uri;
+        setFormData(prev => ({ ...prev, imageUrl: imageUri }));
+      }
+    } catch (error) {
+      Alert.alert(t('error'), t('imageSelectionErrorOccurred'));
+    }
+  };
+
+  const addAdditionalImage = async () => {
+    if (formData.additionalImages.length >= 4) {
+      Alert.alert('Увага', 'Максимум 4 додаткових зображення');
+      return;
+    }
+
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(t('permissionRequired'), t('galleryPermissionNeeded'));
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 0.8,
+        exif: false,
+        base64: false,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const imageUri = result.assets[0].uri;
+        setFormData(prev => ({
+          ...prev,
+          additionalImages: [...prev.additionalImages, imageUri]
+        }));
+      }
+    } catch (error) {
+      Alert.alert(t('error'), t('imageSelectionErrorOccurred'));
+    }
+  };
+
+  const removeAdditionalImage = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      additionalImages: prev.additionalImages.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handleNutriScoreChange = (grade: 'A' | 'B' | 'C' | 'D' | 'E', score: number) => {
+    setAutoCalculatedGrade(grade);
+    if (useAutoGrade) {
+      setFormData(prev => ({ ...prev, nutriscoreGrade: grade }));
     }
   };
 
@@ -558,6 +719,76 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
               )}
             </View>
 
+            {/* Product Images Section */}
+            <View style={styles.formSection}>
+              <Text style={styles.sectionTitle}>📸 Зображення продукту</Text>
+              
+              {/* Main Product Image */}
+              <View style={styles.imageGroup}>
+                <Text style={styles.inputLabel}>Основне зображення *</Text>
+                {formData.imageUrl ? (
+                  <View style={styles.mainImageContainer}>
+                    <Image source={{ uri: formData.imageUrl }} style={styles.mainImage} />
+                    <View style={styles.imageActions}>
+                      <TouchableOpacity style={styles.imageActionButton} onPress={takeProductPhoto}>
+                        <Ionicons name="camera" size={16} color={Colors.text.onPrimary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.imageActionButton, styles.imageActionSecondary]} onPress={pickProductImage}>
+                        <Ionicons name="image" size={16} color={Colors.primary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.imageActionButton, styles.imageActionDanger]} 
+                        onPress={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
+                      >
+                        <Ionicons name="trash" size={16} color={Colors.text.onPrimary} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.emptyMainImage}>
+                    <Ionicons name="image-outline" size={48} color={Colors.text.disabled} />
+                    <Text style={styles.emptyProductImageText}>Додайте основне фото</Text>
+                    <View style={styles.imagePickerActions}>
+                      <TouchableOpacity style={styles.imagePickerButton} onPress={takeProductPhoto}>
+                        <Ionicons name="camera" size={20} color={Colors.text.onPrimary} />
+                        <Text style={styles.imagePickerButtonText}>Камера</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.imagePickerButton, styles.imagePickerSecondary]} onPress={pickProductImage}>
+                        <Ionicons name="image" size={20} color={Colors.primary} />
+                        <Text style={styles.imagePickerSecondaryText}>Галерея</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </View>
+
+              {/* Additional Images */}
+              <View style={styles.imageGroup}>
+                <Text style={styles.inputLabel}>Додаткові зображення (до 4)</Text>
+                
+                <ScrollView horizontal style={styles.additionalImagesScroll} showsHorizontalScrollIndicator={false}>
+                  {formData.additionalImages.map((uri, index) => (
+                    <View key={index} style={styles.additionalImageContainer}>
+                      <Image source={{ uri }} style={styles.additionalImage} />
+                      <TouchableOpacity
+                        style={styles.removeAdditionalImageButton}
+                        onPress={() => removeAdditionalImage(index)}
+                      >
+                        <Ionicons name="close-circle" size={20} color={Colors.error} />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  
+                  {formData.additionalImages.length < 4 && (
+                    <TouchableOpacity style={styles.addImageButton} onPress={addAdditionalImage}>
+                      <Ionicons name="add" size={24} color={Colors.primary} />
+                      <Text style={styles.addImageText}>Додати</Text>
+                    </TouchableOpacity>
+                  )}
+                </ScrollView>
+              </View>
+            </View>
+
             {/* Product Details Form */}
             <View style={styles.formSection}>
               <Text style={styles.sectionTitle}>Основна інформація</Text>
@@ -614,7 +845,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                 <Text style={styles.inputLabel}>Вага (г)</Text>
                 <TextInput
                   style={styles.input}
-                  value={formData.weight.toString()}
+                  value={(formData.weight || 0).toString()}
                   onChangeText={(text) => setFormData(prev => ({ ...prev, weight: parseInt(text) || 0 }))}
                   placeholder="Вага в грамах"
                   placeholderTextColor={Colors.text.disabled}
@@ -625,21 +856,72 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
 
             {/* Nutri-Score */}
             <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>Nutri-Score</Text>
-              <View style={styles.nutriScoreContainer}>
-                {['A', 'B', 'C', 'D', 'E'].map((grade) => (
-                  <TouchableOpacity
-                    key={grade}
-                    style={[
-                      styles.nutriScoreButton,
-                      { backgroundColor: getGradeColor(grade as any) },
-                      formData.nutriscoreGrade === grade && styles.nutriScoreButtonActive
-                    ]}
-                    onPress={() => setFormData(prev => ({ ...prev, nutriscoreGrade: grade as any }))}
-                  >
-                    <Text style={styles.nutriScoreButtonText}>{grade}</Text>
-                  </TouchableOpacity>
-                ))}
+              <Text style={styles.sectionTitle}>⭐ Nutri-Score</Text>
+              
+              <View style={styles.nutriScoreCalculationContainer}>
+                {/* Auto-calculated Nutri-Score */}
+                <View style={styles.autoNutriScoreContainer}>
+                  <AutoNutriScore 
+                    nutriments={formData.nutriments}
+                    fruitsVegetablesNuts={fruitsVegetablesNuts}
+                    onScoreChange={handleNutriScoreChange}
+                    showDetails={true}
+                  />
+                </View>
+
+                {/* Fruits/Vegetables/Nuts Percentage */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Фрукти, овочі, горіхи (%)</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={fruitsVegetablesNuts.toString()}
+                    onChangeText={(text) => setFruitsVegetablesNuts(parseFloat(text) || 0)}
+                    placeholder="0-100%"
+                    placeholderTextColor={Colors.text.disabled}
+                    keyboardType="numeric"
+                  />
+                  <Text style={styles.inputHint}>
+                    Вкажіть відсоток фруктів, овочів та горіхів у складі продукту для точнішого розрахунку
+                  </Text>
+                </View>
+
+                {/* Manual Override Option */}
+                <View style={styles.gradeOverrideContainer}>
+                  <View style={styles.overrideHeader}>
+                    <Text style={styles.overrideTitle}>Ручне перевизначення</Text>
+                    <TouchableOpacity
+                      style={[styles.toggleButton, useAutoGrade && styles.toggleButtonActive]}
+                      onPress={() => {
+                        setUseAutoGrade(!useAutoGrade);
+                        if (!useAutoGrade) {
+                          setFormData(prev => ({ ...prev, nutriscoreGrade: autoCalculatedGrade }));
+                        }
+                      }}
+                    >
+                      <Text style={[styles.toggleButtonText, useAutoGrade && styles.toggleButtonTextActive]}>
+                        {useAutoGrade ? 'Авто' : 'Ручне'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                  
+                  {!useAutoGrade && (
+                    <View style={styles.nutriScoreContainer}>
+                      {['A', 'B', 'C', 'D', 'E'].map((grade) => (
+                        <TouchableOpacity
+                          key={grade}
+                          style={[
+                            styles.nutriScoreButton,
+                            { backgroundColor: getGradeColor(grade as any) },
+                            formData.nutriscoreGrade === grade && styles.nutriScoreButtonActive
+                          ]}
+                          onPress={() => setFormData(prev => ({ ...prev, nutriscoreGrade: grade as any }))}
+                        >
+                          <Text style={styles.nutriScoreButtonText}>{grade}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
               </View>
             </View>
 
@@ -655,7 +937,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Калорії</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={formData.nutriments.calories.toString()}
+                    value={(formData.nutriments?.calories || 0).toString()}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
                       nutriments: { ...prev.nutriments, calories: parseFloat(text) || 0 }
@@ -669,7 +951,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Білки</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={formData.nutriments.proteins.toString()}
+                    value={(formData.nutriments?.proteins || 0).toString()}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
                       nutriments: { ...prev.nutriments, proteins: parseFloat(text) || 0 }
@@ -683,7 +965,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Жири</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={formData.nutriments.fats.total.toString()}
+                    value={(formData.nutriments?.fats?.total || 0).toString()}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
                       nutriments: { 
@@ -700,7 +982,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Насичені жири</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={formData.nutriments.fats.saturated.toString()}
+                    value={(formData.nutriments?.fats?.saturated || 0).toString()}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
                       nutriments: { 
@@ -717,7 +999,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Ненасичені жири</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={formData.nutriments.fats.unsaturated.toString()}
+                    value={(formData.nutriments?.fats?.unsaturated || 0).toString()}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
                       nutriments: { 
@@ -734,7 +1016,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Вуглеводи</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={formData.nutriments.carbohydrates.total.toString()}
+                    value={(formData.nutriments?.carbohydrates?.total || 0).toString()}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
                       nutriments: { 
@@ -751,7 +1033,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Цукор</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={formData.nutriments.carbohydrates.sugar.toString()}
+                    value={(formData.nutriments?.carbohydrates?.sugar || 0).toString()}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
                       nutriments: { 
@@ -768,7 +1050,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Клітковина</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={formData.nutriments.fiber.toString()}
+                    value={(formData.nutriments?.fiber || 0).toString()}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
                       nutriments: { ...prev.nutriments, fiber: parseFloat(text) || 0 }
@@ -782,7 +1064,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <Text style={styles.nutritionLabel}>Сіль</Text>
                   <TextInput
                     style={styles.nutritionInput}
-                    value={formData.nutriments.salt.toString()}
+                    value={(formData.nutriments?.salt || 0).toString()}
                     onChangeText={(text) => setFormData(prev => ({
                       ...prev,
                       nutriments: { ...prev.nutriments, salt: parseFloat(text) || 0 }
@@ -1215,6 +1497,162 @@ const styles = StyleSheet.create({
     ...Typography.caption,
     marginHorizontal: Spacing.md,
     color: Colors.text.secondary,
+  },
+  // Product Images Styles
+  imageGroup: {
+    marginBottom: Spacing.lg,
+  },
+  mainImageContainer: {
+    position: 'relative',
+    alignItems: 'center',
+  },
+  mainImage: {
+    width: 200,
+    height: 200,
+    borderRadius: BorderRadius.large,
+    backgroundColor: Colors.surfaceVariant,
+    resizeMode: 'cover',
+    marginBottom: Spacing.md,
+  },
+  imageActions: {
+    flexDirection: 'row',
+    gap: Spacing.sm,
+  },
+  imageActionButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: BorderRadius.small,
+    padding: Spacing.sm,
+  },
+  imageActionSecondary: {
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: Colors.primary,
+  },
+  imageActionDanger: {
+    backgroundColor: Colors.error,
+  },
+  emptyMainImage: {
+    backgroundColor: Colors.surfaceVariant,
+    borderRadius: BorderRadius.large,
+    padding: Spacing.xl,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: Colors.border.default,
+    borderStyle: 'dashed',
+  },
+  emptyProductImageText: {
+    ...Typography.body,
+    marginTop: Spacing.md,
+    marginBottom: Spacing.lg,
+    color: Colors.text.secondary,
+  },
+  imagePickerActions: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  imagePickerButton: {
+    ...ComponentStyles.button.primary,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+  },
+  imagePickerSecondary: {
+    ...ComponentStyles.button.secondary,
+  },
+  imagePickerButtonText: {
+    ...Typography.body,
+    color: Colors.text.onPrimary,
+  },
+  imagePickerSecondaryText: {
+    ...Typography.body,
+    color: Colors.primary,
+  },
+  additionalImagesScroll: {
+    flexDirection: 'row',
+  },
+  additionalImageContainer: {
+    position: 'relative',
+    marginRight: Spacing.md,
+  },
+  additionalImage: {
+    width: 80,
+    height: 80,
+    borderRadius: BorderRadius.medium,
+    backgroundColor: Colors.surfaceVariant,
+    resizeMode: 'cover',
+  },
+  removeAdditionalImageButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: Colors.surface,
+    borderRadius: 10,
+    ...Shadows.small,
+  },
+  addImageButton: {
+    width: 80,
+    height: 80,
+    borderRadius: BorderRadius.medium,
+    backgroundColor: Colors.surfaceVariant,
+    borderWidth: 2,
+    borderColor: Colors.border.default,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addImageText: {
+    ...Typography.caption,
+    color: Colors.primary,
+    marginTop: Spacing.xs,
+  },
+  // Nutri-Score Calculation Styles
+  nutriScoreCalculationContainer: {
+    gap: Spacing.lg,
+  },
+  autoNutriScoreContainer: {
+    backgroundColor: Colors.surfaceVariant,
+    borderRadius: BorderRadius.medium,
+    padding: Spacing.md,
+  },
+  inputHint: {
+    ...Typography.caption,
+    color: Colors.text.secondary,
+    marginTop: Spacing.xs,
+    lineHeight: 16,
+  },
+  gradeOverrideContainer: {
+    backgroundColor: Colors.surfaceVariant,
+    borderRadius: BorderRadius.medium,
+    padding: Spacing.md,
+  },
+  overrideHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  overrideTitle: {
+    ...Typography.body,
+    fontWeight: 'bold',
+  },
+  toggleButton: {
+    backgroundColor: Colors.surface,
+    borderRadius: BorderRadius.small,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderWidth: 1,
+    borderColor: Colors.border.default,
+  },
+  toggleButtonActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  toggleButtonText: {
+    ...Typography.caption,
+    color: Colors.text.secondary,
+  },
+  toggleButtonTextActive: {
+    color: Colors.text.onPrimary,
   },
   // Submit Button
   submitButton: {

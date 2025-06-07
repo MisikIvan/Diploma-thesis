@@ -16,10 +16,7 @@ import { RouteProp, useNavigation, useFocusEffect } from '@react-navigation/nati
 import { StackNavigationProp } from '@react-navigation/stack';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import Animated, {
-  FadeIn,
-  FadeOut,
-} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 import { RootStackParamList } from '../types/navigation';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import { getProductDetails, getSimilarProducts, updateProductFavoriteStatus } from '../redux/slices/productsSlice';
@@ -41,8 +38,9 @@ import ErrorScreen from '../components/ErrorScreen';
 import AdminInfo from '../components/AdminInfo';
 import { t } from '../utils/translations';
 import { StorageService } from '../utils/storage';
+import { FirebaseService } from '../utils/firebase';
 
-const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
+
 
 type ProductDetailScreenProps = {
   route: RouteProp<RootStackParamList, 'ProductDetail'>;
@@ -98,8 +96,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
     }
 
     try {
-      const favorites = await StorageService.favorites.getFavorites();
-      const isProductFavorite = favorites.some(f => f.userId === currentUser.userId && f.productId === productId);
+      const isProductFavorite = await FirebaseService.favorites.isFavorite(currentUser.userId, productId);
       setIsFavorite(isProductFavorite);
     } catch (error) {
       console.error('Error checking favorite status:', error);
@@ -120,14 +117,14 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
       setIsFavorite(newFavoriteStatus);
 
       if (newFavoriteStatus) {
-        await StorageService.favorites.addFavorite({
+        await FirebaseService.favorites.addFavorite({
           favoriteId: `${currentUser.userId}_${productId}`,
           userId: currentUser.userId,
           productId: productId,
           addedAt: new Date().toISOString()
         });
       } else {
-        await StorageService.favorites.removeFavorite(currentUser.userId, productId);
+        await FirebaseService.favorites.removeFavoriteByUserAndProduct(currentUser.userId, productId);
       }
 
       dispatch(updateProductFavoriteStatus({
@@ -149,79 +146,80 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
   const renderTabContent = () => {
     if (!currentProduct) return null;
     
-    let productTags: string[] = [];
-    try {
-      productTags = getTagsFromProduct(currentProduct);
-    } catch (error) {
-      console.warn('Error getting tags:', error);
-      productTags = [];
-    }
+    // Disabled tags processing temporarily to fix render error
+    // let productTags: string[] = [];
+    // try {
+    //   productTags = getTagsFromProduct(currentProduct);
+    // } catch (error) {
+    //   console.warn('Error getting tags:', error);
+    //   productTags = [];
+    // }
     
     switch (activeTab) {
       case 'nutrition':
         return (
           <ScrollView style={styles.tabContainer} showsVerticalScrollIndicator={false}>
-            <Text style={styles.sectionTitle}>{t('nutritionalFacts')}</Text>
-            <Text style={styles.portionText}>{t('per100g')}</Text>
+            <Text style={styles.sectionTitle}>{t('nutritionalFacts') || 'Nutritional Facts'}</Text>
+            <Text style={styles.portionText}>{t('per100g') || 'Per 100g'}</Text>
             
             {/* Main macronutrients */}
             <View style={styles.nutritionGrid}>
               <View style={styles.nutritionCard}>
                 <Text style={styles.nutritionNumber}>
-                  {formatNutrient(currentProduct.nutriments?.calories, 'kcal')}
+                  {String(formatNutrient(currentProduct.nutriments?.calories, 'kcal') || '-')}
                 </Text>
-                <Text style={styles.nutritionLabelCompact}>{t('calories')}</Text>
+                <Text style={styles.nutritionLabelCompact}>{t('calories') || 'Calories'}</Text>
               </View>
               
               <View style={styles.nutritionCard}>
                 <Text style={styles.nutritionNumber}>
-                  {formatNutrient(currentProduct.nutriments?.proteins)}
+                  {String(formatNutrient(currentProduct.nutriments?.proteins) || '-')}
                 </Text>
-                <Text style={styles.nutritionLabelCompact}>{t('proteins')}</Text>
+                <Text style={styles.nutritionLabelCompact}>{t('proteins') || 'Proteins'}</Text>
               </View>
               
               <View style={styles.nutritionCard}>
                 <Text style={styles.nutritionNumber}>
-                  {formatNutrient(currentProduct.nutriments?.carbohydrates?.total)}
+                  {String(formatNutrient(currentProduct.nutriments?.carbohydrates?.total) || '-')}
                 </Text>
-                <Text style={styles.nutritionLabelCompact}>{t('carbs')}</Text>
+                <Text style={styles.nutritionLabelCompact}>{t('carbs') || 'Carbs'}</Text>
               </View>
 
               <View style={styles.nutritionCard}>
                 <Text style={styles.nutritionNumber}>
-                  {formatNutrient(currentProduct.nutriments?.fats?.total)}
+                  {String(formatNutrient(currentProduct.nutriments?.fats?.total) || '-')}
                 </Text>
-                <Text style={styles.nutritionLabelCompact}>{t('fats')}</Text>
+                <Text style={styles.nutritionLabelCompact}>{t('fats') || 'Fats'}</Text>
               </View>
             </View>
 
             {/* Detailed information */}
             <View style={styles.detailsSection}>
-              <Text style={styles.detailsTitle}>{t('nutritionalFacts')}</Text>
+              <Text style={styles.detailsTitle}>{t('nutritionalFacts') || 'Nutritional Facts'}</Text>
               
               <View style={styles.nutritionRowCompact}>
-                <Text style={styles.nutritionLabelSmall}>{t('calories')}</Text>
+                <Text style={styles.nutritionLabelSmall}>{t('calories') || 'Calories'}</Text>
                 <Text style={styles.nutritionValueSmall}>
                   {formatNutrient(currentProduct.nutriments?.calories, 'kcal')}
                 </Text>
               </View>
 
               <View style={styles.nutritionRowCompact}>
-                <Text style={styles.nutritionLabelSmall}>{t('proteins')}</Text>
+                <Text style={styles.nutritionLabelSmall}>{t('proteins') || 'Proteins'}</Text>
                 <Text style={styles.nutritionValueSmall}>
                   {formatNutrient(currentProduct.nutriments?.proteins)}
                 </Text>
               </View>
 
               <View style={styles.nutritionRowCompact}>
-                <Text style={styles.nutritionLabelSmall}>{t('fats')}</Text>
+                <Text style={styles.nutritionLabelSmall}>{t('fats') || 'Fats'}</Text>
                 <Text style={styles.nutritionValueSmall}>
                   {formatNutrient(currentProduct.nutriments?.fats?.total)}
                 </Text>
               </View>
 
               <View style={styles.nutritionRowCompact}>
-                <Text style={styles.nutritionLabelSmall}>{t('carbs')}</Text>
+                <Text style={styles.nutritionLabelSmall}>{t('carbs') || 'Carbs'}</Text>
                 <Text style={styles.nutritionValueSmall}>
                   {formatNutrient(currentProduct.nutriments?.carbohydrates?.total)}
                 </Text>
@@ -229,27 +227,27 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
 
               {currentProduct.nutriments?.carbohydrates?.sugar !== undefined && (
                 <View style={styles.nutritionRowCompact}>
-                  <Text style={styles.nutritionLabelSmall}>{t('sugar')}</Text>
+                  <Text style={styles.nutritionLabelSmall}>{t('sugar') || 'Sugar'}</Text>
                   <Text style={styles.nutritionValueSmall}>
-                    {formatNutrient(currentProduct.nutriments.carbohydrates.sugar)}
+                    {formatNutrient(currentProduct.nutriments?.carbohydrates?.sugar)}
                   </Text>
                 </View>
               )}
 
               {currentProduct.nutriments?.fats?.saturated !== undefined && (
                 <View style={styles.nutritionRowCompact}>
-                  <Text style={styles.nutritionLabelSmall}>{t('saturatedFats')}</Text>
+                  <Text style={styles.nutritionLabelSmall}>{t('saturatedFats') || 'Saturated Fats'}</Text>
                   <Text style={styles.nutritionValueSmall}>
-                    {formatNutrient(currentProduct.nutriments.fats.saturated)}
+                    {formatNutrient(currentProduct.nutriments?.fats?.saturated)}
                   </Text>
                 </View>
               )}
 
               {currentProduct.nutriments?.salt !== undefined && (
                 <View style={styles.nutritionRowCompact}>
-                  <Text style={styles.nutritionLabelSmall}>{t('salt')}</Text>
+                  <Text style={styles.nutritionLabelSmall}>{t('salt') || 'Salt'}</Text>
                   <Text style={styles.nutritionValueSmall}>
-                    {formatNutrient(currentProduct.nutriments.salt)}
+                    {formatNutrient(currentProduct.nutriments?.salt)}
                   </Text>
                 </View>
               )}
@@ -258,7 +256,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
                 <View style={styles.nutritionRowCompact}>
                   <Text style={styles.nutritionLabelSmall}>Fiber</Text>
                   <Text style={styles.nutritionValueSmall}>
-                    {formatNutrient(currentProduct.nutriments.fiber)}
+                    {formatNutrient(currentProduct.nutriments?.fiber)}
                   </Text>
                 </View>
               )}
@@ -267,31 +265,31 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
             {currentProduct.weight && (
               <View style={styles.wholeProductSection}>
                 <Text style={styles.wholeProductTitle}>
-                  {t('wholeProduct')} ({currentProduct.weight}{t('gramsUnit')})
+                  {t('wholeProduct') || 'Whole Product'} ({currentProduct.weight}{t('gramsUnit') || 'g'})
                 </Text>
                 <View style={styles.wholeProductGrid}>
                   <View style={styles.wholeProductItem}>
-                    <Text style={styles.wholeProductLabel}>{t('calories')}</Text>
+                    <Text style={styles.wholeProductLabel}>{t('calories') || 'Calories'}</Text>
                     <Text style={styles.wholeProductValue}>
-                      {Math.round((currentProduct.nutriments?.calories || 0) * currentProduct.weight / 100)} {t('kcalUnit')}
+                      {Math.round((currentProduct.nutriments?.calories || 0) * currentProduct.weight / 100)} {t('kcalUnit') || 'kcal'}
                     </Text>
                   </View>
                   <View style={styles.wholeProductItem}>
-                    <Text style={styles.wholeProductLabel}>{t('proteins')}</Text>
+                    <Text style={styles.wholeProductLabel}>{t('proteins') || 'Proteins'}</Text>
                     <Text style={styles.wholeProductValue}>
-                      {Math.round(((currentProduct.nutriments?.proteins || 0) * currentProduct.weight / 100) * 10) / 10} {t('gramsUnit')}
+                      {Math.round(((currentProduct.nutriments?.proteins || 0) * currentProduct.weight / 100) * 10) / 10} {t('gramsUnit') || 'g'}
                     </Text>
                   </View>
                   <View style={styles.wholeProductItem}>
-                    <Text style={styles.wholeProductLabel}>{t('fats')}</Text>
+                    <Text style={styles.wholeProductLabel}>{t('fats') || 'Fats'}</Text>
                     <Text style={styles.wholeProductValue}>
-                      {Math.round(((currentProduct.nutriments?.fats?.total || 0) * currentProduct.weight / 100) * 10) / 10} {t('gramsUnit')}
+                      {Math.round(((currentProduct.nutriments?.fats?.total || 0) * currentProduct.weight / 100) * 10) / 10} {t('gramsUnit') || 'g'}
                     </Text>
                   </View>
                   <View style={styles.wholeProductItem}>
-                    <Text style={styles.wholeProductLabel}>{t('carbs')}</Text>
+                    <Text style={styles.wholeProductLabel}>{t('carbs') || 'Carbs'}</Text>
                     <Text style={styles.wholeProductValue}>
-                      {Math.round(((currentProduct.nutriments?.carbohydrates?.total || 0) * currentProduct.weight / 100) * 10) / 10} {t('gramsUnit')}
+                      {Math.round(((currentProduct.nutriments?.carbohydrates?.total || 0) * currentProduct.weight / 100) * 10) / 10} {t('gramsUnit') || 'g'}
                     </Text>
                   </View>
                 </View>
@@ -307,20 +305,20 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
             <View style={styles.compositionSection}>
               <View style={styles.compositionHeader}>
                 <Ionicons name="leaf-outline" size={20} color="#34572a" />
-                <Text style={styles.compositionTitle}>{t('composition')}</Text>
+                <Text style={styles.compositionTitle}>{t('composition') || 'Composition'}</Text>
               </View>
               
               <View style={styles.ingredientsCard}>
                 <Text style={styles.ingredientsText}>
-                  {currentProduct.ingredients}
+                  {currentProduct.ingredients || 'No ingredients listed'}
                 </Text>
               </View>
             </View>
 
             {/* E-additives */}
-            {currentProduct.additives.length > 0 && (
+            {currentProduct.additives && currentProduct.additives.length > 0 && (
               <View style={styles.additivesCard}>
-                <Text style={styles.ingredientsLabel}>{t('additives')}</Text>
+                <Text style={styles.ingredientsLabel}>{t('additives') || 'Additives'}</Text>
                 <Text style={styles.ingredientsText}>
                   {currentProduct.additives.join(', ')}
                 </Text>
@@ -328,9 +326,9 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
             )}
 
             {/* Allergens */}
-            {currentProduct.allergens.length > 0 ? (
+            {currentProduct.allergens && currentProduct.allergens.length > 0 ? (
               <View style={styles.allergensCard}>
-                <Text style={styles.ingredientsLabel}>{t('allergens')}</Text>
+                <Text style={styles.ingredientsLabel}>{t('allergens') || 'Allergens'}</Text>
                 <Text style={styles.ingredientsText}>
                   {currentProduct.allergens.join(', ')}
                 </Text>
@@ -339,7 +337,7 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
               <View style={styles.noAllergensCard}>
                 <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
                 <Text style={[styles.ingredientsText, { marginLeft: 8, color: '#4CAF50' }]}>
-                  {t('noAllergensListed')}
+                  {t('noAllergensListed') || 'No allergens listed'}
                 </Text>
               </View>
             )}
@@ -348,10 +346,9 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
         
       case 'reviews':
         return (
-          <View style={styles.reviewsContainer}>
-            <Text style={styles.sectionTitle}>{t('reviews')}</Text>
-            <Text style={styles.noCommentsText}>{t('noComments')}</Text>
-          </View>
+          <ScrollView style={styles.tabContainer} showsVerticalScrollIndicator={false}>
+            <CommentSection productId={currentProduct.productId} />
+          </ScrollView>
         );
         
       default:
@@ -388,21 +385,21 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
     console.error('Product detail error:', error);
     return (
       <ErrorScreen 
-        message={`${t('error')}. ${t('tryAgain')}`} 
+        message={`${t('error') || 'Error'}. ${t('tryAgain') || 'Try again'}`} 
         onRetry={loadProductData} 
       />
     );
   }
 
   if (loading && !currentProduct) {
-    return <LoadingScreen message={t('loading')} />;
+    return <LoadingScreen message={t('loading') || 'Loading...'} />;
   }
 
   if (!currentProduct) {
     console.log('No product found for ID:', productId);
     return (
       <ErrorScreen 
-        message={t('noResults')} 
+        message={t('noResults') || 'No results found'} 
         onRetry={loadProductData} 
       />
     );
@@ -453,74 +450,47 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
         </View>
         
         <View style={styles.tabsContainer}>
-          <AnimatedTouchableOpacity
-            style={[
-              styles.tabButton,
-              { backgroundColor: activeTab === 'nutrition' ? '#fff' : 'transparent' }
-            ]}
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'nutrition' && styles.activeTab]}
             onPress={() => setActiveTab('nutrition')}
           >
             <Icon 
               name="nutrition" 
-              size={18} 
-              color={activeTab === 'nutrition' ? '#34572a' : '#fff'} 
+              size={20} 
+              color={activeTab === 'nutrition' ? '#fff' : '#666'} 
             />
-            {activeTab === 'nutrition' && (
-              <Animated.Text
-                entering={FadeIn.duration(200)}
-                exiting={FadeOut.duration(200)}
-                style={styles.activeTabText}
-              >
-                {t('nutritionShort') || 'KCPF'}
-              </Animated.Text>
-            )}
-          </AnimatedTouchableOpacity>
+            <Text style={[styles.tabText, activeTab === 'nutrition' && styles.activeTabText]}>
+              {t('nutritionShort') || 'KCPF'}
+            </Text>
+          </TouchableOpacity>
           
-          <AnimatedTouchableOpacity
-            style={[
-              styles.tabButton,
-              { backgroundColor: activeTab === 'composition' ? '#fff' : 'transparent' }
-            ]}
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'composition' && styles.activeTab]}
             onPress={() => setActiveTab('composition')}
           >
             <Icon 
               name="format-list-bulleted" 
-              size={18} 
-              color={activeTab === 'composition' ? '#34572a' : '#fff'} 
+              size={20} 
+              color={activeTab === 'composition' ? '#fff' : '#666'} 
             />
-            {activeTab === 'composition' && (
-              <Animated.Text
-                entering={FadeIn.duration(200)}
-                exiting={FadeOut.duration(200)}
-                style={styles.activeTabText}
-              >
-                {t('compositionShort') || 'Composition'}
-              </Animated.Text>
-            )}
-          </AnimatedTouchableOpacity>
+            <Text style={[styles.tabText, activeTab === 'composition' && styles.activeTabText]}>
+              {t('compositionShort') || 'Composition'}
+            </Text>
+          </TouchableOpacity>
           
-          <AnimatedTouchableOpacity
-            style={[
-              styles.tabButton,
-              { backgroundColor: activeTab === 'reviews' ? '#fff' : 'transparent' }
-            ]}
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'reviews' && styles.activeTab]}
             onPress={() => setActiveTab('reviews')}
           >
             <Icon 
               name="comment-text-outline" 
-              size={18} 
-              color={activeTab === 'reviews' ? '#34572a' : '#fff'} 
+              size={20} 
+              color={activeTab === 'reviews' ? '#fff' : '#666'} 
             />
-            {activeTab === 'reviews' && (
-              <Animated.Text
-                entering={FadeIn.duration(200)}
-                exiting={FadeOut.duration(200)}
-                style={styles.activeTabText}
-              >
-                {t('reviewsShort') || 'Reviews'}
-              </Animated.Text>
-            )}
-          </AnimatedTouchableOpacity>
+            <Text style={[styles.tabText, activeTab === 'reviews' && styles.activeTabText]}>
+              {t('reviewsShort') || 'Reviews'}
+            </Text>
+          </TouchableOpacity>
         </View>
         
         {renderTabContent()}
@@ -597,24 +567,43 @@ const styles = StyleSheet.create({
   },
   tabsContainer: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    backgroundColor: '#f8f9fa',
+    marginHorizontal: 16,
+    marginTop: 8,
+    borderRadius: 16,
+    padding: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  tabButton: {
+  tab: {
     flex: 1,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    height: 40,
-    paddingHorizontal: 8,
-    borderRadius: 30,
-    marginHorizontal: 2,
-    minWidth: 0,
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  activeTab: {
+    backgroundColor: '#34572a',
+    shadowColor: '#34572a',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  tabText: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '600',
   },
   activeTabText: {
-    color: '#34572a',
-    fontWeight: 'bold',
+    color: '#fff',
+    fontWeight: '700',
   },
   tabContainer: {
     flex: 1,
@@ -873,29 +862,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     backgroundColor: '#fff',
   },
-  nutriscoreContainer: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    alignItems: 'center',
-  },
-  nutriscoreText: {
-    fontSize: 10,
-    color: '#666',
-    marginBottom: 4,
-  },
-  nutriscoreBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  nutriscoreGrade: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
+
   productInfo: {
     padding: 16,
     backgroundColor: '#fff',
@@ -905,21 +872,7 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 8,
   },
-  tab: {
-    flex: 1,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#34572a',
-  },
-  tabText: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
+
   contentContainer: {
     flex: 1,
     backgroundColor: '#fff',
