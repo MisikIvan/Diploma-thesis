@@ -34,6 +34,37 @@ export const StorageService = {
       } catch (error) {
         console.error('Error removing user from storage:', error);
       }
+    },
+
+    // Clear all user-related data (for testing or manual cleanup)
+    clearAllUserData: async (): Promise<void> => {
+      try {
+        await AsyncStorage.multiRemove([
+          STORAGE_KEYS.USER,
+          STORAGE_KEYS.FAVORITES,
+          'auth_user'
+        ]);
+        console.log('✅ All user data cleared from AsyncStorage (view history preserved)');
+      } catch (error) {
+        console.error('Error clearing all user data:', error);
+      }
+    },
+
+    // Clear data when switching between different users
+    clearDataForUserSwitch: async (currentUserId: string): Promise<void> => {
+      try {
+        // Clear user-specific data but keep view history for the same user
+        await AsyncStorage.multiRemove([
+          STORAGE_KEYS.USER,
+          STORAGE_KEYS.FAVORITES,
+          'auth_user'
+        ]);
+        
+        // Only clear view history if switching to a different user
+        console.log('✅ User data cleared for user switch (view history preserved for same user)');
+      } catch (error) {
+        console.error('Error clearing user switch data:', error);
+      }
     }
   },
 
@@ -162,8 +193,19 @@ export const StorageService = {
         const history = await StorageService.viewHistory.getViewHistory();
         const updatedHistory = history.filter(h => h.userId !== userId);
         await StorageService.viewHistory.saveViewHistory(updatedHistory);
+        console.log(`✅ View history cleared for user: ${userId}`);
       } catch (error) {
         console.error('Error clearing view history:', error);
+      }
+    },
+
+    // Clear ALL view history (for complete reset)
+    clearAllViewHistory: async (): Promise<void> => {
+      try {
+        await AsyncStorage.removeItem(STORAGE_KEYS.VIEW_HISTORY);
+        console.log('✅ All view history cleared');
+      } catch (error) {
+        console.error('Error clearing all view history:', error);
       }
     }
   }

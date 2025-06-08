@@ -19,6 +19,7 @@ import { User } from '../types/index';
 import { getAllUsers, blockUser, unblockUser, auth } from '../api/firebase';
 import { updateUserRole, updateUserBlockStatus } from '../api/userManagement';
 import { t } from '../utils/translations';
+import { getAvatarSource } from '../utils/avatarUtils';
 
 type UserSearchScreenNavigationProp = StackNavigationProp<RootStackParamList, 'UserSearch'>;
 
@@ -28,6 +29,8 @@ const UserSearchScreen: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+
 
  
   const filteredUsers = useMemo(() => {
@@ -122,7 +125,7 @@ const UserSearchScreen: React.FC = () => {
   const renderUserItem = ({ item }: { item: User }) => (
     <View style={styles.userCard}>
       <Image
-        source={item.avatarUrl ? { uri: item.avatarUrl } : require('../assets/profile1.png')}
+        source={getAvatarSource(item.avatarUrl)}
         style={styles.userAvatar}
       />
       

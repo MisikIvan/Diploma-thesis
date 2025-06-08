@@ -221,19 +221,81 @@ export const FirebaseService = {
  
   viewHistory: {
     addToViewHistory: async (viewHistory: ViewHistory): Promise<string> => {
+      // First, remove any existing entries for this user+product combination to avoid duplicates
+      await FirebaseService.viewHistory.removeExistingViewHistory(viewHistory.userId, viewHistory.productId);
+      
+      // Add the new view history entry
       const docRef = await addDoc(collection(db, 'viewHistory'), viewHistory);
+      
+      // Clean up old entries to maintain max 10 items per user
+      await FirebaseService.viewHistory.cleanupOldViewHistory(viewHistory.userId);
+      
       return docRef.id;
     },
 
-    getUserViewHistory: async (userId: string, maxResults = 50): Promise<ViewHistory[]> => {
+    removeExistingViewHistory: async (userId: string, productId: string): Promise<void> => {
       const q = query(
         collection(db, 'viewHistory'),
         where('userId', '==', userId),
-        orderBy('viewedAt', 'desc'),
-        limit(maxResults)
+        where('productId', '==', productId)
       );
+      
       const querySnapshot = await getDocs(q);
-      return querySnapshot.docs.map(doc => doc.data() as ViewHistory);
+      
+      if (!querySnapshot.empty) {
+        const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+        console.log(`🗑️ Removed ${querySnapshot.docs.length} existing view history entries for user ${userId} and product ${productId}`);
+      }
+    },
+
+    cleanupOldViewHistory: async (userId: string): Promise<void> => {
+      const q = query(
+        collection(db, 'viewHistory'),
+        where('userId', '==', userId),
+        orderBy('viewedAt', 'desc')
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const docs = querySnapshot.docs;
+      
+      // If more than 10 items, delete the oldest ones
+      if (docs.length > 10) {
+        const docsToDelete = docs.slice(10); // Keep first 10 (newest), delete the rest
+        
+        const deletePromises = docsToDelete.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+        
+        console.log(`🧹 Cleaned up ${docsToDelete.length} old view history entries for user ${userId}`);
+      }
+    },
+
+    getUserViewHistory: async (userId: string, maxResults = 10): Promise<ViewHistory[]> => {
+      try {
+        // Try with ordering first (requires index)
+        const q = query(
+          collection(db, 'viewHistory'),
+          where('userId', '==', userId),
+          orderBy('viewedAt', 'desc'),
+          limit(maxResults)
+        );
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => doc.data() as ViewHistory);
+      } catch (error) {
+        console.warn('🔥 Ordered query failed, falling back to simple query:', error);
+        
+        // Fallback: simple query without ordering
+        const simpleQ = query(
+          collection(db, 'viewHistory'),
+          where('userId', '==', userId),
+          limit(maxResults)
+        );
+        const querySnapshot = await getDocs(simpleQ);
+        const results = querySnapshot.docs.map(doc => doc.data() as ViewHistory);
+        
+        // Sort locally by viewedAt (descending)
+        return results.sort((a, b) => new Date(b.viewedAt).getTime() - new Date(a.viewedAt).getTime());
+      }
     },
 
     clearUserViewHistory: async (userId: string): Promise<void> => {

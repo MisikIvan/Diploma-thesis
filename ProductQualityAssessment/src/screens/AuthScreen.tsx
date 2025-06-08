@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { t } from '../utils/translations';
 import { useAppDispatch } from '../redux/hooks';
-import { login, register, googleLogin } from '../redux/slices/userSlice';
+import { login, register, googleLogin, passwordReset } from '../redux/slices/userSlice';
 import { ValidationUtils } from '../utils/validation';
 
 interface AuthScreenProps {
@@ -161,11 +161,23 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
         { text: t('cancel'), style: 'cancel' },
         { 
           text: t('send'), 
-          onPress: () => {
-            Alert.alert(
-              t('resetEmailSent'),
-              t('resetPasswordConfirmation').replace('{email}', email)
-            );
+          onPress: async () => {
+            try {
+              setIsLoading(true);
+              await dispatch(passwordReset(email.toLowerCase().trim())).unwrap();
+              setIsLoading(false);
+              
+              Alert.alert(
+                t('resetEmailSent'),
+                t('resetPasswordConfirmation').replace('{email}', email)
+              );
+            } catch (err: any) {
+              setIsLoading(false);
+              
+              let errorMessage = err.message || t('error');
+              Alert.alert(t('error'), errorMessage);
+              console.error('Password reset error:', err);
+            }
           } 
         }
       ]
@@ -179,7 +191,21 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
       setIsLoading(false);
     } catch (err: any) {
       setIsLoading(false);
-      Alert.alert(t('googleSignInError'), err.message || t('error'));
+      
+      // Handle specific Google Sign-In errors
+      let errorMessage = err.message || t('error');
+      
+      if (err.message?.includes('не налаштований')) {
+        errorMessage = 'Google Sign-In тимчасово недоступний на мобільних пристроях. Використайте вхід через email.';
+      } else if (err.message?.includes('скасовано')) {
+        errorMessage = 'Вхід через Google було скасовано';
+      } else if (err.message?.includes('cancelled')) {
+        errorMessage = 'Авторизація була скасована';
+      } else if (err.message?.includes('network')) {
+        errorMessage = 'Помилка мережі. Перевірте з\'єднання з інтернетом.';
+      }
+      
+      Alert.alert('Google Sign-In', errorMessage);
       console.error('Google sign in error:', err);
     }
   };
@@ -307,8 +333,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ navigation }) => {
         <TouchableOpacity
           style={styles.googleButton}
           onPress={handleGoogleSignIn}
+          disabled={isLoading}
         >
-          <Text style={styles.googleButtonText}>{t('continueWithGoogle')}</Text>
+          {isLoading ? (
+            <ActivityIndicator color="#34572a" size="small" />
+          ) : (
+            <Text style={styles.googleButtonText}>{t('continueWithGoogle')}</Text>
+          )}
         </TouchableOpacity>
 
         <TouchableOpacity

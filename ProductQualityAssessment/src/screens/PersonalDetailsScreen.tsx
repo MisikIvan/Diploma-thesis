@@ -14,7 +14,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { User } from '../types/index';
 import { StorageService } from '../utils/storage';
 import { t } from '../utils/translations';
-import { useAppSelector } from '../redux/hooks';
+import { useAppSelector, useAppDispatch } from '../redux/hooks';
+import { updateUser } from '../redux/slices/userSlice';
 import { updateUserProfile } from '../api/userProfile';
 
 interface PersonalDetailsScreenProps {
@@ -26,6 +27,7 @@ const PersonalDetailsScreen: React.FC<PersonalDetailsScreenProps> = ({ navigatio
   const [isLoading, setIsLoading] = useState(true);
 
   const currentUserFromRedux = useAppSelector(state => state.user.currentUser);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     loadUserData();
@@ -61,6 +63,12 @@ const PersonalDetailsScreen: React.FC<PersonalDetailsScreenProps> = ({ navigatio
     try {
    
       await StorageService.user.saveUser(updatedUser);
+      
+      // Update Redux state if this is the current user
+      if (currentUserFromRedux && updatedUser.userId === currentUserFromRedux.userId) {
+        console.log('🔄 Updating Redux state with personal details');
+        dispatch(updateUser(updatedUser));
+      }
       
     
       if (currentUserFromRedux && 

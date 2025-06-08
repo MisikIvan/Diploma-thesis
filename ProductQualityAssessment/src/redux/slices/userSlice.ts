@@ -5,7 +5,8 @@ import {
   loginWithEmail,
   loginWithGoogle,
   logoutUser,
-  getCurrentUser
+  getCurrentUser,
+  resetPassword
 } from '../../api/firebase';
 
 interface UserState {
@@ -56,12 +57,23 @@ export const checkAuth = createAsyncThunk(
   }
 );
 
+export const passwordReset = createAsyncThunk(
+  'user/passwordReset',
+  async (email: string) => {
+    await resetPassword(email);
+    return email;
+  }
+);
+
 const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
     clearError: (state) => {
       state.error = null;
+    },
+    updateUser: (state, action: PayloadAction<User>) => {
+      state.currentUser = action.payload;
     }
   },
   extraReducers: (builder) => {
@@ -132,9 +144,22 @@ const userSlice = createSlice({
       .addCase(checkAuth.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || 'Auth check failed';
+      })
+      
+      // Password Reset
+      .addCase(passwordReset.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(passwordReset.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(passwordReset.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Password reset failed';
       });
   }
 });
 
-export const { clearError } = userSlice.actions;
+export const { clearError, updateUser } = userSlice.actions;
 export default userSlice.reducer; 

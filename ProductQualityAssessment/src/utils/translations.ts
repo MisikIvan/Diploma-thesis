@@ -104,6 +104,9 @@ export interface TranslationKeys {
   send: string;
   resetEmailSent: string;
   resetPasswordConfirmation: string;
+  passwordResetError: string;
+  userNotFound: string;
+  tooManyResetRequests: string;
   registrationSuccessful: string;
   accountCreated: string;
 
@@ -564,6 +567,7 @@ export interface TranslationKeys {
   authenticationError: string;
   
   // Additional hardcoded strings that need translation
+  accountBlockedCannotSuggestProducts: string;
   editProductAction: string;
   cancelAction: string;
   editAction: string;
@@ -907,6 +911,9 @@ const en: TranslationKeys = {
   send: 'Send',
   resetEmailSent: 'Reset Email Sent',
   resetPasswordConfirmation: 'A password reset link has been sent to {email}',
+  passwordResetError: 'Password reset failed',
+  userNotFound: 'User with this email not found',
+  tooManyResetRequests: 'Too many reset requests. Please try again later',
   registrationSuccessful: 'Registration Successful',
   accountCreated: 'Your account has been created. You can now log in.',
 
@@ -1367,6 +1374,7 @@ const en: TranslationKeys = {
   authenticationError: 'Authentication error',
   
   // Additional hardcoded strings that need translation
+  accountBlockedCannotSuggestProducts: 'Your account is blocked. You cannot suggest new products.',
   editProductAction: 'Edit product',
   cancelAction: 'Cancel',
   editAction: 'Edit',
@@ -1708,6 +1716,9 @@ const uk: TranslationKeys = {
   send: 'Надіслати',
   resetEmailSent: 'Лист для скидання відправлено',
   resetPasswordConfirmation: 'Посилання для скидання пароля надіслано на {email}',
+  passwordResetError: 'Помилка скидання пароля',
+  userNotFound: 'Користувача з таким email не знайдено',
+  tooManyResetRequests: 'Занадто багато запитів на скидання. Спробуйте пізніше',
   registrationSuccessful: 'Реєстрація успішна',
   accountCreated: 'Ваш обліковий запис створено. Тепер ви можете увійти.',
 
@@ -2168,6 +2179,7 @@ const uk: TranslationKeys = {
   authenticationError: 'Помилка аутентифікації',
   
   // Additional hardcoded strings that need translation
+  accountBlockedCannotSuggestProducts: 'Ваш акаунт заблокований. Ви не можете пропонувати нові продукти.',
   editProductAction: 'Редагувати продукт',
   cancelAction: 'Скасувати',
   editAction: 'Редагувати',

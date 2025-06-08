@@ -658,7 +658,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imageScroll}>
             {aiScanImages.map((uri, index) => (
               <View key={index} style={styles.scanImageContainer}>
-                <Image source={{ uri }} style={styles.scanImage} />
+                <Image source={uri && uri.trim() !== '' ? { uri } : require('../assets/logo.png')} style={styles.scanImage} />
                 <TouchableOpacity
                   style={styles.removeImageButton}
                   onPress={() => removeScanImage(index)}
@@ -736,7 +736,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
         <View style={styles.productImagesContainer}>
           {formData.imageUrl && (
             <View style={styles.mainImageContainer}>
-              <Image source={{ uri: formData.imageUrl }} style={styles.mainImage} />
+              <Image source={formData.imageUrl && formData.imageUrl.trim() !== '' ? { uri: formData.imageUrl } : require('../assets/logo.png')} style={styles.mainImage} />
               <TouchableOpacity
                 style={styles.removeImageButton}
                 onPress={() => removeProductImage(-1)}
@@ -750,7 +750,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.additionalImagesScroll}>
             {productImages.map((uri, index) => (
               <View key={index} style={styles.additionalImageContainer}>
-                <Image source={{ uri }} style={styles.additionalImage} />
+                <Image source={uri && uri.trim() !== '' ? { uri } : require('../assets/logo.png')} style={styles.additionalImage} />
                 <TouchableOpacity
                   style={styles.removeImageButton}
                   onPress={() => removeProductImage(index)}

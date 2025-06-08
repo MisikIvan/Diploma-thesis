@@ -1,7 +1,8 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { Product, NutriScoreGrade } from '../../types/index';
+import { Product, NutriScoreGrade, ViewHistory } from '../../types/index';
 import { StorageService } from '../../utils/storage';
 import { getProduct as fetchProductFromFirebase, getAllProducts } from '../../api/firebase';
+import { FirebaseService } from '../../utils/firebase';
 
 interface SearchParams {
   query: string;
@@ -110,28 +111,52 @@ export const loadRecentProducts = createAsyncThunk(
   'products/loadRecentProducts',
   async (userId: string, { rejectWithValue }) => {
     try {
-      const viewHistory = await StorageService.viewHistory.getViewHistory();
-      const userHistory = viewHistory.filter(h => h.userId === userId);
+      console.log('🔥 Loading recent products from Firebase for user:', userId);
       
-   
-      const recentProductIds = userHistory.slice(0, 5).map(h => h.productId);
+      // Load from Firebase instead of AsyncStorage
+      const viewHistory = await FirebaseService.viewHistory.getUserViewHistory(userId, 10);
+      console.log('🔥 Loaded view history from Firebase:', viewHistory.length, 'items');
       
-     
+      // Remove duplicates by productId (keep most recent)
+      const uniqueViewHistory = viewHistory.reduce((acc: ViewHistory[], current: ViewHistory) => {
+        const existingIndex = acc.findIndex(item => item.productId === current.productId);
+        if (existingIndex === -1) {
+          acc.push(current);
+        } else {
+          // Keep the more recent one
+          if (new Date(current.viewedAt) > new Date(acc[existingIndex].viewedAt)) {
+            acc[existingIndex] = current;
+          }
+        }
+        return acc;
+      }, []);
+      
+      // Sort by viewedAt descending and get recent product IDs (last 5)
+      const sortedUniqueHistory = uniqueViewHistory.sort((a, b) => 
+        new Date(b.viewedAt).getTime() - new Date(a.viewedAt).getTime()
+      );
+      
+      const recentProductIds = sortedUniqueHistory.slice(0, 5).map((h: ViewHistory) => h.productId);
+      console.log('🔥 Unique recent product IDs:', recentProductIds);
+      
+      // Load products from Firebase
       const recentProducts: Product[] = [];
       for (const productId of recentProductIds) {
         try {
           const product = await fetchProductFromFirebase(productId);
           if (product) {
             recentProducts.push(product);
+            console.log('🔥 Loaded recent product:', product.name);
           }
         } catch (error) {
           console.warn('Failed to load recent product:', productId, error);
         }
       }
       
+      console.log('🔥 Total unique recent products loaded:', recentProducts.length);
       return recentProducts;
     } catch (error) {
-      console.error('Failed to load recent products from storage:', error);
+      console.error('🔥 Failed to load recent products from Firebase:', error);
       return rejectWithValue('Failed to load recent products');
     }
   }
@@ -141,10 +166,23 @@ export const addToViewHistory = createAsyncThunk(
   'products/addToViewHistory',
   async ({ userId, product }: { userId: string; product: Product }, { rejectWithValue }) => {
     try {
-      await StorageService.viewHistory.addToViewHistory(userId, product);
+      console.log('🔥 Adding to Firebase view history:', product.name, 'for user:', userId);
+      
+      // Create view history entry
+      const viewHistoryEntry: ViewHistory = {
+        historyId: `${userId}_${product.productId}_${Date.now()}`,
+        userId,
+        productId: product.productId,
+        viewedAt: new Date().toISOString()
+      };
+      
+      // Save to Firebase
+      await FirebaseService.viewHistory.addToViewHistory(viewHistoryEntry);
+      console.log('🔥 Successfully added to Firebase view history');
+      
       return product;
     } catch (error) {
-      console.error('Failed to add product to view history:', error);
+      console.error('🔥 Failed to add product to Firebase view history:', error);
       return rejectWithValue('Failed to save to view history');
     }
   }

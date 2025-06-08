@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { AirbnbRating } from 'react-native-ratings';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
 import { addNewComment, fetchProductComments, removeComment } from '../redux/slices/commentsSlice';
@@ -20,6 +20,8 @@ const CommentSection: React.FC<CommentSectionProps> = ({ productId }) => {
   const [newComment, setNewComment] = useState('');
   const [rating, setRating] = useState(0);
   
+  const MAX_COMMENT_LENGTH = 250;
+  
   useEffect(() => {
     if (productId) {
       dispatch(fetchProductComments(productId)).then((action) => {
@@ -31,6 +33,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({ productId }) => {
   
   const comments = productComments[productId] || [];
   
+  const handleCommentChange = (text: string) => {
+    if (text.length <= MAX_COMMENT_LENGTH) {
+      setNewComment(text);
+    }
+  };
+
   const handleAddComment = () => {
     if (!currentUser) {
       Alert.alert(t('error'), t('featureNotImplemented'));
@@ -46,6 +54,16 @@ const CommentSection: React.FC<CommentSectionProps> = ({ productId }) => {
     
     if (rating === 0) {
       Alert.alert(t('error'), t('ratingRequired'));
+      return;
+    }
+
+    if (newComment.trim().length === 0) {
+      Alert.alert(t('error'), 'Comment cannot be empty');
+      return;
+    }
+
+    if (newComment.length > MAX_COMMENT_LENGTH) {
+      Alert.alert(t('error'), `Comment cannot exceed ${MAX_COMMENT_LENGTH} characters`);
       return;
     }
     
@@ -126,35 +144,44 @@ const CommentSection: React.FC<CommentSectionProps> = ({ productId }) => {
     return (
       <View style={styles.commentContainer} key={commentId}>
         <View style={styles.commentHeader}>
-          <Text style={styles.userName}>{item.userName}</Text>
-          <View style={styles.ratingContainer}>
-            <AirbnbRating
-              count={5}
-              defaultRating={item.rating}
-              size={12}
-              showRating={false}
-              isDisabled
-            />
+          <View style={styles.userInfo}>
+            <View style={styles.userAvatar}>
+              <Text style={styles.avatarText}>
+                {item.userName.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+            <View style={styles.userDetails}>
+              <Text style={styles.userName}>{item.userName}</Text>
+              <View style={styles.ratingRow}>
+                <AirbnbRating
+                  count={5}
+                  defaultRating={item.rating}
+                  size={10}
+                  showRating={false}
+                  isDisabled
+                />
+                <Text style={styles.commentDate}>
+                  {new Date(item.createdAt).toLocaleDateString()}
+                </Text>
+              </View>
+            </View>
           </View>
+          
+          {isAdmin && (
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => {
+                const safeCommentId = commentId;
+                console.log('CommentID при натисканні на видалення:', safeCommentId, typeof safeCommentId);
+                handleDeleteComment(safeCommentId);
+              }}
+            >
+              <Text style={styles.deleteButtonText}>×</Text>
+            </TouchableOpacity>
+          )}
         </View>
         
         <Text style={styles.commentText}>{item.text}</Text>
-        <Text style={styles.commentDate}>
-          {new Date(item.createdAt).toLocaleDateString()}
-        </Text>
-        
-        {isAdmin && (
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => {
-              const safeCommentId = commentId;
-              console.log('CommentID при натисканні на видалення:', safeCommentId, typeof safeCommentId);
-              handleDeleteComment(safeCommentId);
-            }}
-          >
-            <Text style={styles.deleteButtonText}>{t('deleteComment')}</Text>
-          </TouchableOpacity>
-        )}
       </View>
     );
   };
@@ -178,18 +205,32 @@ const CommentSection: React.FC<CommentSectionProps> = ({ productId }) => {
             />
           </View>
           
-          <TextInput
-            style={styles.commentInput}
-            placeholder={t('commentPlaceholder')}
-            value={newComment}
-            onChangeText={setNewComment}
-            multiline
-          />
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.commentInput}
+              placeholder={t('commentPlaceholder')}
+              value={newComment}
+              onChangeText={handleCommentChange}
+              multiline
+              maxLength={MAX_COMMENT_LENGTH}
+            />
+            <View style={styles.characterCounter}>
+              <Text style={[
+                styles.characterCountText,
+                newComment.length > MAX_COMMENT_LENGTH * 0.9 && styles.characterCountWarning
+              ]}>
+                {newComment.length}/{MAX_COMMENT_LENGTH}
+              </Text>
+            </View>
+          </View>
           
           <TouchableOpacity
-            style={styles.submitButton}
+            style={[
+              styles.submitButton,
+              (loading || newComment.trim() === '' || rating === 0 || newComment.length > MAX_COMMENT_LENGTH) && styles.submitButtonDisabled
+            ]}
             onPress={handleAddComment}
-            disabled={loading || newComment.trim() === '' || rating === 0}
+            disabled={loading || newComment.trim() === '' || rating === 0 || newComment.length > MAX_COMMENT_LENGTH}
           >
             <Text style={styles.submitButtonText}>{t('submitComment')}</Text>
           </TouchableOpacity>
@@ -197,7 +238,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({ productId }) => {
       )}
       
       <View style={styles.commentsListContainer}>
-        <Text style={styles.commentsListTitle}>{t('allComments')}</Text>
+        <View style={styles.commentsHeader}>
+          <Text style={styles.commentsListTitle}>{t('allComments')}</Text>
+          {comments.length > 3 && (
+            <Text style={styles.scrollHint}>↕️ Scroll to view all</Text>
+          )}
+        </View>
         
         {comments.length === 0 ? (
           <View style={styles.noCommentsContainer}>
@@ -205,9 +251,15 @@ const CommentSection: React.FC<CommentSectionProps> = ({ productId }) => {
             <Text style={styles.beFirstText}>{t('beFirstToComment')}</Text>
           </View>
         ) : (
-          <View style={styles.commentsList}>
+          <ScrollView 
+            style={styles.commentsList}
+            showsVerticalScrollIndicator={true}
+            nestedScrollEnabled={true}
+            indicatorStyle="black"
+            scrollIndicatorInsets={{ right: 2 }}
+          >
             {comments.map(item => renderComment(item))}
-          </View>
+          </ScrollView>
         )}
       </View>
     </View>
@@ -225,16 +277,16 @@ const styles = StyleSheet.create({
     color: '#34572a',
   },
   addCommentContainer: {
-    marginBottom: 24,
-    padding: 20,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 16,
+    marginBottom: 20,
+    padding: 18,
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: '#e9ecef',
-    shadowColor: '#000',
+    borderColor: '#e8e8e8',
+    shadowColor: '#34572a',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
     elevation: 3,
   },
   addCommentTitle: {
@@ -253,6 +305,9 @@ const styles = StyleSheet.create({
     color: '#666',
     fontWeight: '500',
   },
+  inputContainer: {
+    marginTop: 8,
+  },
   commentInput: {
     borderWidth: 1,
     borderColor: '#ddd',
@@ -260,9 +315,20 @@ const styles = StyleSheet.create({
     padding: 12,
     height: 100,
     textAlignVertical: 'top',
-    marginTop: 8,
     backgroundColor: '#fff',
     fontSize: 14,
+  },
+  characterCounter: {
+    alignItems: 'flex-end',
+    marginTop: 4,
+  },
+  characterCountText: {
+    fontSize: 12,
+    color: '#666',
+  },
+  characterCountWarning: {
+    color: '#ff6b35',
+    fontWeight: '500',
   },
   submitButton: {
     backgroundColor: '#5d8402',
@@ -276,6 +342,11 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
+  submitButtonDisabled: {
+    backgroundColor: '#cccccc',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
   submitButtonText: {
     color: 'white',
     fontWeight: 'bold',
@@ -284,65 +355,121 @@ const styles = StyleSheet.create({
   commentsListContainer: {
     marginTop: 8,
   },
+  commentsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
   commentsListTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 16,
     color: '#34572a',
   },
+  scrollHint: {
+    fontSize: 12,
+    color: '#888',
+    fontStyle: 'italic',
+  },
   commentsList: {
-    maxHeight: 400,
+    maxHeight: 500,
+    paddingHorizontal: 6,
+    marginHorizontal: -6,
+    backgroundColor: '#fafafa',
+    borderRadius: 12,
+    paddingVertical: 8,
   },
   commentContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    marginBottom: 8,
     padding: 16,
-    borderRadius: 12,
-    backgroundColor: '#f8f9fa',
-    marginBottom: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#34572a',
+    shadowColor: '#34572a',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
   },
   commentHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    flex: 1,
+  },
+  userAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#34572a',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginRight: 12,
+  },
+  avatarText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  userDetails: {
+    flex: 1,
   },
   userName: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: '#34572a',
+    fontWeight: '600',
+    fontSize: 15,
+    color: '#2c2c2c',
+    marginBottom: 4,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   commentText: {
     fontSize: 14,
-    marginTop: 8,
     lineHeight: 20,
-    color: '#333',
+    color: '#4a4a4a',
+    marginTop: 4,
   },
   commentDate: {
-    color: '#888',
-    fontSize: 12,
-    marginTop: 8,
+    color: '#999',
+    fontSize: 11,
+    marginLeft: 8,
+    fontWeight: '400',
   },
   deleteButton: {
-    alignSelf: 'flex-end',
-    padding: 8,
-    marginTop: 8,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#dc3545',
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#ffebee',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
   },
   deleteButtonText: {
-    color: '#dc3545',
-    fontSize: 12,
-    fontWeight: '500',
+    color: '#f44336',
+    fontSize: 16,
+    fontWeight: 'bold',
+    lineHeight: 16,
   },
   noCommentsContainer: {
     alignItems: 'center',
-    padding: 32,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 16,
+    padding: 40,
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
     marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+    shadowColor: '#34572a',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
   },
   noCommentsText: {
     fontSize: 16,

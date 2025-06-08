@@ -15,6 +15,7 @@ import { createSubmission } from '../api/firebase';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types/navigation';
 import { getAllProducts } from '../api/firebase';
+import { APP_CONSTANTS } from '../utils/config';
 import { StorageService } from '../utils/storage';
 import { showSuccess, showError, showSubmitSuccess, showNetworkError } from '../utils/alerts';
 import { Colors, Spacing, Typography, ComponentStyles, Shadows } from '../utils/theme';
@@ -115,18 +116,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       if (showLoader) setIsLoading(true);
       setError(null);
       
-      const fetchedProducts = await getAllProducts();
+      // Load only 20 latest products for home screen
+      const fetchedProducts = await getAllProducts(APP_CONSTANTS.MAX_HOME_PRODUCTS);
       setAllProducts(fetchedProducts);
-      
-    
-      const recent = await StorageService.viewHistory.getViewHistory();
-    
-      if (currentUser?.userId) {
-        const userRecent = recent
-          .filter(h => h.userId === currentUser.userId)
-          .slice(0, 5);
-        
-      }
+      console.log(`🏠 Home screen loaded ${fetchedProducts.length} latest products`);
     } catch (err: any) {
       console.error('Error loading products:', err);
       setError(err.message || 'Failed to load products');
@@ -235,9 +228,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       
       // Add to view history with enhanced logging
       if (currentUser?.userId) {
-        console.log('Adding to view history for user:', currentUser.userId);
-        await StorageService.viewHistory.addToViewHistory(currentUser.userId, product);
-        console.log('Successfully added to view history');
+        console.log('🔥 Adding to view history for user:', currentUser.userId);
+        await dispatch(addToViewHistory({ userId: currentUser.userId, product }));
+        console.log('🔥 Successfully added to view history via Redux');
       } else {
         console.log('No current user, skipping view history');
       }
@@ -267,6 +260,17 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       navigation.navigate('Auth');
       return;
     }
+    
+    // Check if user is blocked
+    if (currentUser.isBlocked) {
+      Alert.alert(
+        t('accessDenied'), 
+        t('accountBlockedCannotSuggestProducts'),
+        [{ text: t('ok'), style: 'default' }]
+      );
+      return;
+    }
+    
     setShowSubmissionForm(true);
   };
 
@@ -335,7 +339,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         />
       )}
 
-      {!localSearchQuery.trim() && (
+      {!localSearchQuery.trim() && currentUser && !currentUser.isBlocked && (
         <SuggestProductBanner onPress={handleSuggestProduct} />
       )}
     </View>

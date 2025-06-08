@@ -13,7 +13,8 @@ import { t, getHeightText } from '../utils/translations';
 import PickerWheel from '../components/PickerWheel';
 import { RootStackParamList } from '../types/navigation';
 import { StorageService } from '../utils/storage';
-import { useAppSelector } from '../redux/hooks';
+import { useAppSelector, useAppDispatch } from '../redux/hooks';
+import { updateUser } from '../redux/slices/userSlice';
 import { updateUserProfile } from '../api/userProfile';
 
 type HeightPickerScreenProps = StackScreenProps<RootStackParamList, 'HeightPicker'>;
@@ -24,6 +25,7 @@ const HeightPickerScreen: React.FC<HeightPickerScreenProps> = ({ navigation, rou
   const [isLoading, setIsLoading] = useState(false);
 
   const currentUserFromRedux = useAppSelector(state => state.user.currentUser);
+  const dispatch = useAppDispatch();
 
 
   const generateHeightData = () => {
@@ -56,6 +58,12 @@ const HeightPickerScreen: React.FC<HeightPickerScreenProps> = ({ navigation, rou
 
    
       await StorageService.user.saveUser(updatedUser);
+      
+      // Update Redux state if this is the current user
+      if (currentUserFromRedux && updatedUser.userId === currentUserFromRedux.userId) {
+        console.log('🔄 Updating Redux state with new height data');
+        dispatch(updateUser(updatedUser));
+      }
       
   
       if (currentUserFromRedux && 

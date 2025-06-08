@@ -1,11 +1,12 @@
 import { initializeApp } from 'firebase/app';
-import {   getAuth,  initializeAuth,  Auth,  createUserWithEmailAndPassword,   signInWithEmailAndPassword,   signOut,   GoogleAuthProvider,   signInWithPopup,  onAuthStateChanged,  updateProfile,  User as FirebaseUser,  signInWithCredential} from 'firebase/auth';
-import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, query, where, getDocs, deleteDoc, addDoc, Timestamp } from 'firebase/firestore';
+import {   getAuth,  initializeAuth,  Auth,  createUserWithEmailAndPassword,   signInWithEmailAndPassword,   signOut,   GoogleAuthProvider,   signInWithPopup,  onAuthStateChanged,  updateProfile,  User as FirebaseUser,  signInWithCredential,  sendPasswordResetEmail} from 'firebase/auth';
+import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, query, where, getDocs, deleteDoc, addDoc, Timestamp, orderBy, limit } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { FIREBASE_CONFIG } from '../utils/config';
+import { FIREBASE_CONFIG, GOOGLE_AUTH_CONFIG } from '../utils/config';
 import { User, Product, Comment, ProductSubmission } from '../types/index';
 import { Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
+import * as AuthSession from 'expo-auth-session';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -33,9 +34,26 @@ const googleProvider = new GoogleAuthProvider();
 WebBrowser.maybeCompleteAuthSession();
 
 
+const clearPreviousUserData = async () => {
+  try {
+    // Clear all user-specific data before new login
+    await AsyncStorage.multiRemove([
+      'ProductQualityApp_user',        // Previous user profile data
+      'ProductQualityApp_favorites',   // Previous user favorites
+      'ProductQualityApp_viewHistory', // Previous user view history
+    ]);
+    console.log('🧹 Previous user data cleared');
+  } catch (error) {
+    console.error('Error clearing previous user data:', error);
+  }
+};
+
 const storeUserInStorage = async (user: FirebaseUser | null) => {
   try {
     if (user) {
+      // Clear previous user data before storing new user
+      await clearPreviousUserData();
+      
       await AsyncStorage.setItem('auth_user', JSON.stringify({
         uid: user.uid,
         email: user.email,
@@ -135,17 +153,94 @@ export const loginWithGoogle = async (): Promise<User> => {
       const user = result.user;      
       console.log('Successfully logged in with Google on web:', user.uid);
             
-         
       await storeUserInStorage(user);
-            
       return await handleGoogleUser(user);    
     } else {      
-   
-      console.log('Google login on mobile not implemented in this version');      
-      throw new Error('Google login is currently only supported on web. Please use email login on mobile.');    
+      console.log('Using mobile Google login flow with AuthSession');
+      
+      // Mobile Google Sign-In using Expo AuthSession
+      const redirectUri = AuthSession.makeRedirectUri({
+        scheme: 'productquality',
+        path: 'auth'
+      });
+      
+      console.log('Redirect URI:', redirectUri);
+      
+      // Отримуємо Google Client ID з конфігурації
+      const googleClientId = GOOGLE_AUTH_CONFIG.clientId;
+      
+      if (!googleClientId) {
+        throw new Error('Google Client ID not configured. Please set EXPO_PUBLIC_GOOGLE_CLIENT_ID in environment variables.');
+      }
+      
+      const request = new AuthSession.AuthRequest({
+        clientId: googleClientId,
+        scopes: ['openid', 'profile', 'email'],
+        redirectUri,
+        responseType: AuthSession.ResponseType.Code,
+        extraParams: {
+          access_type: 'offline',
+        },
+      });
+
+      const result = await request.promptAsync({
+        authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+      });
+
+      console.log('AuthSession result:', result);
+
+      if (result.type === 'success' && result.params.code) {
+        // Exchange authorization code for access token
+        const tokenResponse = await AuthSession.exchangeCodeAsync(
+          {
+            clientId: googleClientId,
+            code: result.params.code,
+            redirectUri,
+            extraParams: {
+              code_verifier: request.codeVerifier || '',
+            },
+          },
+          {
+            tokenEndpoint: 'https://oauth2.googleapis.com/token',
+          }
+        );
+
+        console.log('Token response:', tokenResponse);
+
+        if (tokenResponse.accessToken) {
+          // Get user info from Google
+          const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: {
+              Authorization: `Bearer ${tokenResponse.accessToken}`,
+            },
+          });
+
+          const userInfo = await userInfoResponse.json();
+          console.log('Google user info:', userInfo);
+
+          // Create Firebase custom token or sign in with credential
+          const credential = GoogleAuthProvider.credential(tokenResponse.idToken, tokenResponse.accessToken);
+          const firebaseResult = await signInWithCredential(auth, credential);
+          
+          await storeUserInStorage(firebaseResult.user);
+          return await handleGoogleUser(firebaseResult.user);
+        } else {
+          throw new Error('Failed to get access token from Google');
+        }
+      } else {
+        throw new Error('Google authentication was cancelled or failed');
+      }
     }  
-  } catch (error) {    
-    console.error('Error logging in with Google:', error);    
+  } catch (error: any) {    
+    console.error('Error logging in with Google:', error);
+    
+    // Provide user-friendly error messages
+    if (error.message?.includes('Client ID not configured')) {
+      throw new Error('Google Sign-In не налаштований для цієї платформи. Будь ласка, використайте вхід через email.');
+    } else if (error.message?.includes('cancelled')) {
+      throw new Error('Вхід через Google було скасовано');
+    }
+    
     throw error;  
   }
 };
@@ -190,11 +285,43 @@ const handleGoogleUser = async (user: FirebaseUser): Promise<User> => {
   }
 };
 
+export const resetPassword = async (email: string): Promise<void> => {
+  try {
+    console.log('Sending password reset email to:', email);
+    await sendPasswordResetEmail(auth, email);
+    console.log('Password reset email sent successfully');
+  } catch (error: any) {
+    console.error('Error sending password reset email:', error);
+    
+    // Handle specific Firebase errors
+    if (error.code === 'auth/user-not-found') {
+      throw new Error('Користувача з таким email не знайдено');
+    } else if (error.code === 'auth/invalid-email') {
+      throw new Error('Невірний формат email адреси');
+    } else if (error.code === 'auth/too-many-requests') {
+      throw new Error('Занадто багато запитів. Спробуйте пізніше');
+    } else if (error.code === 'auth/network-request-failed') {
+      throw new Error('Помилка мережі. Перевірте з\'єднання з інтернетом');
+    }
+    
+    throw error;
+  }
+};
+
 export const logoutUser = async (): Promise<void> => {
   try {
     await signOut(auth);
    
     await storeUserInStorage(null);
+    
+    
+    await AsyncStorage.multiRemove([
+      'ProductQualityApp_user',        // User profile data
+      'ProductQualityApp_favorites',   // User favorites
+      'auth_user'                     
+    ]);
+    
+    console.log('✅ Local user data cleared from AsyncStorage (view history preserved in Firebase)');
   } catch (error) {
     console.error('Error signing out:', error);
     throw error;
@@ -383,13 +510,28 @@ export const getProduct = async (productId: string): Promise<Product | null> => 
   }
 };
 
-export const getAllProducts = async (): Promise<Product[]> => {
+export const getAllProducts = async (maxResults?: number): Promise<Product[]> => {
   try {
     console.log('🔥 getAllProducts: Starting Firebase fetch...');
     const productsCollection = collection(db, 'products');
     console.log('🔥 getAllProducts: Collection reference created');
     
-    const productsSnapshot = await getDocs(productsCollection);
+    let q;
+    if (maxResults) {
+      // For home screen: get latest products with limit
+      q = query(
+        productsCollection,
+        orderBy('createdAt', 'desc'),
+        limit(maxResults)
+      );
+      console.log('🔥 getAllProducts: Limited query created with limit:', maxResults);
+    } else {
+      // For other screens: get all products
+      q = query(productsCollection);
+      console.log('🔥 getAllProducts: Unlimited query created');
+    }
+    
+    const productsSnapshot = await getDocs(q);
     console.log('🔥 getAllProducts: Snapshot received, size:', productsSnapshot.size);
     
     const products = productsSnapshot.docs.map(doc => {
@@ -453,9 +595,6 @@ export const addComment = async (
     };
     
     await updateDoc(docRef, { commentId: docRef.id });
-    
-   
-    await updateProductRating(productId);
     
     return commentWithId;
   } catch (error) {
@@ -555,15 +694,7 @@ export const deleteComment = async (commentId: string, adminId: string): Promise
   
     }
     
-    try {
-    
-      if (comment.productId) {
-        await updateProductRating(comment.productId);
-      }
-    } catch (ratingError) {
-      console.error('Error updating product rating:', ratingError);
-      
-    }
+    // Rating functionality removed - comments now only have visual stars
     
     return;
   } catch (error) {
@@ -573,37 +704,7 @@ export const deleteComment = async (commentId: string, adminId: string): Promise
 };
 
 
-const updateProductRating = async (productId: string): Promise<void> => {
-  try {
-    const commentsQuery = query(
-      collection(db, 'comments'), 
-      where('productId', '==', productId),
-      where('isDeleted', '==', false)
-    );
-    const commentsSnapshot = await getDocs(commentsQuery);
-    const comments = commentsSnapshot.docs.map(doc => doc.data() as Comment);
-    
-    if (comments.length === 0) {
-      const productRef = doc(db, 'products', productId);
-      await updateDoc(productRef, {
-        ratingCount: 0
-      });
-      return;
-    }
-    
-    const totalRating = comments.reduce((sum, comment) => sum + comment.rating, 0);
-    const averageRating = totalRating / comments.length;
-    
-    const productRef = doc(db, 'products', productId);
-    await updateDoc(productRef, {
-      averageRating,
-      ratingCount: comments.length
-    });
-  } catch (error) {
-    console.error('Error updating product rating:', error);
-    throw error;
-  }
-};
+
 
 
 export const uploadProductImage = async (imageFile: File): Promise<string> => {

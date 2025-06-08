@@ -13,7 +13,8 @@ import { t, getAgeText } from '../utils/translations';
 import PickerWheel from '../components/PickerWheel';
 import { RootStackParamList } from '../types/navigation';
 import { StorageService } from '../utils/storage';
-import { useAppSelector } from '../redux/hooks';
+import { useAppSelector, useAppDispatch } from '../redux/hooks';
+import { updateUser } from '../redux/slices/userSlice';
 import { updateUserProfile } from '../api/userProfile';
 
 type AgePickerScreenProps = StackScreenProps<RootStackParamList, 'AgePicker'>;
@@ -24,6 +25,7 @@ const AgePickerScreen: React.FC<AgePickerScreenProps> = ({ navigation, route }) 
   const [isLoading, setIsLoading] = useState(false);
 
   const currentUserFromRedux = useAppSelector(state => state.user.currentUser);
+  const dispatch = useAppDispatch();
 
   const generateAgeData = () => {
     const ages = [];
@@ -52,6 +54,12 @@ const AgePickerScreen: React.FC<AgePickerScreenProps> = ({ navigation, route }) 
       updatedUser.age = selectedAge;
 
       await StorageService.user.saveUser(updatedUser);
+      
+      // Update Redux state if this is the current user
+      if (currentUserFromRedux && updatedUser.userId === currentUserFromRedux.userId) {
+        console.log('🔄 Updating Redux state with new age data');
+        dispatch(updateUser(updatedUser));
+      }
       
       if (currentUserFromRedux && 
           updatedUser.userId !== 'user123' && 

@@ -252,18 +252,31 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
     } catch (error) {
       console.error('❌ AI Analysis error:', error);
       
-      try {
-        setAnalysisStep(t('usingBackupAnalysis'));
-        const fallbackData = fallbackProductAnalysis('');
-        setAnalysisResult(fallbackData);
-        
-        console.log('🔄 Auto-filling form with fallback result:', fallbackData);
-        const autoFilledData = autoFillFormFromAnalysis(fallbackData, formData);
-        applyAnalysisResults(autoFilledData);
-        console.log('✅ Fallback analysis applied');
-      } catch (fallbackError) {
-        console.error('❌ Fallback analysis also failed:', fallbackError);
-        Alert.alert('Помилка аналізу', 'Не вдалося проаналізувати зображення. Заповніть форму вручну.');
+      // Перевірка чи це помилка нехарчового продукту
+      const errorMessage = error instanceof Error ? error.message : '';
+      if (errorMessage.includes('етикетку харчового продукту') || 
+          errorMessage.includes('харчового продукту') ||
+          errorMessage.includes('food product')) {
+        Alert.alert(
+          'Не харчовий продукт',
+          'Схоже, що зображення не містить етикетки харчового продукту. Будь ласка, додайте фото упаковки їжі з таблицею харчової цінності.',
+          [{ text: 'Зрозуміло', style: 'default' }]
+        );
+      } else {
+        // Інші помилки - пробуємо fallback
+        try {
+          setAnalysisStep(t('usingBackupAnalysis'));
+          const fallbackData = fallbackProductAnalysis('');
+          setAnalysisResult(fallbackData);
+          
+          console.log('🔄 Auto-filling form with fallback result:', fallbackData);
+          const autoFilledData = autoFillFormFromAnalysis(fallbackData, formData);
+          applyAnalysisResults(autoFilledData);
+          console.log('✅ Fallback analysis applied');
+        } catch (fallbackError) {
+          console.error('❌ Fallback analysis also failed:', fallbackError);
+          Alert.alert('Помилка аналізу', 'Не вдалося проаналізувати зображення. Заповніть форму вручну.');
+        }
       }
     } finally {
       setIsAnalyzing(false);
@@ -568,7 +581,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                   <ScrollView horizontal style={styles.imageScroll} showsHorizontalScrollIndicator={false}>
                     {aiScanImages.map((uri, index) => (
                       <View key={index} style={styles.scanImageContainer}>
-                        <Image source={{ uri }} style={styles.scanImage} />
+                        <Image source={uri && uri.trim() !== '' ? { uri } : require('../assets/logo.png')} style={styles.scanImage} />
                         <Text style={styles.imageNumber}>{index + 1}</Text>
                         <TouchableOpacity
                           style={styles.removeImageButton}
@@ -748,7 +761,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                 <Text style={styles.inputLabel}>Основне зображення *</Text>
                 {formData.imageUrl ? (
                   <View style={styles.mainImageContainer}>
-                    <Image source={{ uri: formData.imageUrl }} style={styles.mainImage} />
+                    <Image source={formData.imageUrl && formData.imageUrl.trim() !== '' ? { uri: formData.imageUrl } : require('../assets/logo.png')} style={styles.mainImage} />
                     <View style={styles.imageActions}>
                       <TouchableOpacity style={styles.imageActionButton} onPress={takeProductPhoto}>
                         <Ionicons name="camera" size={16} color={Colors.text.onPrimary} />
@@ -789,7 +802,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({
                 <ScrollView horizontal style={styles.additionalImagesScroll} showsHorizontalScrollIndicator={false}>
                   {formData.additionalImages.map((uri, index) => (
                     <View key={index} style={styles.additionalImageContainer}>
-                      <Image source={{ uri }} style={styles.additionalImage} />
+                      <Image source={uri && uri.trim() !== '' ? { uri } : require('../assets/logo.png')} style={styles.additionalImage} />
                       <TouchableOpacity
                         style={styles.removeAdditionalImageButton}
                         onPress={() => removeAdditionalImage(index)}

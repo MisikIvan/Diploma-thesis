@@ -18,6 +18,11 @@ export const FIREBASE_CONFIG = {
   measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || ""
 };
 
+export const GOOGLE_AUTH_CONFIG = {
+  clientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID || process.env.EXPO_PUBLIC_FIREBASE_WEB_CLIENT_ID || "",
+  webClientId: process.env.EXPO_PUBLIC_FIREBASE_WEB_CLIENT_ID || "",
+};
+
 export const STORAGE_KEYS = {
   USER: 'ProductQualityApp_user',
   FAVORITES: 'ProductQualityApp_favorites',
@@ -26,8 +31,9 @@ export const STORAGE_KEYS = {
 };
 
 export const APP_CONSTANTS = {
-  MAX_VIEW_HISTORY: parseInt(process.env.EXPO_PUBLIC_MAX_VIEW_HISTORY || '50'), 
+  MAX_VIEW_HISTORY: parseInt(process.env.EXPO_PUBLIC_MAX_VIEW_HISTORY || '10'), // Changed to 10
   MAX_RECENT_PRODUCTS: parseInt(process.env.EXPO_PUBLIC_MAX_RECENT_PRODUCTS || '5'), 
   DEBOUNCE_SEARCH: parseInt(process.env.EXPO_PUBLIC_DEBOUNCE_SEARCH || '300'), 
   DEFAULT_IMAGE: process.env.EXPO_PUBLIC_DEFAULT_IMAGE || 'https://via.placeholder.com/300x300?text=No+Image',
+  MAX_HOME_PRODUCTS: parseInt(process.env.EXPO_PUBLIC_MAX_HOME_PRODUCTS || '20'), // New limit for home screen
 }; 

@@ -216,7 +216,10 @@ const ProductSubmissionsScreen: React.FC<ProductSubmissionsScreenProps> = ({
     >
       <View style={styles.submissionHeader}>
         <Image 
-          source={{ uri: item.productData.imageUrl }}
+          source={item.productData.imageUrl && item.productData.imageUrl.trim() !== '' 
+            ? { uri: item.productData.imageUrl } 
+            : require('../assets/logo.png')
+          }
           style={styles.submissionImage}
           defaultSource={require('../assets/logo.png')}
         />

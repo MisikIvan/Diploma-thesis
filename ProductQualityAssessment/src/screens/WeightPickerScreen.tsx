@@ -13,7 +13,8 @@ import { t, getWeightText } from '../utils/translations';
 import PickerWheel from '../components/PickerWheel';
 import { RootStackParamList } from '../types/navigation';
 import { StorageService } from '../utils/storage';
-import { useAppSelector } from '../redux/hooks';
+import { useAppSelector, useAppDispatch } from '../redux/hooks';
+import { updateUser } from '../redux/slices/userSlice';
 import { updateUserProfile } from '../api/userProfile';
 
 type WeightPickerScreenProps = StackScreenProps<RootStackParamList, 'WeightPicker'>;
@@ -24,6 +25,7 @@ const WeightPickerScreen: React.FC<WeightPickerScreenProps> = ({ navigation, rou
   const [isLoading, setIsLoading] = useState(false);
 
   const currentUserFromRedux = useAppSelector(state => state.user.currentUser);
+  const dispatch = useAppDispatch();
 
   
   const generateWeightData = () => {
@@ -68,6 +70,12 @@ const WeightPickerScreen: React.FC<WeightPickerScreenProps> = ({ navigation, rou
 
     
       await StorageService.user.saveUser(updatedUser);
+      
+      // Update Redux state if this is the current user
+      if (currentUserFromRedux && updatedUser.userId === currentUserFromRedux.userId) {
+        console.log('🔄 Updating Redux state with new weight data');
+        dispatch(updateUser(updatedUser));
+      }
       
    
       if (currentUserFromRedux && 

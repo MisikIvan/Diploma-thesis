@@ -12,7 +12,8 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { t } from '../utils/translations';
 import { RootStackParamList } from '../types/navigation';
 import { StorageService } from '../utils/storage';
-import { useAppSelector } from '../redux/hooks';
+import { useAppSelector, useAppDispatch } from '../redux/hooks';
+import { updateUser } from '../redux/slices/userSlice';
 import { updateUserProfile } from '../api/userProfile';
 
 type GenderPickerScreenProps = StackScreenProps<RootStackParamList, 'GenderPicker'>;
@@ -23,6 +24,7 @@ const GenderPickerScreen: React.FC<GenderPickerScreenProps> = ({ navigation, rou
   const [isLoading, setIsLoading] = useState(false);
 
   const currentUserFromRedux = useAppSelector(state => state.user.currentUser);
+  const dispatch = useAppDispatch();
 
   const genderOptions = [
     { key: 'male', label: t('male'), icon: 'man' },
@@ -46,6 +48,12 @@ const GenderPickerScreen: React.FC<GenderPickerScreenProps> = ({ navigation, rou
 
     
       await StorageService.user.saveUser(updatedUser);
+      
+      // Update Redux state if this is the current user
+      if (currentUserFromRedux && updatedUser.userId === currentUserFromRedux.userId) {
+        console.log('🔄 Updating Redux state with new gender data');
+        dispatch(updateUser(updatedUser));
+      }
       
     
       if (currentUserFromRedux && 

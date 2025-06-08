@@ -369,9 +369,9 @@ const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ route }) => {
         
       case 'reviews':
         return (
-          <ScrollView style={styles.tabContainer} showsVerticalScrollIndicator={false}>
+          <View style={styles.tabContainer}>
             <CommentSection productId={currentProduct.productId} />
-          </ScrollView>
+          </View>
         );
         
       default:

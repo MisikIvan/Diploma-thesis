@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   Text,
@@ -21,8 +21,9 @@ import LanguageSelector from '../components/LanguageSelector';
 import AvatarSelector from '../components/AvatarSelector';
 import BMIIndicator from '../components/BMIIndicator';
 import { useAppDispatch, useAppSelector } from '../redux/hooks';
-import { logout } from '../redux/slices/userSlice';
+import { logout, updateUser } from '../redux/slices/userSlice';
 import { updateUserProfile } from '../api/userProfile';
+import { getAvatarSource } from '../utils/avatarUtils';
 
 interface ProfileScreenProps {
   navigation: any;
@@ -38,46 +39,67 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const dispatch = useAppDispatch();
   const currentUserFromRedux = useAppSelector(state => state.user.currentUser);
 
-  const getAvatarSource = (avatarUrl?: string) => {
-    if (!avatarUrl) return require('../assets/profile1.png');
-    
-    if (avatarUrl.includes('profile') && (avatarUrl.includes('.png') || avatarUrl.includes('.jpg'))) {
-      switch (avatarUrl) {
-        case 'profile1.png': return require('../assets/profile1.png');
-        case 'profile2.png': return require('../assets/profile2.png');
-        case 'profile3.png': return require('../assets/profile3.png');
-        case 'profile4.png': return require('../assets/profile4.png');
-        case 'profile5.png': return require('../assets/profile5.png');
-        case 'profile6.png': return require('../assets/profile6.png');
-        case 'profile-currents.jpg': return require('../assets/profile-currents.jpg');
-        default: return require('../assets/profile1.png');
-      }
-    }
-    
-    return { uri: avatarUrl };
-  };
+
 
   useEffect(() => {
     loadUserData();
   }, []);
 
+  // Add effect to listen to Redux state changes
+  useEffect(() => {
+    if (currentUserFromRedux) {
+      console.log('🔄 Redux state changed, updating ProfileScreen');
+      setUser(currentUserFromRedux);
+    }
+  }, [currentUserFromRedux]);
+
+  // Force immediate update when Redux state changes (before render)
+  useLayoutEffect(() => {
+    if (currentUserFromRedux && currentUserFromRedux !== user) {
+      console.log('⚡ Force updating user state immediately');
+      setUser(currentUserFromRedux);
+    }
+  }, [currentUserFromRedux]);
+
   useFocusEffect(
     React.useCallback(() => {
+      console.log('🎯 Screen focused, checking for updates...');
       
-      loadUserData();
-    }, [])
+      // If Redux has current data, use it immediately
+      if (currentUserFromRedux) {
+        console.log('📡 Using Redux data on focus');
+        setUser(currentUserFromRedux);
+        setIsLoading(false);
+      } else {
+        // Only load from storage if no Redux data
+        loadUserData();
+      }
+    }, [currentUserFromRedux])
   );
 
   const loadUserData = async () => {
     setIsLoading(true);
     try {
-      const userData = await StorageService.user.getUser();
-      if (userData) {
-        setUser(userData);
-      } else if (currentUserFromRedux) {
+      // First try to get fresh data from Redux (which loads from Firebase)
+      if (currentUserFromRedux) {
+        console.log('📡 Using fresh data from Redux/Firebase');
         setUser(currentUserFromRedux);
+        
+        // Also save to local storage for offline access
+        try {
+          await StorageService.user.saveUser(currentUserFromRedux);
+        } catch (storageError) {
+          console.warn('Failed to save to local storage:', storageError);
+        }
       } else {
-        navigation.navigate('Auth');
+        // Fallback to local storage if no Redux data
+        console.log('💾 Fallback to local storage data');
+        const userData = await StorageService.user.getUser();
+        if (userData) {
+          setUser(userData);
+        } else {
+          navigation.navigate('Auth');
+        }
       }
     } catch (error) {
       console.error('Failed to load user data:', error);
@@ -97,38 +119,61 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     if (!user) return;
 
     try {
+      console.log('🎯 Selecting new avatar:', avatarPath);
+      console.log('👤 Current user before update:', user.avatarUrl);
+      
       const updatedUser: User = {
         ...user,
         avatarUrl: avatarPath,
       };
 
+      console.log('💾 Saving updated user with avatar:', updatedUser.avatarUrl);
       await saveUserData(updatedUser);
+      
+      // Force close the avatar selector
+      setShowAvatarSelector(false);
+      
+      console.log('✅ Avatar update successful');
       Alert.alert(t('success'), t('avatarUpdateSuccess'));
     } catch (error) {
-      console.error('Failed to update avatar:', error);
+      console.error('❌ Failed to update avatar:', error);
       Alert.alert(t('error'), t('avatarUpdateError'));
     }
   };
 
   const saveUserData = async (updatedUser: User) => {
     try {
+      console.log('💾 Saving user to local storage...', updatedUser.avatarUrl);
       await StorageService.user.saveUser(updatedUser);
+      console.log('✅ Saved to local storage successfully');
       
       if (currentUserFromRedux && 
           updatedUser.userId !== 'user123' && 
           !updatedUser.userId.startsWith('demo_') && 
           !updatedUser.userId.startsWith('local_')) {
         try {
+          console.log('🔥 Updating Firebase profile...', updatedUser.userId);
           await updateUserProfile(updatedUser.userId, updatedUser);
+          console.log('✅ Firebase update successful');
         } catch (firebaseError) {
-          console.warn('Firebase update failed, but local storage updated:', firebaseError);
-          
+          console.warn('⚠️ Firebase update failed, but local storage updated:', firebaseError);
         }
+      } else {
+        console.log('ℹ️ Skipping Firebase update (demo/local user)');
       }
       
+      console.log('🔄 Updating local state with new user data');
       setUser(updatedUser);
+      
+      // Also update Redux state if this is the current user
+      if (currentUserFromRedux && updatedUser.userId === currentUserFromRedux.userId) {
+        console.log('🔄 Updating Redux state with new user data');
+        dispatch(updateUser(updatedUser));
+      }
+      
+      console.log('✅ Local state updated');
     } catch (error) {
-      console.error('Failed to save user data:', error);
+      console.error('❌ Failed to save user data:', error);
       throw error;
     }
   };
@@ -137,14 +182,14 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
     switch (type) {
       case 'weight':
         navigation.navigate('WeightPicker', {
-          currentWeight: user?.currentWeight || 60,
+          currentWeight: user?.currentWeight || 70, // Changed default to more reasonable 70kg
           title: title,
           type: 'weight'
         });
         break;
       case 'goalWeight':
         navigation.navigate('WeightPicker', {
-          currentWeight: user?.goalWeight || 70,
+          currentWeight: user?.goalWeight || (user?.currentWeight ? user.currentWeight - 5 : 70), // Smart default based on current weight
           title: title,
           type: 'goalWeight'
         });
@@ -286,6 +331,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         <View style={styles.profileSection}>
           <TouchableOpacity onPress={() => setShowAvatarSelector(true)}>
             <Image 
+              key={user.avatarUrl || 'default'} 
               source={getAvatarSource(user.avatarUrl)} 
               style={styles.profileImage}
             />
@@ -293,74 +339,94 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           <Text style={styles.profileName}>{user.displayName || user.email || 'User'}</Text>
         </View>
 
-        <View style={styles.bannerContainer}>
-          <Image 
-            source={require('../assets/settings-baner1.png')} 
-            style={styles.bannerImage}
-            resizeMode="cover"
-          />
-          <View style={styles.bannerOverlay}>
-            <Text style={styles.bannerTitle}>{t('fillYourPersonalData')}</Text>
-            <Text style={styles.bannerSubtitle}>{t('personalDataBanner')}</Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <View style={styles.settingsGrid}>
-            <View style={styles.settingItem}>
-              <Text style={styles.settingLabel}>{t('age')}</Text>
-              <Text style={styles.settingValue}>{user.age || '27'}</Text>
+        {/* Banner to encourage filling personal data - only show if data is incomplete */}
+        {(!user.age || !user.height || !user.currentWeight) && (
+          <View style={styles.bannerContainer}>
+            <Image 
+              source={require('../assets/settings-baner1.png')} 
+              style={styles.bannerImage}
+              resizeMode="cover"
+            />
+            <View style={styles.bannerOverlay}>
+              <Text style={styles.bannerTitle}>{t('fillYourPersonalData')}</Text>
+              <Text style={styles.bannerSubtitle}>{t('personalDataBanner')}</Text>
             </View>
+          </View>
+        )}
+
+        {/* Personal data section - only show if user has entered any personal data */}
+        {(user.age || user.height || user.currentWeight) && (
+          <View style={styles.section}>
+            <View style={styles.settingsGrid}>
+              {user.age && (
+                <View style={styles.settingItem}>
+                  <Text style={styles.settingLabel}>{t('age')}</Text>
+                  <Text style={styles.settingValue}>{user.age}</Text>
+                </View>
+              )}
+              
+              {user.height && (
+                <View style={styles.settingItem}>
+                  <Text style={styles.settingLabel}>{t('height')}</Text>
+                  <View style={styles.settingValueContainer}>
+                    <Text style={styles.settingValue}>{user.height} {t('cm')}</Text>
+                  </View>
+                </View>
+              )}
+              
+              {user.currentWeight && (
+                <View style={styles.settingItem}>
+                  <Text style={styles.settingLabel}>{t('currentWeight')}</Text>
+                  <View style={styles.settingValueContainer}>
+                    <Text style={styles.settingValue}>{user.currentWeight} {t('kg')}</Text>
+                  </View>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* Overview section - only show if user has weight data */}
+        {(user.currentWeight || user.goalWeight) && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('overview')}</Text>
             
-            <View style={styles.settingItem}>
-              <Text style={styles.settingLabel}>{t('height')}</Text>
-              <View style={styles.settingValueContainer}>
-                <Text style={styles.settingValue}>{user.height || '170.0'} {t('cm')}</Text>
+            <View style={styles.goalContainer}>
+              <View style={styles.goalHeader}>
+                <Text style={styles.goalLabel}>{t('weightGoal')}</Text>
+                <TouchableOpacity style={styles.updateButton} onPress={handleChangeGoal}>
+                  <Text style={styles.updateButtonText}>{t('update')}</Text>
+                </TouchableOpacity>
               </View>
+              <Text style={styles.goalValue}>{user.goalWeight || '70'} {t('kg')}</Text>
             </View>
-            
-            <View style={styles.settingItem}>
-              <Text style={styles.settingLabel}>{t('currentWeight')}</Text>
-              <View style={styles.settingValueContainer}>
-                <Text style={styles.settingValue}>{user.currentWeight || '60'} {t('kg')}</Text>
+
+            {user.currentWeight && (
+              <View style={styles.currentWeightCard}>
+                <Text style={styles.currentWeightValue}>{user.currentWeight} {t('kg')}</Text>
+                <Text style={styles.currentWeightLabel}>{t('currentWeight')}</Text>
+                <Text style={styles.weightAdvice}>
+                  {t('tryToUpdateOnceAWeek')}. {t('ensureYouHitYourGoal')}.
+                </Text>
+                <TouchableOpacity 
+                  style={styles.logWeightButton} 
+                  onPress={() => handleOpenPicker('weight', 'Log Weight')}
+                >
+                  <Text style={styles.logWeightButtonText}>{t('logWeight')}</Text>
+                </TouchableOpacity>
               </View>
-            </View>
-          </View>
-        </View>
+            )}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('overview')}</Text>
-          
-          <View style={styles.goalContainer}>
-            <View style={styles.goalHeader}>
-              <Text style={styles.goalLabel}>{t('weightGoal')}</Text>
-              <TouchableOpacity style={styles.updateButton} onPress={handleChangeGoal}>
-                <Text style={styles.updateButtonText}>{t('update')}</Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.goalValue}>{user.goalWeight || '70'} {t('kg')}</Text>
+            {/* BMI only shows if both weight and height are available */}
+            {user.currentWeight && user.height && (
+              <BMIIndicator 
+                bmi={bmi} 
+                weight={user.currentWeight} 
+                height={user.height} 
+              />
+            )}
           </View>
-
-          <View style={styles.currentWeightCard}>
-            <Text style={styles.currentWeightValue}>{user.currentWeight || '60'} {t('kg')}</Text>
-            <Text style={styles.currentWeightLabel}>{t('currentWeight')}</Text>
-            <Text style={styles.weightAdvice}>
-              {t('tryToUpdateOnceAWeek')}. {t('ensureYouHitYourGoal')}.
-            </Text>
-            <TouchableOpacity 
-              style={styles.logWeightButton} 
-              onPress={() => handleOpenPicker('weight', 'Log Weight')}
-            >
-              <Text style={styles.logWeightButtonText}>{t('logWeight')}</Text>
-            </TouchableOpacity>
-          </View>
-
-          <BMIIndicator 
-            bmi={bmi} 
-            weight={user.currentWeight} 
-            height={user.height} 
-          />
-        </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>{t('customization')}</Text>

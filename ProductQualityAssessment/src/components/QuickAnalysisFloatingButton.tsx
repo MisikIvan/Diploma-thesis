@@ -320,7 +320,7 @@ const QuickAnalysisFloatingButton: React.FC<QuickAnalysisFloatingButtonProps> = 
       <ScrollView style={styles.analysisContent} showsVerticalScrollIndicator={false}>
         {capturedImage && (
           <View style={styles.imagePreviewContainer}>
-            <Image source={{ uri: capturedImage }} style={styles.imagePreview} />
+            <Image source={capturedImage && capturedImage.trim() !== '' ? { uri: capturedImage } : require('../assets/logo.png')} style={styles.imagePreview} />
           </View>
         )}
 

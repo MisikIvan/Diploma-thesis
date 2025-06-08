@@ -69,9 +69,20 @@ const imageToBase64 = async (imageUri: string): Promise<string> => {
 const analyzeWithGemini = async (base64Image: string, context?: any): Promise<AnalyzedProductData> => {
   const contextInfo = context?.name ? `Контекст: назва продукту "${context.name}"` : '';
   
-  const prompt = `Проаналізуй це зображення етикетки продукту і витягни ДЕТАЛЬНУ інформацію у форматі JSON.
+  const prompt = `КРИТИЧНО ВАЖЛИВО: Це додаток для аналізу ХАРЧОВИХ ПРОДУКТІВ. Спочатку визначи - чи є це зображення ЕТИКЕТКИ ХАРЧОВОГО ПРОДУКТУ.
 
 ${contextInfo}
+
+ПЕРЕВІРКА ХАРЧОВОГО ПРОДУКТУ:
+1. Чи є на зображенні етикетка харчового продукту з таблицею харчової цінності?
+2. Чи видно інгредієнти/склад харчового продукту?
+3. Чи є це упаковка їжі/напою з поживними речовинами?
+
+ЯКЩО ЦЕ НЕ ХАРЧОВИЙ ПРОДУКТ:
+Поверни JSON з confidence: 0.0 та analysisDetails: "Не вдалося розпізнати етикетку харчового продукту. Перевірте, що зображення містить упаковку їжі з таблицею харчової цінності."
+
+ЯКЩО ЦЕ ХАРЧОВИЙ ПРОДУКТ:
+Проаналізуй зображення етикетки та поверни ДЕТАЛЬНУ інформацію у форматі JSON:
 
 🎯 ГОЛОВНЕ: Зосередься на ХАРЧОВІЙ ЦІННОСТІ для автоматичного розрахунку Nutri-Score!
 
@@ -101,7 +112,8 @@ ${contextInfo}
   "isVegetarian": true/false,
   "hasLactose": true/false,
   "hasGluten": true/false,
-  "confidence": 0.0-1.0
+  "confidence": 0.0-1.0,
+  "analysisDetails": "Детальний опис що було розпізнано"
 }
 
 🔍 ОБОВ'ЯЗКОВО шукай:
@@ -121,8 +133,10 @@ QUALITY: свіжий, якісний, натуральний, переробл�
 PREPARATION: готовий-до-вживання, потребує-готування, швидкого-приготування
 OTHER: новинка, популярний, рекомендований
 
-⚠️ ВАЖЛИВО: Якщо не впевнений у цифрах - краще залиш 0 ніж вигадуй!
-Confidence = точність розпізнавання (0.8+ для чітких даних, 0.5-0.7 для частково читаємих, <0.5 для нечітких)`;
+ВАЖЛИВО: 
+- Якщо не впевнений у цифрах - краще залиш 0 ніж вигадуй!
+- Confidence = точність розпізнавання (0.8+ для чітких даних, 0.5-0.7 для частково читаємих, <0.5 для нечітких, 0.0 для нехарчових)
+- analysisDetails повинен містити детальний опис що було знайдено та розпізнано`;
 
   try {
     const response = await axios.post(
@@ -164,10 +178,15 @@ Confidence = точність розпізнавання (0.8+ для чітки
 
     const analysisResult = JSON.parse(jsonMatch[0]);
     
-  
+    // Перевірка валідності харчового продукту
+    if (analysisResult.confidence === 0.0 || analysisResult.confidence < 0.1) {
+      console.log('❌ Non-food product detected:', analysisResult.analysisDetails);
+      throw new Error(analysisResult.analysisDetails || 'Зображення не містить етикетку харчового продукту');
+    }
+    
     const result: AnalyzedProductData = {
       confidence: analysisResult.confidence || 0.5,
-      analysisDetails: 'Розпізнано Gemini 2.5 Flash Preview 05-20',
+      analysisDetails: analysisResult.analysisDetails || 'Розпізнано Gemini 2.5 Flash Preview 05-20',
       ...analysisResult
     };
 

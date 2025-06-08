@@ -301,14 +301,32 @@ export function quickNutriScore(
   fruitsVegetablesNuts: number = 0,
   category: FoodCategory = 'general'
 ): NutriScoreResult {
+  // Валідація вхідних даних
+  const validateNutrientValue = (value: number, name: string, max: number = 1000): number => {
+    if (isNaN(value) || value < 0) return 0;
+    if (value > max) {
+      console.warn(`⚠️ Високе значення ${name}: ${value}. Обмежено до ${max}.`);
+      return max;
+    }
+    return Math.round(value * 100) / 100; // Округлення до 2 знаків після коми
+  };
+
+  const validatedCalories = validateNutrientValue(calories, 'калорій', 900);
+  const validatedSaturatedFat = validateNutrientValue(saturatedFat, 'насичених жирів', 100);
+  const validatedSugars = validateNutrientValue(sugars, 'цукру', 100);
+  const validatedSalt = validateNutrientValue(salt, 'солі', 50);
+  const validatedFiber = validateNutrientValue(fiber, 'клітковини', 50);
+  const validatedProtein = validateNutrientValue(protein, 'білків', 100);
+  const validatedFruitsVegetablesNuts = Math.max(0, Math.min(100, fruitsVegetablesNuts || 0));
+
   const nutritionalData: NutritionalData = {
-    energy: calories * 4.184, 
-    saturatedFat,
-    totalSugars: sugars,
-    sodium: salt * 400, 
-    fiber,
-    protein,
-    fruitsVegetablesNuts,
+    energy: validatedCalories * 4.184, // Конвертація ккал в кДж
+    saturatedFat: validatedSaturatedFat,
+    totalSugars: validatedSugars,
+    sodium: validatedSalt * 400, // Конвертація г солі в мг натрію
+    fiber: validatedFiber,
+    protein: validatedProtein,
+    fruitsVegetablesNuts: validatedFruitsVegetablesNuts,
   };
 
   return calculateNutriScore(nutritionalData, category);

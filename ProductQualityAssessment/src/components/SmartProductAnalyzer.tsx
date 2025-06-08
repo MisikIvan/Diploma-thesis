@@ -266,7 +266,7 @@ const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
         
           {imageUri && (
             <View style={styles.imageContainer}>
-              <Image source={{ uri: imageUri }} style={styles.previewImage} />
+              <Image source={imageUri && imageUri.trim() !== '' ? { uri: imageUri } : require('../assets/logo.png')} style={styles.previewImage} />
               <Text style={styles.imageCaption}>Зображення для аналізу</Text>
             </View>
           )}
