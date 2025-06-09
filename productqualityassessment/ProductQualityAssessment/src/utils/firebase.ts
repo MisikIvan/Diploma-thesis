@@ -1,0 +1,341 @@
+import {   collection,   doc,   getDoc,   getDocs,   setDoc,   updateDoc,   deleteDoc,   query,   where,   orderBy,   limit,  addDoc,  Timestamp,  DocumentData} from 'firebase/firestore';import {   signInWithEmailAndPassword,   createUserWithEmailAndPassword,   signOut,   updateProfile,  User as FirebaseUser} from 'firebase/auth';import { auth, db } from '../api/firebase';import type { User, Product, Favorite, ViewHistory, Comment } from '../types/index';import AsyncStorage from '@react-native-async-storage/async-storage';
+
+
+const AuthStorage = {
+  setUser: async (user: FirebaseUser | null) => {
+    try {
+      if (user) {
+        await AsyncStorage.setItem('auth_user', JSON.stringify({
+          uid: user.uid,
+          email: user.email,
+          displayName: user.displayName
+        }));
+      } else {
+        await AsyncStorage.removeItem('auth_user');
+      }
+    } catch (error) {
+      console.error('Error storing auth state in AsyncStorage:', error);
+    }
+  },
+  
+  getUser: async (): Promise<{uid: string, email: string | null, displayName: string | null} | null> => {
+    try {
+      const userData = await AsyncStorage.getItem('auth_user');
+      return userData ? JSON.parse(userData) : null;
+    } catch (error) {
+      console.error('Error retrieving auth state from AsyncStorage:', error);
+      return null;
+    }
+  }
+};
+
+
+auth.onAuthStateChanged(user => {
+  AuthStorage.setUser(user);
+});
+
+
+export const FirebaseService = {
+
+  auth: {
+    getCurrentUser: (): FirebaseUser | null => {
+      return auth.currentUser;
+    },
+
+    signIn: async (email: string, password: string): Promise<FirebaseUser> => {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await AuthStorage.setUser(userCredential.user);
+      return userCredential.user;
+    },
+
+    signUp: async (email: string, password: string, displayName: string): Promise<FirebaseUser> => {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(userCredential.user, { displayName });
+      await AuthStorage.setUser(userCredential.user);
+      return userCredential.user;
+    },
+
+    signOut: async (): Promise<void> => {
+      await signOut(auth);
+      await AuthStorage.setUser(null);
+    }
+  },
+
+ 
+  users: {
+    createUser: async (user: User): Promise<void> => {
+      await setDoc(doc(db, 'users', user.userId), user);
+    },
+
+    getUser: async (userId: string): Promise<User | null> => {
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      if (userDoc.exists()) {
+        return userDoc.data() as User;
+      }
+      return null;
+    },
+
+    updateUser: async (userId: string, userData: Partial<User>): Promise<void> => {
+      await updateDoc(doc(db, 'users', userId), userData);
+    }
+  },
+
+ 
+  products: {
+    getProduct: async (productId: string): Promise<Product | null> => {
+      const productDoc = await getDoc(doc(db, 'products', productId));
+      if (productDoc.exists()) {
+        return productDoc.data() as Product;
+      }
+      return null;
+    },
+
+    saveProduct: async (product: Product): Promise<void> => {
+      await setDoc(doc(db, 'products', product.productId), product);
+    },
+
+    searchProducts: async (searchTerm: string, maxResults = 20): Promise<Product[]> => {
+    
+      const q = query(
+        collection(db, 'products'),
+        where('name', '>=', searchTerm),
+        where('name', '<=', searchTerm + '\uf8ff'),
+        limit(maxResults)
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => doc.data() as Product);
+    }
+  },
+
+
+  favorites: {
+    getUserFavorites: async (userId: string): Promise<Favorite[]> => {
+      const q = query(
+        collection(db, 'favorites'),
+        where('userId', '==', userId)
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => {
+        return {
+          ...doc.data(),
+      
+          favoriteId: doc.id
+        } as Favorite;
+      });
+    },
+
+    addFavorite: async (favorite: Favorite): Promise<string> => {
+      const docRef = await addDoc(collection(db, 'favorites'), {
+        ...favorite,
+        addedAt: Timestamp.now().toDate().toISOString()
+      });
+      
+
+      await updateDoc(docRef, { favoriteId: docRef.id });
+      
+      return docRef.id;
+    },
+
+    removeFavorite: async (favoriteId: string): Promise<void> => {
+      console.log(`Firebase: Attempting to remove favorite with ID: ${favoriteId}`);
+      
+      try {
+
+        const favRef = doc(db, 'favorites', favoriteId);
+        const docSnap = await getDoc(favRef);
+        
+        if (docSnap.exists()) {
+          console.log(`Firebase: Found document to delete with ID: ${favoriteId}`);
+          await deleteDoc(favRef);
+          console.log(`Firebase: Successfully deleted document with ID: ${favoriteId}`);
+        } else {
+          console.error(`Firebase: Document with ID ${favoriteId} does not exist!`);
+          
+    
+          console.log(`Firebase: Trying to find document by direct query...`);
+          const q = query(collection(db, 'favorites'), where('favoriteId', '==', favoriteId));
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            const docToDelete = querySnapshot.docs[0];
+            console.log(`Firebase: Found favorite via query, actual ID: ${docToDelete.id}`);
+            await deleteDoc(docToDelete.ref);
+            console.log(`Firebase: Successfully deleted document via query`);
+          } else {
+            console.error(`Firebase: Could not find favorite with favoriteId: ${favoriteId}`);
+          }
+        }
+      } catch (error) {
+        console.error(`Firebase: Error removing favorite: ${error}`);
+        throw error;
+      }
+    },
+    
+ 
+    removeFavoriteByUserAndProduct: async (userId: string, productId: string): Promise<void> => {
+      console.log(`Firebase: Directly removing favorites for user ${userId} and product ${productId}`);
+      
+      try {
+     
+        const q = query(
+          collection(db, 'favorites'),
+          where('userId', '==', userId),
+          where('productId', '==', productId)
+        );
+        
+        const querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+          console.log(`Firebase: No favorites found to delete for this combination`);
+          return;
+        }
+        
+        console.log(`Firebase: Found ${querySnapshot.docs.length} favorites to delete`);
+        
+ 
+        const deletePromises = querySnapshot.docs.map(doc => {
+          console.log(`Firebase: Deleting document with ID: ${doc.id}`);
+          return deleteDoc(doc.ref);
+        });
+        
+        await Promise.all(deletePromises);
+        console.log(`Firebase: Successfully deleted all matching favorites`);
+      } catch (error) {
+        console.error(`Firebase: Error removing favorites by user/product: ${error}`);
+        throw error;
+      }
+    },
+
+    isFavorite: async (userId: string, productId: string): Promise<boolean> => {
+      const q = query(
+        collection(db, 'favorites'),
+        where('userId', '==', userId),
+        where('productId', '==', productId),
+        limit(1)
+      );
+      const querySnapshot = await getDocs(q);
+      return !querySnapshot.empty;
+    }
+  },
+
+ 
+  viewHistory: {
+    addToViewHistory: async (viewHistory: ViewHistory): Promise<string> => {
+      // First, remove any existing entries for this user+product combination to avoid duplicates
+      await FirebaseService.viewHistory.removeExistingViewHistory(viewHistory.userId, viewHistory.productId);
+      
+      // Add the new view history entry
+      const docRef = await addDoc(collection(db, 'viewHistory'), viewHistory);
+      
+      // Clean up old entries to maintain max 10 items per user
+      await FirebaseService.viewHistory.cleanupOldViewHistory(viewHistory.userId);
+      
+      return docRef.id;
+    },
+
+    removeExistingViewHistory: async (userId: string, productId: string): Promise<void> => {
+      const q = query(
+        collection(db, 'viewHistory'),
+        where('userId', '==', userId),
+        where('productId', '==', productId)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const deletePromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+        console.log(`🗑️ Removed ${querySnapshot.docs.length} existing view history entries for user ${userId} and product ${productId}`);
+      }
+    },
+
+    cleanupOldViewHistory: async (userId: string): Promise<void> => {
+      const q = query(
+        collection(db, 'viewHistory'),
+        where('userId', '==', userId),
+        orderBy('viewedAt', 'desc')
+      );
+      
+      const querySnapshot = await getDocs(q);
+      const docs = querySnapshot.docs;
+      
+      // If more than 10 items, delete the oldest ones
+      if (docs.length > 10) {
+        const docsToDelete = docs.slice(10); // Keep first 10 (newest), delete the rest
+        
+        const deletePromises = docsToDelete.map(doc => deleteDoc(doc.ref));
+        await Promise.all(deletePromises);
+        
+        console.log(`🧹 Cleaned up ${docsToDelete.length} old view history entries for user ${userId}`);
+      }
+    },
+
+    getUserViewHistory: async (userId: string, maxResults = 10): Promise<ViewHistory[]> => {
+      try {
+        // Try with ordering first (requires index)
+        const q = query(
+          collection(db, 'viewHistory'),
+          where('userId', '==', userId),
+          orderBy('viewedAt', 'desc'),
+          limit(maxResults)
+        );
+        const querySnapshot = await getDocs(q);
+        return querySnapshot.docs.map(doc => doc.data() as ViewHistory);
+      } catch (error) {
+        console.warn('🔥 Ordered query failed, falling back to simple query:', error);
+        
+        // Fallback: simple query without ordering
+        const simpleQ = query(
+          collection(db, 'viewHistory'),
+          where('userId', '==', userId),
+          limit(maxResults)
+        );
+        const querySnapshot = await getDocs(simpleQ);
+        const results = querySnapshot.docs.map(doc => doc.data() as ViewHistory);
+        
+        // Sort locally by viewedAt (descending)
+        return results.sort((a, b) => new Date(b.viewedAt).getTime() - new Date(a.viewedAt).getTime());
+      }
+    },
+
+    clearUserViewHistory: async (userId: string): Promise<void> => {
+      const q = query(
+        collection(db, 'viewHistory'),
+        where('userId', '==', userId)
+      );
+      const querySnapshot = await getDocs(q);
+      
+   
+      const deletePromises = querySnapshot.docs.map(
+        doc => deleteDoc(doc.ref)
+      );
+      
+      await Promise.all(deletePromises);
+    }
+  },
+
+
+  comments: {
+    getProductComments: async (productId: string): Promise<Comment[]> => {
+      const q = query(
+        collection(db, 'comments'),
+        where('productId', '==', productId),
+        where('isModerated', '==', true),
+        orderBy('createdAt', 'desc')
+      );
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => doc.data() as Comment);
+    },
+
+    addComment: async (comment: Comment): Promise<string> => {
+      const commentData = {
+        ...comment,
+        userAvatar: comment.userAvatar || null,
+        createdAt: Timestamp.now().toDate().toISOString(),
+        isModerated: false 
+      };
+      const docRef = await addDoc(collection(db, 'comments'), commentData);
+      return docRef.id;
+    }
+  }
+}; 
