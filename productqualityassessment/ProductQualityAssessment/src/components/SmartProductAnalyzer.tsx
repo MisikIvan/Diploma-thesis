@@ -61,6 +61,16 @@ const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
         barcode: currentFormData.barcode,
       });
 
+      // Перевіряємо чи це не-їжевий продукт
+      if (analysisResult.isNonFood) {
+        Alert.alert(
+          'Некоректне фото',
+          analysisResult.analysisDetails || 'Це не харчовий продукт. Сфотографуйте етикетку їжі.',
+          [{ text: 'Зрозуміло', style: 'default' }]
+        );
+        return;
+      }
+
       setAnalysisResult(analysisResult);
 
       if (analysisResult.confidence > 0.3) {
@@ -79,7 +89,7 @@ const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
     } catch (error) {
       console.error('Analysis error:', error);
       
-    
+      // Спроба базового аналізу
       setAnalysisStep('🔄 Спроба базового аналізу...');
       try {
         const fallbackResult = fallbackProductAnalysis('');
@@ -93,7 +103,7 @@ const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
       } catch (fallbackError) {
         Alert.alert(
           'Помилка аналізу',
-          'Не вдалося проаналізувати продукт. Перевірте підключення до інтернету та API ключ OpenAI.'
+          'Не вдалося проаналізувати продукт. Спробуйте ще раз з більш чітким фото етикетки.'
         );
       }
     } finally {
@@ -323,7 +333,8 @@ const SmartProductAnalyzer: React.FC<SmartProductAnalyzerProps> = ({
             <Text style={styles.tipText}>• Зробіть чітке фото всієї етикетки</Text>
             <Text style={styles.tipText}>• Включіть таблицю харчової цінності</Text>
             <Text style={styles.tipText}>• Переконайтеся в хорошому освітленні</Text>
-            <Text style={styles.tipText}>• Gemini краще розуміє контекст!</Text>
+            <Text style={styles.tipText}>• Фотографуйте тільки ХАРЧОВІ продукти</Text>
+            <Text style={styles.tipText}>• Gemini не аналізує косметику, ліки, побутову хімію</Text>
           </View>
         </ScrollView>
 

@@ -257,8 +257,22 @@ const QuickAnalysisFloatingButton: React.FC<QuickAnalysisFloatingButtonProps> = 
     setNutriScoreResult(nutriScore);
   };
 
+  // Функція для правильної обробки десяткових чисел
+  const parseNumericValue = (text: string): number => {
+    if (!text || text.trim() === '') return 0;
+    
+    // Заміна коми на крапку для підтримки європейського формату
+    const normalizedText = text.replace(',', '.');
+    
+    // Перевірка на валідність числа
+    const parsed = parseFloat(normalizedText);
+    
+    // Повертаємо 0 якщо число невалідне, інакше повертаємо значення з максимум 2 знаками після коми
+    return isNaN(parsed) ? 0 : Math.round(parsed * 100) / 100;
+  };
+
   const handleNutritionEdit = (field: keyof EditableNutrition, value: string) => {
-    const numValue = parseFloat(value) || 0;
+    const numValue = parseNumericValue(value);
     setEditableNutrition(prev => ({
       ...prev,
       [field]: numValue
@@ -373,7 +387,7 @@ const QuickAnalysisFloatingButton: React.FC<QuickAnalysisFloatingButtonProps> = 
                     style={styles.nutritionInput}
                     value={value.toString()}
                     onChangeText={(text) => handleNutritionEdit(key as keyof EditableNutrition, text)}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     placeholder="0"
                   />
                 </View>

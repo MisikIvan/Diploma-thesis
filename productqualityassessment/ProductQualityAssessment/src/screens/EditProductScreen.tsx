@@ -55,7 +55,8 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
       fiber: 0
     },
     tags: [],
-    weight: 0
+    weight: 0,
+    barcode: ''
   });
 
   const getNutriScoreColor = (grade: string) => {
@@ -212,6 +213,18 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
       return;
     }
 
+    // Валідація штрихкоду
+    if (product.barcode && product.barcode.trim()) {
+      const barcode = product.barcode.trim();
+      if (!/^\d{8,14}$/.test(barcode)) {
+        Alert.alert(
+          'Помилка', 
+          'Штрих-код повинен містити від 8 до 14 цифр'
+        );
+        return;
+      }
+    }
+
     if (!currentUser?.userId) {
       Alert.alert(t('error'), t('authenticationError'));
       return;
@@ -236,7 +249,8 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
           salt: 0
         },
         tags: product.tags || [],
-        weight: product.weight || 0
+        weight: product.weight || 0,
+        barcode: product.barcode?.trim() || ''
       }, currentUser.userId);
 
       Alert.alert(
@@ -307,6 +321,20 @@ const EditProductScreen: React.FC<EditProductScreenProps> = ({ navigation, route
           }}
           placeholder="Наприклад: 100 або 125.5"
           keyboardType="decimal-pad"
+        />
+        
+        <Text style={styles.inputLabel}>Штрих-код</Text>
+        <TextInput
+          style={styles.input}
+          value={product.barcode || ''}
+          onChangeText={(text) => {
+            // Дозволяємо тільки цифри
+            const numericText = text.replace(/[^0-9]/g, '');
+            setProduct({...product, barcode: numericText});
+          }}
+          placeholder="Введіть штрих-код (8-14 цифр)"
+          keyboardType="number-pad"
+          maxLength={14}
         />
         
         <Text style={styles.sectionTitle}>{t('nutritionalInfo')}</Text>

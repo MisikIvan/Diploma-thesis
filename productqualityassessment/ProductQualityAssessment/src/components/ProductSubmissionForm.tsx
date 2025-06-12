@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,9 @@ import {
   Platform,
   ActivityIndicator,
   ImageBackground,
+  Animated,
+  Vibration,
+  StatusBar,
 } from 'react-native';
 import { Ionicons, MaterialIcons, FontAwesome5, Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -43,8 +46,22 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
   onClose,
   onSubmit,
 }) => {
-  const currentUser = useAppSelector(state => state.user.currentUser);
+  const currentUser = useAppSelector((state: any) => state.user.currentUser);
   
+  // Функція для правильної обробки десяткових чисел
+  const parseNumericValue = (text: string): number => {
+    if (!text || text.trim() === '') return 0;
+    
+    // Заміна коми на крапку для підтримки європейського формату
+    const normalizedText = text.replace(',', '.');
+    
+    // Перевірка на валідність числа
+    const parsed = parseFloat(normalizedText);
+    
+    // Повертаємо 0 якщо число невалідне, інакше повертаємо значення з максимум 2 знаками після коми
+    return isNaN(parsed) ? 0 : Math.round(parsed * 100) / 100;
+  };
+
   const [currentStep, setCurrentStep] = useState<FormStep>('ai-scan');
   const [formData, setFormData] = useState({
     name: '',
@@ -256,6 +273,17 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
 
       const results = await Promise.all(analysisPromises);
       
+      // Перевіряємо чи є не-їжеві продукти
+      const nonFoodResult = results.find(result => result.isNonFood);
+      if (nonFoodResult) {
+        Alert.alert(
+          'Некоректне фото',
+          nonFoodResult.analysisDetails || 'Це не харчовий продукт. Сфотографуйте етикетку їжі.',
+          [{ text: 'Зрозуміло', style: 'default' }]
+        );
+        return;
+      }
+      
       // Combine results
       const combinedResult: AnalyzedProductData = {
         name: '',
@@ -299,7 +327,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
     } catch (error) {
       console.error('Analysis error:', error);
       
-     
+      // Спроба базового аналізу
       setAnalysisStep('Спроба базового аналізу...');
       try {
         const fallbackResult = fallbackProductAnalysis('');
@@ -313,7 +341,7 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
       } catch (fallbackError) {
         Alert.alert(
           'Помилка аналізу',
-          'Не вдалося проаналізувати продукт. Перевірте підключення до інтернету.'
+          'Не вдалося проаналізувати продукт. Спробуйте ще раз з більш чітким фото етикетки.'
         );
       }
     } finally {
@@ -931,9 +959,9 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
           <TextInput
             style={styles.input}
             value={formData.weight.toString()}
-            onChangeText={(text) => setFormData(prev => ({ ...prev, weight: parseFloat(text) || 0 }))}
+            onChangeText={(text) => setFormData(prev => ({ ...prev, weight: parseNumericValue(text) }))}
             placeholder="Вага продукту в грамах"
-            keyboardType="numeric"
+            keyboardType="decimal-pad"
           />
         </View>
 
@@ -984,10 +1012,10 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                 value={formData.nutriments.calories.toString()}
                 onChangeText={(text) => setFormData(prev => ({ 
                   ...prev, 
-                  nutriments: { ...prev.nutriments, calories: parseFloat(text) || 0 }
+                  nutriments: { ...prev.nutriments, calories: parseNumericValue(text) }
                 }))}
                 placeholder="0"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
               />
             </View>
             
@@ -998,10 +1026,10 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                 value={formData.nutriments.proteins.toString()}
                 onChangeText={(text) => setFormData(prev => ({ 
                   ...prev, 
-                  nutriments: { ...prev.nutriments, proteins: parseFloat(text) || 0 }
+                  nutriments: { ...prev.nutriments, proteins: parseNumericValue(text) }
                 }))}
                 placeholder="0"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
               />
             </View>
           </View>
@@ -1016,11 +1044,11 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                   ...prev, 
                   nutriments: { 
                     ...prev.nutriments, 
-                    fats: { ...prev.nutriments.fats, total: parseFloat(text) || 0 }
+                    fats: { ...prev.nutriments.fats, total: parseNumericValue(text) }
                   }
                 }))}
                 placeholder="0"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
               />
             </View>
             
@@ -1033,11 +1061,11 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                   ...prev, 
                   nutriments: { 
                     ...prev.nutriments, 
-                    fats: { ...prev.nutriments.fats, saturated: parseFloat(text) || 0 }
+                    fats: { ...prev.nutriments.fats, saturated: parseNumericValue(text) }
                   }
                 }))}
                 placeholder="0"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
               />
             </View>
           </View>
@@ -1052,11 +1080,11 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                   ...prev, 
                   nutriments: { 
                     ...prev.nutriments, 
-                    carbohydrates: { ...prev.nutriments.carbohydrates, total: parseFloat(text) || 0 }
+                    carbohydrates: { ...prev.nutriments.carbohydrates, total: parseNumericValue(text) }
                   }
                 }))}
                 placeholder="0"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
               />
             </View>
             
@@ -1069,11 +1097,11 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                   ...prev, 
                   nutriments: { 
                     ...prev.nutriments, 
-                    carbohydrates: { ...prev.nutriments.carbohydrates, sugar: parseFloat(text) || 0 }
+                    carbohydrates: { ...prev.nutriments.carbohydrates, sugar: parseNumericValue(text) }
                   }
                 }))}
                 placeholder="0"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
               />
             </View>
           </View>
@@ -1086,10 +1114,10 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                 value={formData.nutriments.salt.toString()}
                 onChangeText={(text) => setFormData(prev => ({ 
                   ...prev, 
-                  nutriments: { ...prev.nutriments, salt: parseFloat(text) || 0 }
+                  nutriments: { ...prev.nutriments, salt: parseNumericValue(text) }
                 }))}
                 placeholder="0"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
               />
             </View>
             
@@ -1100,10 +1128,10 @@ const ProductSubmissionForm: React.FC<ProductSubmissionFormProps> = ({
                 value={formData.nutriments.fiber.toString()}
                 onChangeText={(text) => setFormData(prev => ({ 
                   ...prev, 
-                  nutriments: { ...prev.nutriments, fiber: parseFloat(text) || 0 }
+                  nutriments: { ...prev.nutriments, fiber: parseNumericValue(text) }
                 }))}
                 placeholder="0"
-                keyboardType="numeric"
+                keyboardType="decimal-pad"
               />
             </View>
           </View>

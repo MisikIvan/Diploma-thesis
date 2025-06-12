@@ -41,15 +41,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   // Local state for loading and error handling
   const [isLoading, setIsLoading] = useState(false);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [hasInitialLoad, setHasInitialLoad] = useState(false);
-  const [showSubmissionForm, setShowSubmissionForm] = useState(false);
-  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  
-  
+  const [allProductsForSearch, setAllProductsForSearch] = useState<Product[]>([]);
   const [localSearchQuery, setLocalSearchQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+  const [hasInitialLoad, setHasInitialLoad] = useState(false);
+  
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [showSubmissionForm, setShowSubmissionForm] = useState(false);
 
   
   const searchFilteredProducts = useMemo(() => {
@@ -60,11 +61,21 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     // Check if search term is a barcode 
     const isBarcode = /^\d{8,13}$/.test(searchTerm);
     
-    return allProducts.filter((product: Product) => {
+    // For any search, prefer all products if available
+    const searchableProducts = allProductsForSearch.length > 0 ? allProductsForSearch : allProducts;
+    
+    return searchableProducts.filter((product: Product) => {
       // If searching by barcode, prioritize barcode field
       if (isBarcode) {
-        if (product.barcode && product.barcode.includes(searchTerm)) return true;
-        if (product.productId.toLowerCase().includes(searchTerm)) return true;
+        const productBarcode = product.barcode ? String(product.barcode).trim() : '';
+        const searchBarcode = String(searchTerm).trim();
+        const productId = String(product.productId).trim();
+        
+        // Exact match first
+        if (productBarcode === searchBarcode || productId === searchBarcode) return true;
+        // Partial match as fallback
+        if (productBarcode && productBarcode.includes(searchBarcode)) return true;
+        if (productId.toLowerCase().includes(searchTerm)) return true;
       }
       
       // Search in product name
@@ -91,7 +102,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       
       return false;
     });
-  }, [allProducts, localSearchQuery]);
+  }, [allProducts, allProductsForSearch, localSearchQuery]);
 
 
   useEffect(() => {
@@ -119,6 +130,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       // Load only 20 latest products for home screen
       const fetchedProducts = await getAllProducts(APP_CONSTANTS.MAX_HOME_PRODUCTS);
       setAllProducts(fetchedProducts);
+      // Don't set allProductsForSearch here - keep it empty until search is needed
       console.log(`🏠 Home screen loaded ${fetchedProducts.length} latest products`);
     } catch (err: any) {
       console.error('Error loading products:', err);
@@ -128,11 +140,39 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   };
 
+  // Load all products for search (barcode and text search)
+  const loadAllProductsForSearch = async () => {
+    try {
+      console.log('🔍 Завантажуємо ВСІ продукти для пошуку...');
+      const allProductsFromDB = await getAllProducts(); // No limit - get all products
+      console.log(`🔍 Завантажено ${allProductsFromDB.length} продуктів для пошуку`);
+      setAllProductsForSearch(allProductsFromDB); // Cache all products
+      return allProductsFromDB;
+    } catch (error) {
+      console.error('Помилка завантаження всіх продуктів:', error);
+      return allProductsForSearch.length > 0 ? allProductsForSearch : allProducts; // fallback
+    }
+  };
+
   
-  const handleSearch = useCallback((query: string) => {
+  const handleSearch = useCallback(async (query: string) => {
     (global as any).lastInteractionTime = Date.now();
-    setLocalSearchQuery(query); 
-  }, []);
+    setLocalSearchQuery(query);
+    
+    // If we have a search query and don't have all products loaded, load them
+    if (query.trim() && allProductsForSearch.length <= APP_CONSTANTS.MAX_HOME_PRODUCTS) {
+      console.log('🔍 Виявлено пошук, завантажуємо всі продукти...');
+      setIsSearchLoading(true);
+      try {
+        await loadAllProductsForSearch(); // Wait for all products to load
+        console.log('🔍 Всі продукти завантажені, пошук готовий');
+      } catch (error) {
+        console.error('🔍 Помилка завантаження продуктів для пошуку:', error);
+      } finally {
+        setIsSearchLoading(false);
+      }
+    }
+  }, [allProductsForSearch.length]);
 
   // Handle barcode scanning
   const handleBarcodePress = () => {
@@ -142,45 +182,95 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const handleBarcodeScanned = (barcode: string) => {
     setShowBarcodeScanner(false);
     
+    // ДІАГНОСТИКА ПОШУКУ ШТРИХКОДІВ
+    console.log('🔍 ДІАГНОСТИКА ПОШУКУ ШТРИХКОДІВ');
+    console.log('Штрихкод для пошуку:', barcode);
+    console.log('Кількість продуктів в allProducts (обмежено):', allProducts.length);
+    
     // Set the barcode as search query
     setLocalSearchQuery(barcode);
     
-    // Find products with this barcode
-    const foundProducts = allProducts.filter(product => 
-      product.barcode === barcode || product.productId === barcode
-    );
-    
-    if (foundProducts.length > 0) {
-     
-      if (foundProducts.length === 1) {
-        handleProductPress(foundProducts[0]);
-      } else {
-        // Multiple products found, show search results
-        ToastAndroid.show(
-          t('productsFoundByBarcode'),
-          ToastAndroid.LONG
-        );
+    // Load all products and then search
+    loadAllProductsForSearch().then(fullProductsList => {
+      console.log('Кількість ВСІх продуктів для пошуку:', fullProductsList.length);
+      console.log('Перші 3 продукти:', fullProductsList.slice(0, 3).map(p => ({
+        name: p.name,
+        productId: p.productId, 
+        barcode: p.barcode,
+        barcodeType: typeof p.barcode
+      })));
+      
+      // Find products with this barcode (improved search)
+      const foundProducts = fullProductsList.filter(product => {
+        console.log('Перевірка продукту:', product.name);
+        console.log('- product.barcode:', product.barcode, typeof product.barcode);
+        console.log('- search barcode:', barcode, typeof barcode);
         
+        // Перетворюємо всі значення на рядки та очищуємо від пробілів
+        const productBarcode = product.barcode ? String(product.barcode).trim() : '';
+        const searchBarcode = String(barcode).trim();
+        const productId = String(product.productId).trim();
+        
+        console.log('- очищений product.barcode:', productBarcode);
+        console.log('- очищений search barcode:', searchBarcode);
+        console.log('- barcode match:', productBarcode === searchBarcode);
+        console.log('- productId match:', productId === searchBarcode);
+        
+        // Точне співпадіння штрихкоду або productId
+        if (productBarcode === searchBarcode || productId === searchBarcode) {
+          return true;
+        }
+        
+        // Часткове співпадіння штрихкоду (як резервний варіант)
+        if (productBarcode && productBarcode.includes(searchBarcode)) {
+          console.log('- часткове співпадіння штрихкоду');
+          return true;
+        }
+        
+        return false;
+      });
+      
+      console.log('Результат пошуку:', foundProducts.length, 'продуктів');
+      
+      if (foundProducts.length > 0) {
+       
+        if (foundProducts.length === 1) {
+          handleProductPress(foundProducts[0]);
+        } else {
+          // Multiple products found, show search results
+          ToastAndroid.show(
+            t('productsFoundByBarcode'),
+            ToastAndroid.LONG
+          );
+          
+          Alert.alert(
+            t('productsFoundByBarcode'),
+            `${t('barcodeSearchResult')} ${barcode} ${t('foundProductsLabel')} ${foundProducts.length} ${t('products')}`
+          );
+        }
+      } else {
+        // No products found with this barcode
         Alert.alert(
-          t('productsFoundByBarcode'),
-          `${t('barcodeSearchResult')} ${barcode} ${t('foundProductsLabel')} ${foundProducts.length} ${t('products')}`
+          'Продукт не знайдено',
+          `За штрих-кодом ${barcode} не знайдено жодного продукту в базі даних. Можете додати новий продукт.`,
+          [
+            { text: 'OK', style: 'default' },
+            { 
+              text: 'Додати продукт', 
+              style: 'default',
+              onPress: () => handleSuggestProduct()
+            }
+          ]
         );
       }
-    } else {
-      // No products found with this barcode
+    }).catch(error => {
+      console.error('Помилка під час пошуку штрихкодів:', error);
       Alert.alert(
-        'Продукт не знайдено',
-        `За штрих-кодом ${barcode} не знайдено жодного продукту в базі даних. Можете додати новий продукт.`,
-        [
-          { text: 'OK', style: 'default' },
-          { 
-            text: 'Додати продукт', 
-            style: 'default',
-            onPress: () => handleSuggestProduct()
-          }
-        ]
+        'Помилка пошуку',
+        'Виникла помилка під час пошуку продукту. Спробуйте ще раз.',
+        [{ text: 'OK', style: 'default' }]
       );
-    }
+    });
   };
 
   
@@ -247,7 +337,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       if (product?.productId) {
         console.log('Attempting navigation despite error...');
         try {
-          navigation.navigate('ProductDetail', { productId: product.productId });
+      navigation.navigate('ProductDetail', { productId: product.productId });
         } catch (navError) {
           console.error('Navigation also failed:', navError);
         }
@@ -315,7 +405,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         initialQuery={localSearchQuery}
         onSearch={handleSearch}
         onBarcodePress={handleBarcodePress}
-        loading={false} 
+        loading={isSearchLoading} 
       />
       
       {localSearchQuery.trim() && (
@@ -343,7 +433,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         <SuggestProductBanner onPress={handleSuggestProduct} />
       )}
     </View>
-  ), [recentProducts, localSearchQuery, handleSearch, displayProducts, isSearchingByBarcode]);
+  ), [recentProducts, localSearchQuery, handleSearch, displayProducts, isSearchingByBarcode, isSearchLoading]);
 
   if ((isLoading || reduxLoading) && allProducts.length === 0) {
     return (

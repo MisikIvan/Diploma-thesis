@@ -37,6 +37,7 @@ export interface AnalyzedProductData {
   countryOfOrigin?: string;
   confidence: number;
   analysisDetails?: string;
+  isNonFood?: boolean;
 }
 
 
@@ -78,8 +79,8 @@ ${contextInfo}
 2. Чи видно інгредієнти/склад харчового продукту?
 3. Чи є це упаковка їжі/напою з поживними речовинами?
 
-ЯКЩО ЦЕ НЕ ХАРЧОВИЙ ПРОДУКТ:
-Поверни JSON з confidence: 0.0 та analysisDetails: "Не вдалося розпізнати етикетку харчового продукту. Перевірте, що зображення містить упаковку їжі з таблицею харчової цінності."
+ЯКЩО ЦЕ НЕ ХАРЧОВИЙ ПРОДУКТ (наприклад: побутова хімія, одяг, електроніка, косметика, ліки, книги, канцелярські товари, іграшки тощо):
+Поверни JSON з confidence: 0.0 та analysisDetails з коротким описом того, що ти бачиш замість їжі (наприклад: "На зображенні косметичний засіб", "Це побутова хімія", "Видно електронний пристрій" тощо).
 
 ЯКЩО ЦЕ ХАРЧОВИЙ ПРОДУКТ:
 Проаналізуй зображення етикетки та поверни ДЕТАЛЬНУ інформацію у форматі JSON:
@@ -170,7 +171,7 @@ OTHER: новинка, популярний, рекомендований
     const aiResponse = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
     console.log('🤖 Gemini 2.5 Flash Preview raw response:', aiResponse);
 
-  
+    // Витягуємо JSON з відповіді
     const jsonMatch = aiResponse?.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error('No valid JSON found in Gemini response');
@@ -180,8 +181,17 @@ OTHER: новинка, популярний, рекомендований
     
     // Перевірка валідності харчового продукту
     if (analysisResult.confidence === 0.0 || analysisResult.confidence < 0.1) {
-      console.log('❌ Non-food product detected:', analysisResult.analysisDetails);
-      throw new Error(analysisResult.analysisDetails || 'Зображення не містить етикетку харчового продукту');
+      console.log('❌ Non-food product detected');
+      
+      // Повертаємо спеціальний результат для не-їжевих продуктів замість помилки
+      const userFriendlyMessage = createNonFoodMessage(analysisResult.analysisDetails);
+      console.log('📝 Non-food message:', userFriendlyMessage);
+      
+      return {
+        confidence: 0.0,
+        analysisDetails: userFriendlyMessage,
+        isNonFood: true, // Спеціальний прапорець
+      } as AnalyzedProductData & { isNonFood: boolean };
     }
     
     const result: AnalyzedProductData = {
@@ -194,25 +204,83 @@ OTHER: новинка, популярний, рекомендований
     return result;
 
   } catch (error: any) {
-    console.error('❌ Gemini 2.5 Flash Preview analysis failed:', error);
+    console.error('❌ Gemini analysis failed:', error.message || 'Unknown error');
     
     if (error.response?.status === 429) {
-      throw new Error('API rate limit exceeded. Please try again later.');
+      throw new Error('Забагато запитів до AI. Спробуйте через хвилину.');
     } else if (error.response?.status === 400) {
-      throw new Error('Invalid request to Gemini API. Please check image format.');
+      throw new Error('Некоректний формат зображення. Спробуйте інше фото.');
     }
     
-    throw new Error(`Gemini 2.5 Flash Preview analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    // Якщо це помилка з нашого createNonFoodMessage, передаємо її без змін
+    if (error.message && (error.message.includes('🧴') || error.message.includes('🧽') || 
+                          error.message.includes('💊') || error.message.includes('📱') ||
+                          error.message.includes('👕') || error.message.includes('🧸') ||
+                          error.message.includes('📚') || error.message.includes('🐱') ||
+                          error.message.includes('🌱') || error.message.includes('❌'))) {
+      throw error;
+    }
+    
+    throw new Error('Помилка аналізу зображення. Спробуйте ще раз.');
   }
+};
+
+// Функція для створення зрозумілих повідомлень про не-їжеві продукти
+const createNonFoodMessage = (analysisDetails: string): string => {
+  if (!analysisDetails) {
+    return '❌ Це не харчовий продукт. Сфотографуйте етикетку їжі.';
+  }
+
+  // Витягуємо що саме було розпізнано
+  const details = analysisDetails.toLowerCase();
+  
+  if (details.includes('косметич') || details.includes('beauty') || details.includes('крем')) {
+    return '🧴 Це косметика, а не їжа. Сфотографуйте етикетку харчового продукту.';
+  }
+  
+  if (details.includes('побутов') || details.includes('миюч') || details.includes('cleaning') || details.includes('хімі')) {
+    return '🧽 Це побутова хімія, а не їжа. Сфотографуйте етикетку харчового продукту.';
+  }
+  
+  if (details.includes('ліки') || details.includes('медикамент') || details.includes('medication') || details.includes('таблетк')) {
+    return '💊 Це ліки, а не їжа. Сфотографуйте етикетку харчового продукту.';
+  }
+  
+  if (details.includes('електрон') || details.includes('electronic') || details.includes('пристрій')) {
+    return '📱 Це електроніка, а не їжа. Сфотографуйте етикетку харчового продукту.';
+  }
+  
+  if (details.includes('одяг') || details.includes('clothing') || details.includes('взутт')) {
+    return '👕 Це одяг, а не їжа. Сфотографуйте етикетку харчового продукту.';
+  }
+  
+  if (details.includes('іграшк') || details.includes('toy')) {
+    return '🧸 Це іграшка, а не їжа. Сфотографуйте етикетку харчового продукту.';
+  }
+  
+  if (details.includes('книг') || details.includes('book') || details.includes('канцеляр')) {
+    return '📚 Це книга, а не їжа. Сфотографуйте етикетку харчового продукту.';
+  }
+
+  if (details.includes('тварин') || details.includes('кіт') || details.includes('собак') || details.includes('animal') || details.includes('pet')) {
+    return '🐱 Це тварина, а не їжа. Сфотографуйте етикетку харчового продукту.';
+  }
+
+  if (details.includes('рослин') || details.includes('квітк') || details.includes('plant') || details.includes('flower')) {
+    return '🌱 Це рослина, а не їжа. Сфотографуйте етикетку харчового продукту.';
+  }
+
+  // Коротке загальне повідомлення без деталей
+  return '❌ Це не харчовий продукт. Сфотографуйте етикетку їжі з таблицею харчової цінності.';
 };
 
 
 const patternMatchingFallback = (text: string): Partial<AnalyzedProductData> => {
-  console.log('⚠️ Using pattern matching fallback - Gemini unavailable');
+  console.log('⚠️ Using basic analysis fallback');
   
   const result: Partial<AnalyzedProductData> = {
     confidence: 0.3,
-    analysisDetails: 'Базовий аналіз без AI'
+    analysisDetails: 'Базовий аналіз'
   };
 
  
@@ -245,21 +313,21 @@ export const analyzeProductImage = async (
       try {
         return await analyzeWithGemini(base64Image, context);
       } catch (error) {
-        console.error('Gemini 2.5 Flash Preview failed, using pattern matching...', error);
+        console.error('Gemini analysis unavailable, using basic analysis...');
       }
     }
 
- 
-    console.log('⚠️ Using pattern matching fallback - Gemini 2.5 Flash Preview unavailable');
+    // Базовий аналіз
+    console.log('⚠️ Using basic analysis fallback');
     return {
       confidence: 0.2,
-      analysisDetails: 'Аналіз недоступний - немає Gemini ключа',
+      analysisDetails: 'AI недоступний',
       ...patternMatchingFallback('')
     } as AnalyzedProductData;
 
   } catch (error) {
-    console.error('❌ Complete analysis failed:', error);
-    throw new Error('Failed to analyze product image');
+    console.error('❌ Analysis failed:', error);
+    throw new Error('Не вдалося проаналізувати зображення');
   }
 };
 
@@ -356,7 +424,7 @@ export const autoFillFormFromAnalysis = (
     }
   }
 
- 
+
   if (analysisResult.confidence > 0.5) {
     if (analysisResult.isVegan !== undefined) {
       autoFilledData.isVegan = analysisResult.isVegan;
@@ -563,6 +631,6 @@ export const fallbackProductAnalysis = (extractedText: string): AnalyzedProductD
     nutrition: Object.keys(nutrition).length > 0 ? nutrition : undefined,
     allergens: allergens.length > 0 ? allergens : undefined,
     confidence: 0.3, 
-    analysisDetails: 'Базовий аналіз без AI'
+    analysisDetails: 'Базовий аналіз'
   };
-}; 
+};
